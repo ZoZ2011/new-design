@@ -30,19 +30,19 @@ const IACD = () => {
 
         <div className="grid md:grid-cols-2 gap-6">
           <Button
-            onClick={() => navigate("/exercises/iacd/drilling")}
-            size="lg"
-            className="h-32 text-xl font-semibold shadow-lg"
-          >
-            Drilling
-          </Button>
-
-          <Button
             onClick={() => navigate("/exercises/iacd/well-services")}
             size="lg"
             className="h-32 text-xl font-semibold shadow-lg"
           >
             Well Services
+          </Button>
+
+          <Button
+            onClick={() => navigate("/exercises/iacd/drilling")}
+            size="lg"
+            className="h-32 text-xl font-semibold shadow-lg"
+          >
+            Drilling
           </Button>
         </div>
       </div>
