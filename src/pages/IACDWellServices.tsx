@@ -54,6 +54,14 @@ const IACDWellServices = () => {
           >
             Snubbing
           </Button>
+
+          <Button
+            onClick={() => navigate("/exercises/iacd/well-services/mock-test")}
+            size="lg"
+            className="h-32 text-xl font-semibold shadow-lg md:col-span-2"
+          >
+            Mock Test
+          </Button>
         </div>
       </div>
     </div>
