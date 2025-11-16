@@ -24,14 +24,6 @@ const IACDWellServices = () => {
 
         <div className="grid md:grid-cols-2 gap-6">
           <Button
-            onClick={() => navigate("/signin/workover")}
-            size="lg"
-            className="h-32 text-xl font-semibold shadow-lg"
-          >
-            Workover
-          </Button>
-
-          <Button
             onClick={() => navigate("/signin/coiled-tubing")}
             size="lg"
             className="h-32 text-xl font-semibold shadow-lg"
@@ -40,11 +32,11 @@ const IACDWellServices = () => {
           </Button>
 
           <Button
-            onClick={() => navigate("/signin/wireline")}
+            onClick={() => navigate("/signin/workover")}
             size="lg"
             className="h-32 text-xl font-semibold shadow-lg"
           >
-            Wireline
+            Workover
           </Button>
 
           <Button
@@ -56,11 +48,19 @@ const IACDWellServices = () => {
           </Button>
 
           <Button
+            onClick={() => navigate("/signin/wireline")}
+            size="lg"
+            className="h-32 text-xl font-semibold shadow-lg"
+          >
+            Wireline
+          </Button>
+
+          <Button
             onClick={() => navigate("/exercises/iacd/well-services/mock-test")}
             size="lg"
             className="h-32 text-xl font-semibold shadow-lg md:col-span-2"
           >
-            Mock Test
+            Mock Tests
           </Button>
         </div>
       </div>
