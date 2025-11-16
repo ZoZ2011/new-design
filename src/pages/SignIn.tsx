@@ -26,9 +26,17 @@ const SignIn = () => {
   };
 
   const getCategoryTitle = () => {
-    return category?.split("-").map(word => 
+    if (!category) return "";
+    
+    // Special handling for IADC OGOR mock tests
+    if (category.includes("iadc-ogor-mock-test")) {
+      const testNumber = category.split("-").pop();
+      return `IADC OGOR Mock Test #${testNumber}`;
+    }
+    
+    return category.split("-").map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(" ") || "";
+    ).join(" ");
   };
 
   return (

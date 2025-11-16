@@ -317,9 +317,19 @@ const Questions = () => {
 
         <div className="text-center space-y-2">
           <h1 className="text-3xl md:text-5xl font-bold text-primary">
-            {category?.split("-").map(word => 
-              word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(" ")}
+            {(() => {
+              if (!category) return "";
+              
+              // Special handling for IADC OGOR mock tests
+              if (category.includes("iadc-ogor-mock-test")) {
+                const testNumber = category.split("-").pop();
+                return `IADC OGOR Mock Test #${testNumber}`;
+              }
+              
+              return category.split("-").map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+              ).join(" ");
+            })()}
           </h1>
           <p className="text-muted-foreground">Answer all questions to complete the assessment</p>
         </div>
