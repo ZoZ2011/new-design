@@ -59,7 +59,7 @@ const Questions = () => {
     document.addEventListener("contextmenu", preventContextMenu);
     preventSelection();
 
-    // Add CSS to prevent text selection
+    // Add CSS to prevent text selection and screenshots
     const style = document.createElement("style");
     style.textContent = `
       .no-select {
@@ -69,16 +69,78 @@ const Questions = () => {
         user-select: none;
         -webkit-touch-callout: none;
       }
+      
+      /* Screenshot prevention overlay */
+      @media print {
+        body * {
+          visibility: hidden !important;
+          background: #000 !important;
+          color: #000 !important;
+        }
+        body::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: #000;
+          z-index: 99999;
+        }
+      }
+      
+      /* Additional screenshot blocking */
+      body::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        pointer-events: none;
+        z-index: -1;
+      }
+      
+      @media screen and (-webkit-min-device-pixel-ratio:0) {
+        body::after {
+          background: transparent;
+        }
+      }
     `;
     document.head.appendChild(style);
+
+    // Detect screenshot attempts by monitoring visibility changes
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page is hidden, might be screenshot attempt
+        document.body.style.filter = 'blur(20px)';
+        document.body.style.opacity = '0';
+        setTimeout(() => {
+          if (document.hidden) {
+            document.body.style.background = '#000';
+          }
+        }, 50);
+      } else {
+        document.body.style.filter = '';
+        document.body.style.opacity = '';
+        document.body.style.background = '';
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       document.removeEventListener("keydown", preventScreenshot);
       document.removeEventListener("copy", preventCopy);
       document.removeEventListener("cut", preventCopy);
       document.removeEventListener("contextmenu", preventContextMenu);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.body.style.userSelect = "";
       document.body.style.webkitUserSelect = "";
+      document.body.style.filter = '';
+      document.body.style.opacity = '';
+      document.body.style.background = '';
       document.head.removeChild(style);
     };
   }, []);
