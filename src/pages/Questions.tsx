@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { getQuestionsByCategory, Question } from "@/data/questions";
 import AIChat from "@/components/AIChat";
 import { supabase } from "@/integrations/supabase/client";
+import { ScreenshotBlocker } from "@/components/ScreenshotBlocker";
 
 const Questions = () => {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
@@ -24,43 +25,11 @@ const Questions = () => {
 
   const questions = getQuestionsByCategory(category || "");
 
-  // Prevent screenshots and copying
+  // Use the ScreenshotBlocker component
   useEffect(() => {
-    const preventScreenshot = (e: KeyboardEvent) => {
-      // Prevent PrintScreen, Ctrl+Shift+S (Firefox screenshot), Cmd+Shift+3/4 (Mac)
-      if (
-        e.key === "PrintScreen" ||
-        (e.ctrlKey && e.shiftKey && e.key === "S") ||
-        (e.metaKey && e.shiftKey && (e.key === "3" || e.key === "4"))
-      ) {
-        e.preventDefault();
-        toast.error("Screenshots are not allowed");
-      }
-    };
-
-    const preventCopy = (e: ClipboardEvent) => {
-      e.preventDefault();
-      toast.error("Copying is not allowed");
-    };
-
-    const preventContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      toast.error("Right-click is disabled");
-    };
-
-    const preventSelection = () => {
-      document.body.style.userSelect = "none";
-      document.body.style.webkitUserSelect = "none";
-    };
-
-    document.addEventListener("keydown", preventScreenshot);
-    document.addEventListener("copy", preventCopy);
-    document.addEventListener("cut", preventCopy);
-    document.addEventListener("contextmenu", preventContextMenu);
-    preventSelection();
-
-    // Add CSS to prevent text selection and screenshots
+    // Additional page-specific protections
     const style = document.createElement("style");
+    style.id = "questions-protection";
     style.textContent = `
       .no-select {
         -webkit-user-select: none;
@@ -69,79 +38,14 @@ const Questions = () => {
         user-select: none;
         -webkit-touch-callout: none;
       }
-      
-      /* Screenshot prevention overlay */
-      @media print {
-        body * {
-          visibility: hidden !important;
-          background: #000 !important;
-          color: #000 !important;
-        }
-        body::before {
-          content: '';
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          background: #000;
-          z-index: 99999;
-        }
-      }
-      
-      /* Additional screenshot blocking */
-      body::after {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: transparent;
-        pointer-events: none;
-        z-index: -1;
-      }
-      
-      @media screen and (-webkit-min-device-pixel-ratio:0) {
-        body::after {
-          background: transparent;
-        }
-      }
     `;
     document.head.appendChild(style);
 
-    // Detect screenshot attempts by monitoring visibility changes
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Page is hidden, might be screenshot attempt
-        document.body.style.filter = 'blur(20px)';
-        document.body.style.opacity = '0';
-        setTimeout(() => {
-          if (document.hidden) {
-            document.body.style.background = '#000';
-          }
-        }, 50);
-      } else {
-        document.body.style.filter = '';
-        document.body.style.opacity = '';
-        document.body.style.background = '';
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
     return () => {
-      document.removeEventListener("keydown", preventScreenshot);
-      document.removeEventListener("copy", preventCopy);
-      document.removeEventListener("cut", preventCopy);
-      document.removeEventListener("contextmenu", preventContextMenu);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      document.body.style.userSelect = "";
-      document.body.style.webkitUserSelect = "";
-      document.body.style.filter = '';
-      document.body.style.opacity = '';
-      document.body.style.background = '';
-      document.head.removeChild(style);
+      const styleElement = document.getElementById("questions-protection");
+      if (styleElement) {
+        styleElement.remove();
+      }
     };
   }, []);
 
@@ -347,6 +251,7 @@ const Questions = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4 no-select">
+      <ScreenshotBlocker />
       <div className="max-w-4xl mx-auto pt-8 pb-20 space-y-6">
         <div className="flex items-center justify-between">
           <Button
