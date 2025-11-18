@@ -3,86 +3,26 @@ import { toast } from "sonner";
 
 export const ScreenshotBlocker = () => {
   useEffect(() => {
-    // EXTREME mobile screenshot prevention
-    let isHiding = false;
-    
-    const hideEverythingInstantly = () => {
-      if (isHiding) return;
-      isHiding = true;
-      
-      document.body.style.opacity = "0";
-      document.body.style.backgroundColor = "#000000";
-      document.body.style.visibility = "hidden";
-      document.documentElement.style.backgroundColor = "#000000";
-      document.documentElement.style.opacity = "0";
-      
-      const root = document.getElementById("root");
-      if (root) {
-        root.style.display = "none";
-      }
-      
-      // Hide all elements
-      const allElements = document.querySelectorAll("*");
-      allElements.forEach((el) => {
-        if (el instanceof HTMLElement) {
-          el.style.visibility = "hidden";
-          el.style.opacity = "0";
-        }
-      });
-    };
-
-    const showContentDelayed = () => {
-      setTimeout(() => {
-        isHiding = false;
-        document.body.style.opacity = "1";
-        document.body.style.backgroundColor = "";
-        document.body.style.visibility = "visible";
-        document.documentElement.style.backgroundColor = "";
-        document.documentElement.style.opacity = "1";
-        
-        const root = document.getElementById("root");
-        if (root) {
-          root.style.display = "";
-        }
-        
-        const allElements = document.querySelectorAll("*");
-        allElements.forEach((el) => {
-          if (el instanceof HTMLElement) {
-            el.style.visibility = "";
-            el.style.opacity = "";
-          }
-        });
-      }, 1000);
-    };
-
+    // Disable screenshots, print screen, and dev tools
     const preventScreenshot = (e: KeyboardEvent) => {
-      // Detect Windows Key press (before S is pressed)
-      if (e.key === "Meta" || e.key === "OS" || e.metaKey || e.getModifierState?.("OS")) {
-        hideEverythingInstantly();
-        showContentDelayed();
-      }
-
-      // Block ALL screenshot shortcuts
-      const isScreenshotAttempt = 
+      // Block PrintScreen, Snipping Tool shortcuts, Mac screenshots
+      if (
         e.key === "PrintScreen" ||
         e.key === "Print" ||
-        (e.key === "s" && e.shiftKey) ||
-        (e.key === "S" && e.shiftKey) ||
-        (e.shiftKey && e.metaKey) ||
-        (e.shiftKey && e.metaKey && (e.key === "3" || e.key === "4" || e.key === "5")) ||
-        (e.shiftKey && e.metaKey && (e.key === "#" || e.key === "$" || e.key === "%")) ||
-        (e.key === "PrintScreen" && e.metaKey) ||
+        (e.shiftKey && e.metaKey && e.key === "3") ||
+        (e.shiftKey && e.metaKey && e.key === "4") ||
+        (e.shiftKey && e.metaKey && e.key === "5") ||
+        (e.ctrlKey && e.shiftKey && e.key === "S") ||
+        (e.metaKey && e.shiftKey && e.key === "S") ||
+        // Block dev tools
         (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
         (e.metaKey && e.altKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
-        e.key === "F12";
-
-      if (isScreenshotAttempt) {
+        e.key === "F12"
+      ) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        hideEverythingInstantly();
         toast.error("Screenshots are not allowed");
-        showContentDelayed();
         return false;
       }
     };
@@ -107,85 +47,52 @@ export const ScreenshotBlocker = () => {
       (document.body.style as any).msUserSelect = "none";
     };
 
-    // EXTREME visibility change detection (mobile screenshot detection)
+    // Detect visibility change (common during screenshots)
     const handleVisibilityChange = () => {
-      hideEverythingInstantly();
-      showContentDelayed();
-    };
-
-    // EXTREME window blur (catches ALL screenshot tools on mobile)
-    const handleBlur = () => {
-      hideEverythingInstantly();
-      showContentDelayed();
-    };
-
-    const handleFocus = () => {
-      showContentDelayed();
-    };
-
-    // EXTREME mobile screenshot detection - monitor page lifecycle
-    const handlePageHide = () => {
-      hideEverythingInstantly();
-    };
-
-    const handlePageShow = () => {
-      showContentDelayed();
-    };
-
-    // Detect screenshot via freeze/resume (mobile specific)
-    const handleFreeze = () => {
-      hideEverythingInstantly();
-    };
-
-    const handleResume = () => {
-      showContentDelayed();
-    };
-
-    // EXTREME mobile touch detection
-    const preventTouchScreenshot = (e: TouchEvent) => {
-      if (e.touches.length >= 2) {
-        hideEverythingInstantly();
-        showContentDelayed();
+      if (document.hidden) {
+        document.body.style.opacity = "0";
+        document.body.style.filter = "blur(50px)";
+        setTimeout(() => {
+          if (document.hidden) {
+            document.body.style.backgroundColor = "#000000";
+          }
+        }, 10);
+      } else {
+        setTimeout(() => {
+          document.body.style.opacity = "1";
+          document.body.style.filter = "none";
+          document.body.style.backgroundColor = "";
+        }, 100);
       }
     };
 
-    let longPressTimer: NodeJS.Timeout;
-    const handleTouchStart = () => {
-      longPressTimer = setTimeout(() => {
-        hideEverythingInstantly();
-        showContentDelayed();
-      }, 500);
+    // Detect window blur (screenshot tools often cause this)
+    const handleBlur = () => {
+      document.body.style.opacity = "0";
+      setTimeout(() => {
+        document.body.style.backgroundColor = "#000000";
+      }, 5);
     };
 
-    const handleTouchEnd = () => {
-      clearTimeout(longPressTimer);
+    const handleFocus = () => {
+      setTimeout(() => {
+        document.body.style.opacity = "1";
+        document.body.style.backgroundColor = "";
+      }, 100);
     };
 
-    // Add ALL event listeners with maximum aggression
+    // Add event listeners
     document.addEventListener("keydown", preventScreenshot, true);
     document.addEventListener("keyup", preventScreenshot, true);
     document.addEventListener("copy", preventCopy, true);
     document.addEventListener("cut", preventCopy, true);
     document.addEventListener("contextmenu", preventContextMenu, true);
-    
-    // Visibility and blur - EXTREME
-    document.addEventListener("visibilitychange", handleVisibilityChange, true);
-    window.addEventListener("blur", handleBlur, true);
-    window.addEventListener("focus", handleFocus, true);
-    window.addEventListener("pagehide", handlePageHide, true);
-    window.addEventListener("pageshow", handlePageShow, true);
-    document.addEventListener("freeze", handleFreeze as any, true);
-    document.addEventListener("resume", handleResume as any, true);
-    
-    // Mobile touch - EXTREME
-    document.addEventListener("touchstart", preventTouchScreenshot, { passive: true });
-    document.addEventListener("touchstart", handleTouchStart, { passive: true });
-    document.addEventListener("touchend", handleTouchEnd, { passive: true });
-    document.addEventListener("touchcancel", handleTouchEnd, { passive: true });
-    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
     disableSelection();
 
-    // EXTREME CSS protection for mobile
+    // Add comprehensive CSS protection
     const style = document.createElement("style");
     style.id = "screenshot-blocker";
     style.textContent = `
@@ -195,27 +102,9 @@ export const ScreenshotBlocker = () => {
         -ms-user-select: none !important;
         user-select: none !important;
         -webkit-touch-callout: none !important;
-        -webkit-tap-highlight-color: transparent !important;
-        -webkit-user-drag: none !important;
-        user-drag: none !important;
       }
       
-      /* EXTREME mobile protection */
-      @media (max-width: 768px) {
-        * {
-          -webkit-user-drag: none !important;
-          -webkit-user-modify: none !important;
-          pointer-events: auto !important;
-          -webkit-appearance: none !important;
-        }
-        
-        body {
-          -webkit-user-select: none !important;
-          -webkit-touch-callout: none !important;
-        }
-      }
-      
-      /* Block ALL printing */
+      /* Block printing */
       @media print {
         * {
           display: none !important;
@@ -241,7 +130,7 @@ export const ScreenshotBlocker = () => {
         }
       }
       
-      /* Multiple protection layers */
+      /* Watermark overlay */
       body::before {
         content: '';
         position: fixed;
@@ -255,6 +144,7 @@ export const ScreenshotBlocker = () => {
         mix-blend-mode: difference;
       }
       
+      /* Additional screenshot blocking layer */
       body::after {
         content: '';
         position: fixed;
@@ -266,36 +156,8 @@ export const ScreenshotBlocker = () => {
         pointer-events: none;
         z-index: 999998;
       }
-      
-      /* Prevent ANY content capture */
-      img, canvas, video, svg {
-        -webkit-user-drag: none !important;
-        user-drag: none !important;
-        pointer-events: none !important;
-        -webkit-touch-callout: none !important;
-      }
-      
-      /* EXTREME: Make everything non-capturable on mobile */
-      @media (max-width: 768px) {
-        img, canvas, video, svg, div, span, p, h1, h2, h3, h4, h5, h6 {
-          -webkit-user-select: none !important;
-          -webkit-touch-callout: none !important;
-          -webkit-user-drag: none !important;
-        }
-      }
     `;
     document.head.appendChild(style);
-
-    // Mobile-specific meta tags
-    const metaViewport = document.createElement("meta");
-    metaViewport.name = "screenshot";
-    metaViewport.content = "disabled";
-    document.head.appendChild(metaViewport);
-
-    const metaNoCapture = document.createElement("meta");
-    metaNoCapture.name = "no-capture";
-    metaNoCapture.content = "true";
-    document.head.appendChild(metaNoCapture);
 
     // Disable drag and drop
     const preventDrag = (e: DragEvent) => {
@@ -330,21 +192,11 @@ export const ScreenshotBlocker = () => {
       document.removeEventListener("copy", preventCopy, true);
       document.removeEventListener("cut", preventCopy, true);
       document.removeEventListener("contextmenu", preventContextMenu, true);
-      document.removeEventListener("visibilitychange", handleVisibilityChange, true);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("dragstart", preventDrag, true);
       document.removeEventListener("drop", preventDrag, true);
-      document.removeEventListener("touchstart", preventTouchScreenshot);
-      document.removeEventListener("touchstart", handleTouchStart);
-      document.removeEventListener("touchend", handleTouchEnd);
-      document.removeEventListener("touchcancel", handleTouchEnd);
-      window.removeEventListener("blur", handleBlur, true);
-      window.removeEventListener("focus", handleFocus, true);
-      window.removeEventListener("pagehide", handlePageHide, true);
-      window.removeEventListener("pageshow", handlePageShow, true);
-      document.removeEventListener("freeze", handleFreeze as any, true);
-      document.removeEventListener("resume", handleResume as any, true);
-      
-      clearTimeout(longPressTimer);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
       
       document.body.style.userSelect = "";
       document.body.style.webkitUserSelect = "";
