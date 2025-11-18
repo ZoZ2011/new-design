@@ -3,26 +3,38 @@ import { toast } from "sonner";
 
 export const ScreenshotBlocker = () => {
   useEffect(() => {
-    // Disable screenshots, print screen, and dev tools
+    // Aggressive screenshot prevention for all devices
     const preventScreenshot = (e: KeyboardEvent) => {
-      // Block PrintScreen, Snipping Tool shortcuts, Mac screenshots
-      if (
+      // Block ALL screenshot shortcuts
+      const isScreenshotAttempt = 
         e.key === "PrintScreen" ||
         e.key === "Print" ||
-        (e.shiftKey && e.metaKey && e.key === "3") ||
-        (e.shiftKey && e.metaKey && e.key === "4") ||
-        (e.shiftKey && e.metaKey && e.key === "5") ||
-        (e.ctrlKey && e.shiftKey && e.key === "S") ||
-        (e.metaKey && e.shiftKey && e.key === "S") ||
+        // Windows Snipping Tool (Win + Shift + S)
+        (e.key === "s" && e.shiftKey && (e.metaKey || e.getModifierState?.("OS"))) ||
+        (e.key === "S" && e.shiftKey && (e.metaKey || e.getModifierState?.("OS"))) ||
+        // Mac screenshots
+        (e.shiftKey && e.metaKey && (e.key === "3" || e.key === "4" || e.key === "5")) ||
+        (e.shiftKey && e.metaKey && (e.key === "#" || e.key === "$" || e.key === "%")) ||
+        // Windows + PrtScn
+        (e.key === "PrintScreen" && e.metaKey) ||
+        // Ctrl + Shift + S (various tools)
+        (e.ctrlKey && e.shiftKey && (e.key === "S" || e.key === "s")) ||
         // Block dev tools
         (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
         (e.metaKey && e.altKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
-        e.key === "F12"
-      ) {
+        e.key === "F12";
+
+      if (isScreenshotAttempt) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
+        document.body.style.opacity = "0";
+        document.body.style.backgroundColor = "#000000";
         toast.error("Screenshots are not allowed");
+        setTimeout(() => {
+          document.body.style.opacity = "1";
+          document.body.style.backgroundColor = "";
+        }, 500);
         return false;
       }
     };
@@ -47,34 +59,75 @@ export const ScreenshotBlocker = () => {
       (document.body.style as any).msUserSelect = "none";
     };
 
-    // Detect visibility change (common during screenshots)
+    // Detect visibility change (aggressive protection for mobile screenshots)
     const handleVisibilityChange = () => {
       if (document.hidden) {
         document.body.style.opacity = "0";
-        document.body.style.filter = "blur(50px)";
-        setTimeout(() => {
-          if (document.hidden) {
-            document.body.style.backgroundColor = "#000000";
+        document.body.style.filter = "blur(100px)";
+        document.body.style.backgroundColor = "#000000";
+        document.body.style.color = "#000000";
+        // Hide all content immediately
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach((el) => {
+          if (el instanceof HTMLElement) {
+            el.style.opacity = "0";
           }
-        }, 10);
+        });
       } else {
         setTimeout(() => {
           document.body.style.opacity = "1";
           document.body.style.filter = "none";
           document.body.style.backgroundColor = "";
-        }, 100);
+          document.body.style.color = "";
+          const allElements = document.querySelectorAll('*');
+          allElements.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              el.style.opacity = "";
+            }
+          });
+        }, 200);
       }
     };
 
-    // Detect window blur (screenshot tools often cause this)
+    // Detect window blur (aggressive protection)
     const handleBlur = () => {
       document.body.style.opacity = "0";
-      setTimeout(() => {
-        document.body.style.backgroundColor = "#000000";
-      }, 5);
+      document.body.style.backgroundColor = "#000000";
+      document.body.style.filter = "blur(100px)";
     };
 
     const handleFocus = () => {
+      setTimeout(() => {
+        document.body.style.opacity = "1";
+        document.body.style.backgroundColor = "";
+        document.body.style.filter = "none";
+      }, 200);
+    };
+
+    // Mobile-specific touch protection
+    const preventTouchScreenshot = (e: TouchEvent) => {
+      // Detect multi-touch gestures (common in mobile screenshots)
+      if (e.touches.length >= 2) {
+        document.body.style.opacity = "0";
+        document.body.style.backgroundColor = "#000000";
+        setTimeout(() => {
+          document.body.style.opacity = "1";
+          document.body.style.backgroundColor = "";
+        }, 500);
+      }
+    };
+
+    // Detect long press (Android screenshot method)
+    let longPressTimer: NodeJS.Timeout;
+    const handleTouchStart = () => {
+      longPressTimer = setTimeout(() => {
+        document.body.style.opacity = "0";
+        document.body.style.backgroundColor = "#000000";
+      }, 800);
+    };
+
+    const handleTouchEnd = () => {
+      clearTimeout(longPressTimer);
       setTimeout(() => {
         document.body.style.opacity = "1";
         document.body.style.backgroundColor = "";
@@ -90,6 +143,10 @@ export const ScreenshotBlocker = () => {
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("blur", handleBlur);
     window.addEventListener("focus", handleFocus);
+    document.addEventListener("touchstart", preventTouchScreenshot, { passive: true });
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchend", handleTouchEnd, { passive: true });
+    document.addEventListener("touchcancel", handleTouchEnd, { passive: true });
     disableSelection();
 
     // Add comprehensive CSS protection
@@ -102,6 +159,16 @@ export const ScreenshotBlocker = () => {
         -ms-user-select: none !important;
         user-select: none !important;
         -webkit-touch-callout: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+      }
+      
+      /* Mobile-specific protection */
+      @media (max-width: 768px) {
+        * {
+          -webkit-user-drag: none !important;
+          -webkit-user-modify: none !important;
+          pointer-events: auto !important;
+        }
       }
       
       /* Block printing */
@@ -130,7 +197,7 @@ export const ScreenshotBlocker = () => {
         }
       }
       
-      /* Watermark overlay */
+      /* Invisible watermark overlay */
       body::before {
         content: '';
         position: fixed;
@@ -144,7 +211,7 @@ export const ScreenshotBlocker = () => {
         mix-blend-mode: difference;
       }
       
-      /* Additional screenshot blocking layer */
+      /* Additional protection layer */
       body::after {
         content: '';
         position: fixed;
@@ -156,8 +223,21 @@ export const ScreenshotBlocker = () => {
         pointer-events: none;
         z-index: 999998;
       }
+      
+      /* Prevent canvas/image capture on mobile */
+      img, canvas, video {
+        -webkit-user-drag: none !important;
+        user-drag: none !important;
+        pointer-events: none !important;
+      }
     `;
     document.head.appendChild(style);
+
+    // Add meta tags for mobile screenshot prevention
+    const metaViewport = document.createElement("meta");
+    metaViewport.name = "screenshot";
+    metaViewport.content = "disabled";
+    document.head.appendChild(metaViewport);
 
     // Disable drag and drop
     const preventDrag = (e: DragEvent) => {
@@ -195,8 +275,14 @@ export const ScreenshotBlocker = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("dragstart", preventDrag, true);
       document.removeEventListener("drop", preventDrag, true);
+      document.removeEventListener("touchstart", preventTouchScreenshot);
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("touchcancel", handleTouchEnd);
       window.removeEventListener("blur", handleBlur);
       window.removeEventListener("focus", handleFocus);
+      
+      clearTimeout(longPressTimer);
       
       document.body.style.userSelect = "";
       document.body.style.webkitUserSelect = "";
