@@ -3,22 +3,51 @@ import { toast } from "sonner";
 
 export const ScreenshotBlocker = () => {
   useEffect(() => {
-    // Aggressive screenshot prevention for all devices
+    // Ultra-aggressive instant screenshot prevention
+    const hideContentInstantly = () => {
+      document.body.style.opacity = "0";
+      document.body.style.backgroundColor = "#000000";
+      document.body.style.visibility = "hidden";
+      const root = document.getElementById("root");
+      if (root) {
+        root.style.opacity = "0";
+        root.style.visibility = "hidden";
+      }
+    };
+
+    const showContentDelayed = () => {
+      setTimeout(() => {
+        document.body.style.opacity = "1";
+        document.body.style.backgroundColor = "";
+        document.body.style.visibility = "visible";
+        const root = document.getElementById("root");
+        if (root) {
+          root.style.opacity = "1";
+          root.style.visibility = "visible";
+        }
+      }, 800);
+    };
+
     const preventScreenshot = (e: KeyboardEvent) => {
+      // Detect Windows Key press (before S is pressed)
+      if (e.key === "Meta" || e.key === "OS" || e.metaKey || e.getModifierState?.("OS")) {
+        hideContentInstantly();
+        showContentDelayed();
+      }
+
       // Block ALL screenshot shortcuts
       const isScreenshotAttempt = 
         e.key === "PrintScreen" ||
         e.key === "Print" ||
-        // Windows Snipping Tool (Win + Shift + S)
-        (e.key === "s" && e.shiftKey && (e.metaKey || e.getModifierState?.("OS"))) ||
-        (e.key === "S" && e.shiftKey && (e.metaKey || e.getModifierState?.("OS"))) ||
+        // Windows Snipping Tool (Win + Shift + S) - detect any part of combo
+        (e.key === "s" && e.shiftKey) ||
+        (e.key === "S" && e.shiftKey) ||
+        (e.shiftKey && e.metaKey) ||
         // Mac screenshots
         (e.shiftKey && e.metaKey && (e.key === "3" || e.key === "4" || e.key === "5")) ||
         (e.shiftKey && e.metaKey && (e.key === "#" || e.key === "$" || e.key === "%")) ||
         // Windows + PrtScn
         (e.key === "PrintScreen" && e.metaKey) ||
-        // Ctrl + Shift + S (various tools)
-        (e.ctrlKey && e.shiftKey && (e.key === "S" || e.key === "s")) ||
         // Block dev tools
         (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
         (e.metaKey && e.altKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
@@ -28,13 +57,9 @@ export const ScreenshotBlocker = () => {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        document.body.style.opacity = "0";
-        document.body.style.backgroundColor = "#000000";
+        hideContentInstantly();
         toast.error("Screenshots are not allowed");
-        setTimeout(() => {
-          document.body.style.opacity = "1";
-          document.body.style.backgroundColor = "";
-        }, 500);
+        showContentDelayed();
         return false;
       }
     };
@@ -59,41 +84,45 @@ export const ScreenshotBlocker = () => {
       (document.body.style as any).msUserSelect = "none";
     };
 
-    // Detect visibility change (aggressive protection for mobile screenshots)
+    // Instant visibility change detection (catches Snipping Tool opening)
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        // Instant black screen - no delays
         document.body.style.opacity = "0";
         document.body.style.filter = "blur(100px)";
         document.body.style.backgroundColor = "#000000";
         document.body.style.color = "#000000";
-        // Hide all content immediately
-        const allElements = document.querySelectorAll('*');
-        allElements.forEach((el) => {
-          if (el instanceof HTMLElement) {
-            el.style.opacity = "0";
-          }
-        });
+        document.body.style.visibility = "hidden";
+        const root = document.getElementById("root");
+        if (root) {
+          root.style.display = "none";
+        }
       } else {
         setTimeout(() => {
           document.body.style.opacity = "1";
           document.body.style.filter = "none";
           document.body.style.backgroundColor = "";
           document.body.style.color = "";
-          const allElements = document.querySelectorAll('*');
-          allElements.forEach((el) => {
-            if (el instanceof HTMLElement) {
-              el.style.opacity = "";
-            }
-          });
-        }, 200);
+          document.body.style.visibility = "visible";
+          const root = document.getElementById("root");
+          if (root) {
+            root.style.display = "";
+          }
+        }, 500);
       }
     };
 
-    // Detect window blur (aggressive protection)
+    // Instant window blur detection (catches Snipping Tool)
     const handleBlur = () => {
+      // Instant hide - zero delay
       document.body.style.opacity = "0";
       document.body.style.backgroundColor = "#000000";
       document.body.style.filter = "blur(100px)";
+      document.body.style.visibility = "hidden";
+      const root = document.getElementById("root");
+      if (root) {
+        root.style.display = "none";
+      }
     };
 
     const handleFocus = () => {
@@ -101,7 +130,12 @@ export const ScreenshotBlocker = () => {
         document.body.style.opacity = "1";
         document.body.style.backgroundColor = "";
         document.body.style.filter = "none";
-      }, 200);
+        document.body.style.visibility = "visible";
+        const root = document.getElementById("root");
+        if (root) {
+          root.style.display = "";
+        }
+      }, 500);
     };
 
     // Mobile-specific touch protection
