@@ -7,7 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import backgroundImage from "@/assets/oil-rig-background.jpg";
 
-const VALID_IDS = ["784122", "296592", "766242", "291476", "8527891", "758693", "786953", "776948", "285423", "261719", "400315"];
+const VALID_IDS = ["784122", "296592", "766242", "291476", "8527891", "758693", "786953", "776948", "285423", "261719", "761286", "400315"];
 
 const SignIn = () => {
   const [idNumber, setIdNumber] = useState("");
