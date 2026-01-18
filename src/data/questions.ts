@@ -11,6 +11,7 @@ import brineWeightTableQ27MT2 from "@/assets/brine-weight-table-q27-mt2.png";
 import coiledTubingStackQ35 from "@/assets/coiled-tubing-stack-q35.png";
 import snubbingStackQ17 from "@/assets/snubbing-stack-q17.png";
 import brineWeightTableQ51MT1 from "@/assets/brine-weight-table-q51-mt1.png";
+import { iwcfDrillingQuestions } from "./iwcfDrillingQuestions";
 
 export interface Question {
   id: number;
@@ -2429,6 +2430,8 @@ export function getQuestionsByCategory(category: string): Question[] {
       return iadcOgorMockTest2Questions;
     case "iadc-ogor-mock-test-3":
       return iadcOgorMockTest3Questions;
+    case "iwcf-drilling":
+      return iwcfDrillingQuestions as Question[];
     default:
       return [];
   }
