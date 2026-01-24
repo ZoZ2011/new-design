@@ -1,21 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import backgroundImage from "@/assets/oil-rig-background.jpg";
+import AdminPanel from "@/components/AdminPanel";
 
-const VALID_IDS = ["400315"];
+const ADMIN_CODE = "USERS.400315";
 
 const SignIn = () => {
   const [idNumber, setIdNumber] = useState("");
+  const [validIds, setValidIds] = useState<string[]>([]);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { category } = useParams();
 
+  useEffect(() => {
+    fetchValidIds();
+  }, []);
+
+  const fetchValidIds = async () => {
+    const { data, error } = await supabase
+      .from("valid_users")
+      .select("user_id");
+
+    if (error) {
+      console.error("Failed to fetch valid IDs:", error);
+      // Fallback to default admin ID if fetch fails
+      setValidIds(["400315"]);
+    } else {
+      setValidIds(data?.map(u => u.user_id) || ["400315"]);
+    }
+    setLoading(false);
+  };
+
   const handleSignIn = () => {
-    if (VALID_IDS.includes(idNumber.trim())) {
+    // Check for admin code
+    if (idNumber.trim().toUpperCase() === ADMIN_CODE) {
+      setShowAdminPanel(true);
+      return;
+    }
+
+    if (validIds.includes(idNumber.trim())) {
       localStorage.setItem("userId", idNumber.trim());
       navigate(`/questions/${category}`);
     } else {
@@ -38,6 +68,16 @@ const SignIn = () => {
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(" ");
   };
+
+  const handleAdminClose = () => {
+    setShowAdminPanel(false);
+    setIdNumber("");
+    fetchValidIds(); // Refresh the valid IDs list
+  };
+
+  if (showAdminPanel) {
+    return <AdminPanel onClose={handleAdminClose} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
@@ -73,6 +113,7 @@ const SignIn = () => {
               onChange={(e) => setIdNumber(e.target.value)}
               placeholder="Enter your ID number"
               onKeyPress={(e) => e.key === "Enter" && handleSignIn()}
+              disabled={loading}
             />
           </div>
 
@@ -80,8 +121,9 @@ const SignIn = () => {
             onClick={handleSignIn}
             className="w-full"
             size="lg"
+            disabled={loading}
           >
-            Sign In
+            {loading ? "Loading..." : "Sign In"}
           </Button>
         </div>
       </Card>
