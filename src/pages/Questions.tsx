@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { getQuestionsByCategory, Question } from "@/data/questions";
 import AIChat from "@/components/AIChat";
@@ -19,6 +19,7 @@ const Questions = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [autoSubmit, setAutoSubmit] = useState(false);
   const [soundEffects, setSoundEffects] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { category } = useParams();
   const userId = localStorage.getItem("userId");
@@ -279,14 +280,25 @@ const Questions = () => {
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleClearProgress}
-                title="Clear Progress"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleClearProgress}
+                  title="Clear Progress"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="lg:hidden"
+                  onClick={() => setSidebarOpen(true)}
+                  title="Open Menu"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             {/* Quiz Card */}
@@ -324,15 +336,16 @@ const Questions = () => {
             </div>
           </div>
 
-          {/* Sidebar */}
           <QuestionSidebar
             questions={questions}
             currentIndex={currentQuestionIndex}
             submittedAnswers={submittedAnswers}
             selectedAnswers={selectedAnswers}
             correctCount={correctCount}
+            isOpen={sidebarOpen}
             onQuestionSelect={setCurrentQuestionIndex}
             onSettingsClick={() => navigate(`/settings/${category}`)}
+            onClose={() => setSidebarOpen(false)}
           />
         </div>
       </div>
