@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      dynamic_questions: {
+        Row: {
+          category_slug: string
+          correct_answer: number
+          created_at: string
+          display_order: number
+          id: string
+          options: Json
+          question_text: string
+          updated_at: string
+        }
+        Insert: {
+          category_slug: string
+          correct_answer?: number
+          created_at?: string
+          display_order?: number
+          id?: string
+          options?: Json
+          question_text: string
+          updated_at?: string
+        }
+        Update: {
+          category_slug?: string
+          correct_answer?: number
+          created_at?: string
+          display_order?: number
+          id?: string
+          options?: Json
+          question_text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      question_categories: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          parent_path: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          name: string
+          parent_path?: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          parent_path?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_progress: {
         Row: {
           category: string

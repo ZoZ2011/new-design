@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trash2, Menu } from "lucide-react";
 import { toast } from "sonner";
-import { getQuestionsByCategory, Question } from "@/data/questions";
+import { Question } from "@/data/questions";
+import { useDynamicQuestions } from "@/hooks/useDynamicQuestions";
 import AIChat from "@/components/AIChat";
 import { supabase } from "@/integrations/supabase/client";
 import { ScreenshotBlocker } from "@/components/ScreenshotBlocker";
@@ -24,7 +25,7 @@ const Questions = () => {
   const { category } = useParams();
   const userId = localStorage.getItem("userId");
 
-  const questions = getQuestionsByCategory(category || "");
+  const { questions, loading: questionsLoading } = useDynamicQuestions(category || "");
   const currentQuestion = questions[currentQuestionIndex];
 
   // Calculate correct answers count
@@ -247,6 +248,16 @@ const Questions = () => {
 
   if (!userId) {
     return null;
+  }
+
+  if (questionsLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold">Loading questions...</h2>
+        </div>
+      </div>
+    );
   }
 
   if (!currentQuestion) {
