@@ -110,19 +110,21 @@ const QuestionManager = () => {
         let optionIndex = 0;
 
         i++;
-        // Read option lines - they start with A/B/C/D or a/b/c/d or 1/2/3/4
+        // Read option lines - they start with a/b/c/d or A/B/C/D
         while (i < lines.length && optionIndex < 6) {
-          const rawLine = lines[i];
-          const optionMatch = rawLine.trim().match(/^[A-Da-d1-4][\.\)]\s*(.*)/);
+          const rawLine = lines[i].trim();
+          const optionMatch = rawLine.match(/^[A-Da-d][\.\)]\s*(.*)/);
 
           if (!optionMatch) break;
 
-          const optionText = optionMatch[1].trim();
+          let optionText = optionMatch[1].trim();
           
-          // Check if this line has leading spaces (correct answer indicator)
-          const leadingSpaces = rawLine.length - rawLine.trimStart().length;
-          if (leadingSpaces >= 3) {
+          // Check if the line ends with "1" (correct answer indicator)
+          // The "1" appears at the end, possibly after spaces
+          if (/\s+1\s*$/.test(optionText) || optionText.endsWith("\t1")) {
             correctAnswer = optionIndex;
+            // Remove the trailing "1" marker from the option text
+            optionText = optionText.replace(/\s+1\s*$/, "").trim();
           }
 
           options.push(optionText);
@@ -431,21 +433,21 @@ const QuestionManager = () => {
           <div className="text-sm text-muted-foreground space-y-2">
             <p>Your Word file should follow this format:</p>
             <pre className="bg-muted p-3 rounded text-xs whitespace-pre-wrap">
-{`1. What is the correct answer?
-A. Wrong answer
-B. Wrong answer
-   C. This is the correct answer (has leading spaces)
-D. Wrong answer
+{`1. The four principles of systemic risk management are: identify, quantify/qualify, mitigate, and ______.
+a. Communication
+b. Calibrate
+c. Kill sheet
+d. Control risk          1
 
-2. Next question here?
-A. Option one
-   B. Correct option (indented with spaces)
-C. Option three
-D. Option four`}
+2. Which of the following statements best describe Well Integrity?
+a. The ability of a well to maintain its structural integrity...
+b. The ability of a well to maintain natural production rate.
+c. The ability of a well to maintain its structural integrity and prevent the uncontrolled flow...          1
+d. None of the above`}
             </pre>
             <p>• Questions start with a number (1., 2., etc.)</p>
-            <p>• Answers start with A/B/C/D</p>
-            <p>• The correct answer has <strong>3+ leading spaces</strong> before the letter</p>
+            <p>• Answers start with a/b/c/d</p>
+            <p>• The correct answer has a <strong>"1" at the end</strong> of the line</p>
           </div>
         </Card>
       </div>
