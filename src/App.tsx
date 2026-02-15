@@ -16,6 +16,7 @@ import Manuals from "./pages/Manuals";
 import SignIn from "./pages/SignIn";
 import Questions from "./pages/Questions";
 import Settings from "./pages/Settings";
+import QuestionManager from "./pages/QuestionManager";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/signin/:category" element={<SignIn />} />
           <Route path="/questions/:category" element={<Questions />} />
           <Route path="/settings/:category" element={<Settings />} />
+          <Route path="/question-manager" element={<QuestionManager />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

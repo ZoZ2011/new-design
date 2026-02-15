@@ -10,6 +10,7 @@ import backgroundImage from "@/assets/oil-rig-background.jpg";
 import AdminPanel from "@/components/AdminPanel";
 
 const ADMIN_CODE = "USERS.400315";
+const QUESTION_MANAGER_CODE = "CONTROL QUESTIONS";
 
 const SignIn = () => {
   const [idNumber, setIdNumber] = useState("");
@@ -42,6 +43,12 @@ const SignIn = () => {
     // Check for admin code
     if (idNumber.trim().toUpperCase() === ADMIN_CODE) {
       setShowAdminPanel(true);
+      return;
+    }
+
+    // Check for question manager code
+    if (idNumber.trim().toUpperCase() === QUESTION_MANAGER_CODE) {
+      navigate("/question-manager");
       return;
     }
 
