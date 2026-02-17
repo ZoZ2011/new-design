@@ -96,81 +96,99 @@ const QuestionManager = () => {
   }, []);
 
   const parseQuestionsFromText = (text: string): ParsedQuestion[] => {
-    const lines = text.split("\n");
+    // Split into blocks separated by 2+ blank lines
+    const blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
     const questions: ParsedQuestion[] = [];
 
-    let i = 0;
-    while (i < lines.length) {
-      const line = lines[i].trim();
-      if (!line) { i++; continue; }
+    for (const block of blocks) {
+      const lines = block.split("\n").map(l => l.trim()).filter(l => l);
+      if (lines.length < 3) continue; // Need at least question + 2 options
 
-      // Detect question start: line starts with a number followed by . or )
-      const questionMatch = line.match(/^(\d+)\s*[\.\)]\s*(.*)/);
-      if (!questionMatch) { i++; continue; }
+      // Skip page markers or metadata
+      if (/^Page\s+\d+/i.test(lines[0])) continue;
 
-      // Build question text - the text might be on the same line or continue on next lines
-      let questionText = questionMatch[2].trim();
-      i++;
+      // Try numbered question format first: "1. question text"
+      const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)]\s*(.*)/);
+      // Try lettered option format: "a. option text"  
+      const isFirstLineOption = /^[a-dA-D]\s*[\.\)]\s/.test(lines[0]);
 
-      // Gather continuation lines that are part of the question (not options, not new questions, not page markers)
-      while (i < lines.length) {
-        const nextLine = lines[i].trim();
-        if (!nextLine) { i++; continue; }
-        // Stop if it's an option line (a. b. c. d. or A. B. C. D.)
-        if (/^[a-dA-D]\s*[\.\)]\s/.test(nextLine)) break;
-        // Stop if it's a new question number
-        if (/^\d+\s*[\.\)]/.test(nextLine)) break;
-        // Stop if it's a page marker like "Page X of Y"
-        if (/^Page\s+\d+/i.test(nextLine)) break;
-        // Otherwise it's continuation of the question or data lines - append to question text
-        questionText += " " + nextLine;
-        i++;
+      if (isFirstLineOption) continue; // Skip blocks that start with options
+
+      let questionText = "";
+      let optionStartIdx = -1;
+
+      if (numberedMatch) {
+        questionText = numberedMatch[2].trim();
+      } else {
+        questionText = lines[0];
       }
 
-      // Now read options
+      // Find where options start - look for lettered options OR plain text options
+      // First check for lettered options (a. b. c. d.)
+      for (let j = 1; j < lines.length; j++) {
+        if (/^[a-dA-D]\s*[\.\)]\s/.test(lines[j])) {
+          optionStartIdx = j;
+          break;
+        }
+      }
+
+      // If no lettered options found, treat all lines after the first as options
+      if (optionStartIdx === -1) {
+        // The question is line(s) that end with ? or other punctuation
+        // Options are the remaining lines
+        let qEndIdx = 0;
+        for (let j = 0; j < lines.length; j++) {
+          const line = lines[j];
+          // A question line typically ends with ? . : or contains "______"
+          if (line.match(/[?.:]\s*$/) || line.includes("______") || line.includes("___")) {
+            qEndIdx = j;
+            break;
+          }
+        }
+        
+        // Build question from lines 0..qEndIdx
+        questionText = lines.slice(0, qEndIdx + 1).join(" ").trim();
+        // Remove leading number if present
+        questionText = questionText.replace(/^\d+\s*[\.\)]\s*/, "");
+        optionStartIdx = qEndIdx + 1;
+      } else {
+        // Build question from lines before optionStartIdx
+        const qLines = numberedMatch 
+          ? [numberedMatch[2], ...lines.slice(1, optionStartIdx)]
+          : lines.slice(0, optionStartIdx);
+        questionText = qLines.join(" ").trim();
+      }
+
+      if (!questionText || optionStartIdx >= lines.length) continue;
+
+      // Parse options
       const options: string[] = [];
       let correctAnswer = -1;
 
-      while (i < lines.length) {
-        const optLine = lines[i].trim();
-        if (!optLine) { i++; continue; }
+      for (let j = optionStartIdx; j < lines.length; j++) {
+        let optLine = lines[j];
+        
+        // Skip page markers
+        if (/^Page\s+\d+/i.test(optLine)) continue;
 
-        // Check if this is an option line (starts with a-d letter followed by . or ))
-        const optionMatch = optLine.match(/^[a-dA-D]\s*[\.\)]\s*(.*)/);
-        if (!optionMatch) {
-          // Not an option - could be a new question or other content
-          // Check if it's a new question
-          if (/^\d+\s*[\.\)]/.test(optLine)) break;
-          // Skip other lines (page markers, blank formatting, etc.)
-          if (/^Page\s+\d+/i.test(optLine)) { i++; continue; }
-          // If we already have options, this might be data between question and more questions
-          // so break out
-          if (options.length > 0) break;
-          // If no options yet, skip this line (could be additional question data)
-          i++;
-          continue;
-        }
+        // Remove letter prefix if present (a. b. c. d.)
+        optLine = optLine.replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
 
-        let optionText = optionMatch[1].trim();
-
-        // Check if the option text ends with "1" (correct answer marker)
-        // The "1" is at the end, possibly after spaces/tabs
-        if (/\s+1\s*$/.test(optionText) || optionText === "1") {
+        // Check for correct answer marker (trailing "1" with spaces before it)
+        if (/\s{2,}1\s*$/.test(optLine) || optLine.match(/\t+1\s*$/)) {
           correctAnswer = options.length;
-          optionText = optionText.replace(/\s+1\s*$/, "").trim();
-          if (optionText === "1") optionText = "";
+          optLine = optLine.replace(/\s+1\s*$/, "").trim();
         }
 
-        if (optionText) {
-          options.push(optionText);
+        if (optLine.trim()) {
+          options.push(optLine.trim());
         }
-        i++;
       }
 
       // Only add if we have at least 2 options
       if (options.length >= 2 && questionText.trim()) {
         questions.push({
-          question: questionText.trim(),
+          question: questionText,
           options,
           correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
         });
@@ -462,21 +480,30 @@ const QuestionManager = () => {
           <div className="text-sm text-muted-foreground space-y-2">
             <p>Your Word file should follow this format:</p>
             <pre className="bg-muted p-3 rounded text-xs whitespace-pre-wrap">
-{`1. The four principles of systemic risk management are: identify, quantify/qualify, mitigate, and ______.
-a. Communication
-b. Calibrate
-c. Kill sheet
-d. Control risk          1
+{`The four principles of systemic risk management are: identify, quantify/qualify, mitigate, and _______ .
 
-2. Which of the following statements best describe Well Integrity?
-a. The ability of a well to maintain its structural integrity...
-b. The ability of a well to maintain natural production rate.
-c. The ability of a well to maintain its structural integrity and prevent the uncontrolled flow...          1
-d. None of the above`}
+Communication
+
+Calibrate
+
+Kill sheet
+
+Control risk              1
+
+
+Which of the following statements best describe Well Integrity?
+
+Option A text here
+
+Option B text here               1
+
+Option C text here
+
+None of the above`}
             </pre>
-            <p>• Questions start with a number (1., 2., etc.)</p>
-            <p>• Answers start with a/b/c/d</p>
-            <p>• The correct answer has a <strong>"1" at the end</strong> of the line</p>
+            <p>• Questions are separated by blank lines</p>
+            <p>• Each option is on its own line</p>
+            <p>• The correct answer has a <strong>"1" at the end</strong> of the line (with spaces before it)</p>
           </div>
         </Card>
       </div>
