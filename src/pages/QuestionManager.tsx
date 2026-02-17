@@ -75,6 +75,8 @@ const QuestionManager = () => {
       const result = await mammoth.extractRawText({ arrayBuffer });
       const text = result.value;
 
+      console.log("Raw mammoth text (first 2000 chars):", text.substring(0, 2000));
+
       const questions = parseQuestionsFromText(text);
 
       if (questions.length === 0) {
@@ -94,53 +96,84 @@ const QuestionManager = () => {
   }, []);
 
   const parseQuestionsFromText = (text: string): ParsedQuestion[] => {
-    const lines = text.split("\n").filter((l) => l.trim().length > 0);
+    const lines = text.split("\n");
     const questions: ParsedQuestion[] = [];
 
     let i = 0;
     while (i < lines.length) {
       const line = lines[i].trim();
+      if (!line) { i++; continue; }
 
-      // Detect question line - starts with a number followed by . or )
-      const questionMatch = line.match(/^\d+[\.\)]\s*(.*)/);
-      if (questionMatch) {
-        const questionText = questionMatch[1].trim();
-        const options: string[] = [];
-        let correctAnswer = 0;
-        let optionIndex = 0;
+      // Detect question start: line starts with a number followed by . or )
+      const questionMatch = line.match(/^(\d+)\s*[\.\)]\s*(.*)/);
+      if (!questionMatch) { i++; continue; }
 
+      // Build question text - the text might be on the same line or continue on next lines
+      let questionText = questionMatch[2].trim();
+      i++;
+
+      // Gather continuation lines that are part of the question (not options, not new questions, not page markers)
+      while (i < lines.length) {
+        const nextLine = lines[i].trim();
+        if (!nextLine) { i++; continue; }
+        // Stop if it's an option line (a. b. c. d. or A. B. C. D.)
+        if (/^[a-dA-D]\s*[\.\)]\s/.test(nextLine)) break;
+        // Stop if it's a new question number
+        if (/^\d+\s*[\.\)]/.test(nextLine)) break;
+        // Stop if it's a page marker like "Page X of Y"
+        if (/^Page\s+\d+/i.test(nextLine)) break;
+        // Otherwise it's continuation of the question or data lines - append to question text
+        questionText += " " + nextLine;
         i++;
-        // Read option lines - they start with a/b/c/d or A/B/C/D
-        while (i < lines.length && optionIndex < 6) {
-          const rawLine = lines[i].trim();
-          const optionMatch = rawLine.match(/^[A-Da-d][\.\)]\s*(.*)/);
+      }
 
-          if (!optionMatch) break;
+      // Now read options
+      const options: string[] = [];
+      let correctAnswer = -1;
 
-          let optionText = optionMatch[1].trim();
-          
-          // Check if the line ends with "1" (correct answer indicator)
-          // The "1" appears at the end, possibly after spaces
-          if (/\s+1\s*$/.test(optionText) || optionText.endsWith("\t1")) {
-            correctAnswer = optionIndex;
-            // Remove the trailing "1" marker from the option text
-            optionText = optionText.replace(/\s+1\s*$/, "").trim();
-          }
+      while (i < lines.length) {
+        const optLine = lines[i].trim();
+        if (!optLine) { i++; continue; }
 
-          options.push(optionText);
-          optionIndex++;
+        // Check if this is an option line (starts with a-d letter followed by . or ))
+        const optionMatch = optLine.match(/^[a-dA-D]\s*[\.\)]\s*(.*)/);
+        if (!optionMatch) {
+          // Not an option - could be a new question or other content
+          // Check if it's a new question
+          if (/^\d+\s*[\.\)]/.test(optLine)) break;
+          // Skip other lines (page markers, blank formatting, etc.)
+          if (/^Page\s+\d+/i.test(optLine)) { i++; continue; }
+          // If we already have options, this might be data between question and more questions
+          // so break out
+          if (options.length > 0) break;
+          // If no options yet, skip this line (could be additional question data)
           i++;
+          continue;
         }
 
-        if (options.length >= 2) {
-          questions.push({
-            question: questionText,
-            options,
-            correctAnswer,
-          });
+        let optionText = optionMatch[1].trim();
+
+        // Check if the option text ends with "1" (correct answer marker)
+        // The "1" is at the end, possibly after spaces/tabs
+        if (/\s+1\s*$/.test(optionText) || optionText === "1") {
+          correctAnswer = options.length;
+          optionText = optionText.replace(/\s+1\s*$/, "").trim();
+          if (optionText === "1") optionText = "";
         }
-      } else {
+
+        if (optionText) {
+          options.push(optionText);
+        }
         i++;
+      }
+
+      // Only add if we have at least 2 options
+      if (options.length >= 2 && questionText.trim()) {
+        questions.push({
+          question: questionText.trim(),
+          options,
+          correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
+        });
       }
     }
 
@@ -164,13 +197,11 @@ const QuestionManager = () => {
 
     setSaving(true);
     try {
-      // Delete existing dynamic questions for this category
       await supabase
         .from("dynamic_questions")
         .delete()
         .eq("category_slug", selectedCategory);
 
-      // Insert new questions
       const rows = parsedQuestions.map((q, idx) => ({
         category_slug: selectedCategory,
         question_text: q.question,
@@ -180,7 +211,6 @@ const QuestionManager = () => {
       }));
 
       const { error } = await supabase.from("dynamic_questions").insert(rows);
-
       if (error) throw error;
 
       toast.success(`Updated ${parsedQuestions.length} questions for "${allCategories.find(c => c.slug === selectedCategory)?.name}"`);
@@ -206,17 +236,14 @@ const QuestionManager = () => {
 
     setSaving(true);
     try {
-      // Create category
       const { error: catError } = await supabase.from("question_categories").insert({
         name: newCategoryName.trim(),
         slug,
         parent_path: newCategoryParent,
         display_order: allCategories.length + 1,
       });
-
       if (catError) throw catError;
 
-      // Insert questions
       const rows = parsedQuestions.map((q, idx) => ({
         category_slug: slug,
         question_text: q.question,
@@ -348,7 +375,8 @@ const QuestionManager = () => {
                 className="w-full"
                 size="lg"
               >
-                {saving ? "Saving..." : `Replace with ${parsedQuestions.length} Questions`}
+                <Plus className="mr-2 h-5 w-5" />
+                {saving ? "Saving..." : `Add ${parsedQuestions.length} Questions (Replace Existing)`}
               </Button>
             )}
           </Card>
@@ -396,7 +424,8 @@ const QuestionManager = () => {
                 className="w-full"
                 size="lg"
               >
-                {saving ? "Saving..." : `Create "${newCategoryName}" with ${parsedQuestions.length} Questions`}
+                <Plus className="mr-2 h-5 w-5" />
+                {saving ? "Saving..." : `Add "${newCategoryName}" with ${parsedQuestions.length} Questions`}
               </Button>
             )}
           </Card>
