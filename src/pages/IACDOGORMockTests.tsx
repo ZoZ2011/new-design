@@ -1,9 +1,24 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const IACDOGORMockTests = () => {
   const navigate = useNavigate();
+  const [dynamicCategories, setDynamicCategories] = useState<{ name: string; slug: string }[]>([]);
+
+  useEffect(() => {
+    const fetchDynamic = async () => {
+      const { data } = await supabase
+        .from("question_categories")
+        .select("name, slug")
+        .eq("parent_path", "/exercises/iacd/well-services/mock-test")
+        .order("display_order");
+      if (data) setDynamicCategories(data);
+    };
+    fetchDynamic();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
@@ -46,6 +61,17 @@ const IACDOGORMockTests = () => {
           >
             Mock Test #3
           </Button>
+
+          {dynamicCategories.map((cat) => (
+            <Button
+              key={cat.slug}
+              onClick={() => navigate(`/signin/${cat.slug}`)}
+              size="lg"
+              className="h-32 text-xl font-semibold shadow-lg"
+            >
+              {cat.name}
+            </Button>
+          ))}
         </div>
       </div>
     </div>
