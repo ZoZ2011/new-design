@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Upload, Plus, Trash2, FileText, Check, AlertCircle } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Trash2, FileText, Check, AlertCircle, FolderOpen, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import backgroundImage from "@/assets/oil-rig-background.jpg";
 import mammoth from "mammoth";
 
 interface ParsedQuestion {
@@ -308,67 +307,74 @@ const QuestionManager = () => {
   ];
 
   return (
-    <div className="min-h-screen p-4 relative">
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${backgroundImage})` }}
-      />
-      <div className="absolute inset-0 bg-black/70" />
+    <div className="min-h-screen bg-background font-jakarta">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+          <button
+            onClick={() => (mode === "menu" ? navigate("/") : setMode("menu"))}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {mode === "menu" ? "Home" : "Back to Menu"}
+          </button>
+          <span className="text-border">›</span>
+          <span className="text-sm font-semibold text-foreground">Question Manager</span>
+        </div>
+      </header>
 
-      <div className="max-w-4xl mx-auto pt-8 space-y-6 relative z-10">
-        <Button
-          variant="ghost"
-          onClick={() => (mode === "menu" ? navigate("/") : setMode("menu"))}
-          className="text-white hover:text-primary"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {mode === "menu" ? "Home" : "Back to Menu"}
-        </Button>
-
-        <h1 className="text-4xl font-bold text-primary text-center">Question Manager</h1>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
+        {/* Page Title */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <FolderOpen className="w-5 h-5 text-primary" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">Question Manager</h1>
+          </div>
+          <p className="text-muted-foreground text-sm pl-[52px]">Manage categories and upload questions</p>
+        </div>
 
         {mode === "menu" && (
-          <div className="grid md:grid-cols-2 gap-6 mt-8">
-            <Card
-              className="p-8 cursor-pointer hover:border-primary transition-colors"
+          <div className="grid sm:grid-cols-2 gap-4">
+            <button
               onClick={() => setMode("update")}
+              className="group text-left bg-card border border-border rounded-2xl p-6 hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
             >
-              <div className="text-center space-y-4">
-                <Upload className="h-12 w-12 mx-auto text-primary" />
-                <h2 className="text-2xl font-bold">Update Questions</h2>
-                <p className="text-muted-foreground">
-                  Upload a Word file to replace questions in an existing category
-                </p>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors duration-200">
+                <RefreshCw className="w-5 h-5 text-primary" />
               </div>
-            </Card>
+              <h2 className="text-lg font-bold text-foreground mb-1">Update Questions</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">Replace questions in an existing category by uploading a Word file</p>
+            </button>
 
-            <Card
-              className="p-8 cursor-pointer hover:border-primary transition-colors"
+            <button
               onClick={() => setMode("add")}
+              className="group text-left bg-card border border-border rounded-2xl p-6 hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
             >
-              <div className="text-center space-y-4">
-                <Plus className="h-12 w-12 mx-auto text-primary" />
-                <h2 className="text-2xl font-bold">Add New Category</h2>
-                <p className="text-muted-foreground">
-                  Create a new question category with uploaded questions
-                </p>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors duration-200">
+                <Plus className="w-5 h-5 text-primary" />
               </div>
-            </Card>
+              <h2 className="text-lg font-bold text-foreground mb-1">Add New Category</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">Create a new question category with uploaded questions</p>
+            </button>
           </div>
         )}
 
         {mode === "update" && (
-          <Card className="p-6 space-y-6">
-            <h2 className="text-2xl font-bold">Update Existing Questions</h2>
+          <Card className="p-5 sm:p-6 space-y-5 border border-border shadow-sm rounded-2xl">
+            <h2 className="text-lg font-bold text-foreground">Update Existing Questions</h2>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Select Category</label>
+              <label className="text-sm font-semibold text-foreground">Select Category</label>
               <select
-                className="w-full p-2 rounded-md border bg-background text-foreground"
+                className="w-full h-10 px-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
-                <option value="">-- Select a category --</option>
+                <option value="">— Select a category —</option>
                 {allCategories.map((cat) => (
                   <option key={cat.slug} value={cat.slug}>
                     {cat.name}
@@ -390,33 +396,34 @@ const QuestionManager = () => {
               <Button
                 onClick={handleSaveUpdate}
                 disabled={saving}
-                className="w-full"
+                className="w-full h-11 font-semibold gap-2 hover:-translate-y-0.5 transition-all duration-200"
                 size="lg"
               >
-                <Plus className="mr-2 h-5 w-5" />
-                {saving ? "Saving..." : `Add ${parsedQuestions.length} Questions (Replace Existing)`}
+                <Check className="h-4 w-4" />
+                {saving ? "Saving..." : `Save ${parsedQuestions.length} Questions (Replace Existing)`}
               </Button>
             )}
           </Card>
         )}
 
         {mode === "add" && (
-          <Card className="p-6 space-y-6">
-            <h2 className="text-2xl font-bold">Add New Question Category</h2>
+          <Card className="p-5 sm:p-6 space-y-5 border border-border shadow-sm rounded-2xl">
+            <h2 className="text-lg font-bold text-foreground">Add New Question Category</h2>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Category Name</label>
+              <label className="text-sm font-semibold text-foreground">Category Name</label>
               <Input
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 placeholder="e.g. Well Control Drilling"
+                className="h-10"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Where should it be placed?</label>
+              <label className="text-sm font-semibold text-foreground">Where should it be placed?</label>
               <select
-                className="w-full p-2 rounded-md border bg-background text-foreground"
+                className="w-full h-10 px-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                 value={newCategoryParent}
                 onChange={(e) => setNewCategoryParent(e.target.value)}
               >
@@ -439,11 +446,11 @@ const QuestionManager = () => {
               <Button
                 onClick={handleSaveNew}
                 disabled={saving}
-                className="w-full"
+                className="w-full h-11 font-semibold gap-2 hover:-translate-y-0.5 transition-all duration-200"
                 size="lg"
               >
-                <Plus className="mr-2 h-5 w-5" />
-                {saving ? "Saving..." : `Add "${newCategoryName}" with ${parsedQuestions.length} Questions`}
+                <Check className="h-4 w-4" />
+                {saving ? "Saving..." : `Create "${newCategoryName}" with ${parsedQuestions.length} Questions`}
               </Button>
             )}
           </Card>
@@ -451,35 +458,42 @@ const QuestionManager = () => {
 
         {/* Dynamic categories management */}
         {mode === "menu" && dynamicCategories.length > 0 && (
-          <Card className="p-6 space-y-4">
-            <h2 className="text-xl font-bold">Dynamic Categories</h2>
-            {dynamicCategories.map((cat) => (
-              <div key={cat.slug} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <div>
-                  <p className="font-medium">{cat.name}</p>
-                  <p className="text-sm text-muted-foreground">{cat.parentPath}</p>
+          <Card className="p-5 sm:p-6 space-y-4 border border-border shadow-sm rounded-2xl">
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+              <FolderOpen className="h-4 w-4 text-primary" />
+              Dynamic Categories
+              <span className="ml-auto text-xs font-medium bg-primary/10 text-primary px-2.5 py-1 rounded-full">{dynamicCategories.length}</span>
+            </h2>
+            <div className="space-y-2">
+              {dynamicCategories.map((cat) => (
+                <div key={cat.slug} className="flex items-center justify-between p-3 bg-muted/60 rounded-xl border border-border">
+                  <div>
+                    <p className="font-semibold text-sm text-foreground">{cat.name}</p>
+                    <p className="text-xs text-muted-foreground">{cat.parentPath}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    onClick={() => handleDeleteCategory(cat.slug)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleDeleteCategory(cat.slug)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+              ))}
+            </div>
           </Card>
         )}
 
         {/* Word file format guide */}
-        <Card className="p-6 space-y-3">
-          <h3 className="font-bold text-lg flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-primary" />
+        <Card className="p-5 sm:p-6 space-y-3 border border-border shadow-sm rounded-2xl">
+          <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-primary" />
             Word File Format Guide
           </h3>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-xs text-muted-foreground space-y-2">
             <p>Your Word file should follow this format:</p>
-            <pre className="bg-muted p-3 rounded text-xs whitespace-pre-wrap">
+            <pre className="bg-muted/60 border border-border p-3 rounded-xl text-xs whitespace-pre-wrap leading-relaxed">
 {`The four principles of systemic risk management are: identify, quantify/qualify, mitigate, and _______ .
 
 Communication
@@ -524,8 +538,8 @@ const UploadSection = ({
 }) => (
   <div className="space-y-4">
     <div className="space-y-2">
-      <label className="text-sm font-medium">Upload Word File (.docx)</label>
-      <div className="border-2 border-dashed rounded-lg p-6 text-center">
+      <label className="text-sm font-semibold text-foreground">Upload Word File (.docx)</label>
+      <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
         <input
           type="file"
           accept=".docx,.doc"
@@ -533,20 +547,24 @@ const UploadSection = ({
           className="hidden"
           id="word-upload"
         />
-        <label htmlFor="word-upload" className="cursor-pointer space-y-2 block">
+        <label htmlFor="word-upload" className="cursor-pointer block">
           {uploading ? (
-            <p className="text-muted-foreground">Parsing file...</p>
+            <div className="space-y-2">
+              <Upload className="h-8 w-8 mx-auto text-primary animate-pulse" />
+              <p className="text-sm text-muted-foreground">Parsing file...</p>
+            </div>
           ) : fileName ? (
             <div className="flex items-center justify-center gap-2 text-primary">
               <FileText className="h-5 w-5" />
-              <span>{fileName}</span>
+              <span className="font-semibold text-sm">{fileName}</span>
               <Check className="h-5 w-5" />
             </div>
           ) : (
-            <>
-              <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-              <p className="text-muted-foreground">Click to upload a Word file</p>
-            </>
+            <div className="space-y-2">
+              <Upload className="h-8 w-8 mx-auto text-muted-foreground/60" />
+              <p className="text-sm text-muted-foreground">Click to upload a Word file</p>
+              <p className="text-xs text-muted-foreground/60">.docx or .doc</p>
+            </div>
           )}
         </label>
       </div>
@@ -554,20 +572,21 @@ const UploadSection = ({
 
     {parsedQuestions.length > 0 && (
       <div className="space-y-2">
-        <h3 className="font-medium">
-          Preview ({parsedQuestions.length} questions parsed)
+        <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
+          <Check className="h-4 w-4 text-success" />
+          Preview — {parsedQuestions.length} questions parsed
         </h3>
-        <div className="max-h-64 overflow-y-auto space-y-3">
+        <div className="max-h-64 overflow-y-auto space-y-2">
           {parsedQuestions.slice(0, 5).map((q, idx) => (
-            <div key={idx} className="p-3 bg-muted rounded-lg text-sm">
-              <p className="font-medium">
+            <div key={idx} className="p-3 bg-muted/60 border border-border rounded-xl text-sm">
+              <p className="font-semibold text-foreground">
                 Q{idx + 1}: {q.question}
               </p>
-              <div className="mt-1 space-y-0.5">
+              <div className="mt-1.5 space-y-0.5">
                 {q.options.map((opt, oi) => (
                   <p
                     key={oi}
-                    className={oi === q.correctAnswer ? "text-green-600 font-medium" : "text-muted-foreground"}
+                    className={oi === q.correctAnswer ? "text-success font-medium" : "text-muted-foreground"}
                   >
                     {String.fromCharCode(65 + oi)}. {opt}
                     {oi === q.correctAnswer && " ✓"}
@@ -577,8 +596,8 @@ const UploadSection = ({
             </div>
           ))}
           {parsedQuestions.length > 5 && (
-            <p className="text-sm text-muted-foreground text-center">
-              ... and {parsedQuestions.length - 5} more questions
+            <p className="text-xs text-muted-foreground text-center py-2">
+              + {parsedQuestions.length - 5} more questions
             </p>
           )}
         </div>

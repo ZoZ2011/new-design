@@ -201,151 +201,169 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={onClose}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
+    <div className="min-h-screen bg-background font-jakarta">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+          >
+            <ArrowLeft className="w-4 h-4" />
             Back to Sign In
-          </Button>
-          <h1 className="text-2xl font-bold text-primary">Admin Panel - User Management</h1>
+          </button>
+          <span className="text-border">›</span>
+          <span className="text-sm font-semibold text-foreground">Admin Panel</span>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
+        {/* Page Title */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <User className="w-5 h-5 text-primary" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">User Management</h1>
+          </div>
+          <p className="text-muted-foreground text-sm pl-[52px]">Manage valid users and view their progress</p>
         </div>
 
-        {/* Add New User Section */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Plus className="h-5 w-5" />
+        {/* Add New User */}
+        <Card className="p-5 sm:p-6 border border-border shadow-sm">
+          <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+            <Plus className="h-4 w-4 text-primary" />
             Add New User
           </h2>
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Input
               placeholder="ID Number"
               value={newUserId}
               onChange={(e) => setNewUserId(e.target.value)}
-              className="flex-1"
+              className="flex-1 h-10"
             />
             <Input
               placeholder="Name (optional)"
               value={newUserName}
               onChange={(e) => setNewUserName(e.target.value)}
-              className="flex-1"
+              className="flex-1 h-10"
             />
-            <Button onClick={addNewUser}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={addNewUser} className="h-10 gap-2 hover:-translate-y-0.5 transition-all duration-200 shrink-0">
+              <Plus className="h-4 w-4" />
               Add User
             </Button>
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Users List */}
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Valid Users ({validUsers.length})
+          <Card className="p-5 sm:p-6 border border-border shadow-sm">
+            <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" />
+              Valid Users
+              <span className="ml-auto text-xs font-medium bg-primary/10 text-primary px-2.5 py-1 rounded-full">
+                {validUsers.length}
+              </span>
             </h2>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading users...</div>
+              <div className="text-center py-10 text-muted-foreground text-sm">Loading users...</div>
+            ) : validUsers.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-sm">No users yet</div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Added</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {validUsers.map((user) => (
-                      <TableRow 
-                        key={user.id} 
-                        className={`cursor-pointer hover:bg-muted/50 ${selectedUser?.id === user.id ? 'bg-muted' : ''}`}
-                        onClick={() => fetchUserStats(user)}
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {validUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    onClick={() => fetchUserStats(user)}
+                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 ${
+                      selectedUser?.id === user.id ? "border-primary/40 bg-primary/5" : "border-border"
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground truncate">{user.name || "Unnamed User"}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{user.user_id}</p>
+                    </div>
+                    <div className="flex items-center gap-2 ml-3">
+                      <span className="text-xs text-muted-foreground hidden sm:block">{formatDate(user.created_at)}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteUser(user.id, user.user_id);
+                        }}
+                        disabled={user.user_id === "400315"}
                       >
-                        <TableCell className="font-mono font-medium">{user.user_id}</TableCell>
-                        <TableCell>{user.name || "-"}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDate(user.created_at)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteUser(user.id, user.user_id);
-                            }}
-                            disabled={user.user_id === "400315"}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </Card>
 
           {/* User Details */}
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Activity className="h-5 w-5" />
+          <Card className="p-5 sm:p-6 border border-border shadow-sm">
+            <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
               User Details
             </h2>
             {!selectedUser ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Click on a user to view their details
+              <div className="text-center py-16 space-y-2">
+                <User className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+                <p className="text-muted-foreground text-sm">Select a user to view their details</p>
               </div>
             ) : loadingStats ? (
-              <div className="text-center py-8 text-muted-foreground">Loading statistics...</div>
+              <div className="text-center py-16 text-muted-foreground text-sm">Loading statistics...</div>
             ) : userStats ? (
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {/* User Info */}
-                <div className="border-b pb-4">
-                  <div className="text-xl font-bold">{selectedUser.name || "Unnamed User"}</div>
-                  <div className="text-sm text-muted-foreground font-mono">ID: {selectedUser.user_id}</div>
+                <div className="flex items-center gap-3 pb-4 border-b border-border">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-foreground">{selectedUser.name || "Unnamed User"}</div>
+                    <div className="text-xs text-muted-foreground font-mono">ID: {selectedUser.user_id}</div>
+                  </div>
                 </div>
 
                 {/* Last Activity */}
-                <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                  <Clock className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-3 p-3 bg-muted/60 rounded-xl">
+                  <Clock className="h-4 w-4 text-primary shrink-0" />
                   <div>
-                    <div className="text-sm text-muted-foreground">Last Activity</div>
-                    <div className="font-medium">{getTimeSinceLastActivity(userStats.lastActivity)}</div>
+                    <div className="text-xs text-muted-foreground">Last Activity</div>
+                    <div className="font-semibold text-sm text-foreground">{getTimeSinceLastActivity(userStats.lastActivity)}</div>
                   </div>
                 </div>
 
                 {/* Overall Stats */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-primary">{userStats.totalQuestions}</div>
-                    <div className="text-xs text-muted-foreground">Total Progress</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-primary">{userStats.answeredQuestions}</div>
-                    <div className="text-xs text-muted-foreground">Answered</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-primary">{userStats.submittedQuestions}</div>
-                    <div className="text-xs text-muted-foreground">Submitted</div>
-                  </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Tracked", value: userStats.totalQuestions },
+                    { label: "Answered", value: userStats.answeredQuestions },
+                    { label: "Submitted", value: userStats.submittedQuestions },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="text-center p-3 bg-muted/60 rounded-xl">
+                      <div className="text-2xl font-bold text-primary">{value}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Completion Rate */}
                 {userStats.totalQuestions > 0 && (
                   <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Completion Rate</span>
-                      <span className="font-medium">
+                    <div className="flex justify-between text-xs mb-2">
+                      <span className="text-muted-foreground font-medium">Completion Rate</span>
+                      <span className="font-bold text-primary">
                         {Math.round((userStats.submittedQuestions / userStats.totalQuestions) * 100)}%
                       </span>
                     </div>
-                    <Progress 
-                      value={(userStats.submittedQuestions / userStats.totalQuestions) * 100} 
+                    <Progress
+                      value={(userStats.submittedQuestions / userStats.totalQuestions) * 100}
                       className="h-2"
                     />
                   </div>
@@ -354,21 +372,19 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
                 {/* Category Breakdown */}
                 {userStats.categoriesProgress.length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4" />
+                    <h3 className="font-bold text-sm text-foreground mb-3 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-primary" />
                       Progress by Category
                     </h3>
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-h-48 overflow-y-auto">
                       {userStats.categoriesProgress.map((cat) => (
                         <div key={cat.category} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span>{formatCategoryName(cat.category)}</span>
-                            <span className="text-muted-foreground">
-                              {cat.submitted}/{cat.total} submitted
-                            </span>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-foreground font-medium">{formatCategoryName(cat.category)}</span>
+                            <span className="text-muted-foreground">{cat.submitted}/{cat.total}</span>
                           </div>
-                          <Progress 
-                            value={cat.total > 0 ? (cat.submitted / cat.total) * 100 : 0} 
+                          <Progress
+                            value={cat.total > 0 ? (cat.submitted / cat.total) * 100 : 0}
                             className="h-1.5"
                           />
                         </div>
@@ -378,9 +394,9 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
                 )}
 
                 {userStats.totalQuestions === 0 && (
-                  <div className="text-center py-4 text-muted-foreground">
-                    This user has not started any questions yet
-                  </div>
+                  <p className="text-center text-sm text-muted-foreground py-4">
+                    This user hasn't started any questions yet
+                  </p>
                 )}
               </div>
             ) : null}

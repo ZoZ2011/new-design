@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Moon, Sun } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Settings2 } from "lucide-react";
 import { toast } from "sonner";
-import backgroundImage from "@/assets/oil-rig-background.jpg";
 import { supabase } from "@/integrations/supabase/client";
 
 interface UserSettings {
@@ -155,31 +154,35 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen p-4 relative">
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${backgroundImage})` }}
-      />
-      <div className="absolute inset-0 bg-black/60" />
-      <div className="max-w-2xl mx-auto pt-8 pb-20 space-y-6 relative z-10">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(`/questions/${category}`)}
-          className="mb-4 text-white hover:text-white hover:bg-white/10"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Questions
-        </Button>
+    <div className="min-h-screen bg-background font-jakarta">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+          <button
+            onClick={() => navigate(`/questions/${category}`)}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Questions
+          </button>
+        </div>
+      </header>
 
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-5xl font-bold text-white">Settings</h1>
-          <p className="text-white/80">Customize your experience</p>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 space-y-6 animate-fade-in">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Settings2 className="w-5 h-5 text-primary" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">Settings</h1>
+          </div>
+          <p className="text-muted-foreground text-sm">Customize your experience</p>
         </div>
 
         <div className="space-y-4">
           <Card className="p-6 space-y-6">
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Appearance</h2>
+              <h2 className="text-base font-bold text-foreground">Appearance</h2>
               
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -236,7 +239,7 @@ const Settings = () => {
 
           <Card className="p-6 space-y-6">
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Preferences</h2>
+              <h2 className="text-base font-bold text-foreground">Preferences</h2>
               
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -269,7 +272,7 @@ const Settings = () => {
           <Button
             onClick={resetSettings}
             variant="outline"
-            className="w-full"
+            className="w-full h-11 font-semibold hover:-translate-y-0.5 transition-all duration-200"
           >
             Reset to Defaults
           </Button>
