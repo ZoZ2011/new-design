@@ -2,11 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Shield, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import backgroundImage from "@/assets/oil-rig-background.jpg";
 import AdminPanel from "@/components/AdminPanel";
 
 const ADMIN_CODE = "USERS.400315";
@@ -87,53 +85,62 @@ const SignIn = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative">
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${backgroundImage})` }}
-      />
-      <div className="absolute inset-0 bg-black/60" />
-      <Card className="w-full max-w-md p-8 space-y-6 relative z-10">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-primary">{getCategoryTitle()}</h1>
-          <p className="text-muted-foreground">Enter your ID number to continue</p>
+    <div className="min-h-screen bg-background font-jakarta flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+          <span className="text-border">›</span>
+          <span className="text-sm font-semibold text-foreground truncate">{getCategoryTitle()}</span>
         </div>
+      </header>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="idNumber" className="text-sm font-medium">
-              ID Number
-            </label>
-            <Input
-              id="idNumber"
-              type="text"
-              value={idNumber}
-              onChange={(e) => setIdNumber(e.target.value)}
-              placeholder="Enter your ID number"
-              onKeyPress={(e) => e.key === "Enter" && handleSignIn()}
-              disabled={loading}
-            />
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm space-y-8 animate-fade-in">
+          {/* Icon + Title */}
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
+              <Shield className="w-7 h-7 text-primary" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">{getCategoryTitle()}</h1>
+            <p className="text-muted-foreground text-sm">Enter your ID number to access exercises</p>
           </div>
 
-          <Button 
-            onClick={handleSignIn}
-            className="w-full"
-            size="lg"
-            disabled={loading}
-          >
-            {loading ? "Loading..." : "Sign In"}
-          </Button>
+          {/* Form Card */}
+          <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+            <div className="space-y-2">
+              <label htmlFor="idNumber" className="text-sm font-semibold text-foreground">
+                ID Number
+              </label>
+              <Input
+                id="idNumber"
+                type="text"
+                value={idNumber}
+                onChange={(e) => setIdNumber(e.target.value)}
+                placeholder="Enter your ID number"
+                onKeyPress={(e) => e.key === "Enter" && handleSignIn()}
+                disabled={loading}
+                className="h-11 text-base"
+              />
+            </div>
+
+            <Button
+              onClick={handleSignIn}
+              className="w-full h-11 font-semibold text-base gap-2 hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-primary/20"
+              disabled={loading}
+            >
+              <LogIn className="w-4 h-4" />
+              {loading ? "Loading..." : "Sign In"}
+            </Button>
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };
