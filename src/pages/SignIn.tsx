@@ -23,13 +23,10 @@ const SignIn = () => {
   }, []);
 
   const fetchValidIds = async () => {
-    const { data, error } = await supabase
-      .from("valid_users")
-      .select("user_id");
+    const { data, error } = await supabase.from("valid_users").select("user_id");
 
     if (error) {
       console.error("Failed to fetch valid IDs:", error);
-      // Fallback to default admin ID if fetch fails
       setValidIds(["400315"]);
     } else {
       setValidIds(data?.map(u => u.user_id) || ["400315"]);
@@ -37,7 +34,7 @@ const SignIn = () => {
     setLoading(false);
   };
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     // Check for admin code
     if (idNumber.trim().toUpperCase() === ADMIN_CODE) {
       setShowAdminPanel(true);
@@ -50,34 +47,56 @@ const SignIn = () => {
       return;
     }
 
-    if (validIds.includes(idNumber.trim())) {
-      localStorage.setItem("userId", idNumber.trim());
-      navigate(`/questions/${category}`);
-    } else {
+    const trimmedId = idNumber.trim();
+
+    if (!validIds.includes(trimmedId)) {
       toast.error("Invalid ID Number", {
-        description: "Please enter a valid ID number"
+        description: "Please enter a valid ID number",
       });
+      return;
     }
+
+    // Check category access — if no rows at all for user, allow everything (open access)
+    // If rows exist, user must have access to this specific category
+    if (category) {
+      const { data: accessData, error: accessError } = await supabase
+        .from("user_category_access")
+        .select("category_slug")
+        .eq("user_id", trimmedId);
+
+      if (!accessError && accessData && accessData.length > 0) {
+        const allowedSlugs = accessData.map(r => r.category_slug);
+        if (!allowedSlugs.includes(category)) {
+          toast.error("Access Denied", {
+            description: "You don't have permission to access this section.",
+          });
+          return;
+        }
+      }
+    }
+
+    localStorage.setItem("userId", trimmedId);
+    navigate(`/questions/${category}`);
   };
 
   const getCategoryTitle = () => {
     if (!category) return "";
-    
-    // Special handling for IADC OGOR mock tests
+
     if (category.includes("iadc-ogor-mock-test")) {
       const testNumber = category.split("-").pop();
       return `IADC OGOR Mock Test #${testNumber}`;
     }
-    
-    return category.split("-").map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(" ");
+
+    return category
+      .split("-")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   const handleAdminClose = () => {
     setShowAdminPanel(false);
     setIdNumber("");
-    fetchValidIds(); // Refresh the valid IDs list
+    fetchValidIds();
   };
 
   if (showAdminPanel) {
@@ -97,7 +116,9 @@ const SignIn = () => {
             Back
           </button>
           <span className="text-border">›</span>
-          <span className="text-sm font-semibold text-foreground truncate">{getCategoryTitle()}</span>
+          <span className="text-sm font-semibold text-foreground truncate">
+            {getCategoryTitle()}
+          </span>
         </div>
       </header>
 
@@ -108,7 +129,9 @@ const SignIn = () => {
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
               <Shield className="w-7 h-7 text-primary" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">{getCategoryTitle()}</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+              {getCategoryTitle()}
+            </h1>
             <p className="text-muted-foreground text-sm">Enter your ID number to access exercises</p>
           </div>
 
@@ -122,9 +145,9 @@ const SignIn = () => {
                 id="idNumber"
                 type="text"
                 value={idNumber}
-                onChange={(e) => setIdNumber(e.target.value)}
+                onChange={e => setIdNumber(e.target.value)}
                 placeholder="Enter your ID number"
-                onKeyPress={(e) => e.key === "Enter" && handleSignIn()}
+                onKeyPress={e => e.key === "Enter" && handleSignIn()}
                 disabled={loading}
                 className="h-11 text-base"
               />
