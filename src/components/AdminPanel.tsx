@@ -2,11 +2,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, User, Activity, Clock, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, User, Activity, Clock, BarChart3, Lock, Unlock, ShieldCheck } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface ValidUser {
@@ -29,11 +27,29 @@ interface UserStats {
   }[];
 }
 
+interface CategoryInfo {
+  slug: string;
+  name: string;
+}
+
 interface AdminPanelProps {
   onClose: () => void;
 }
 
+const ALL_CATEGORIES: CategoryInfo[] = [
+  { slug: "coiled-tubing", name: "Coiled Tubing" },
+  { slug: "workover", name: "Workover" },
+  { slug: "snubbing", name: "Snubbing" },
+  { slug: "wireline", name: "Wireline" },
+  { slug: "iadc-ogor-mock-test-1", name: "IADC OGOR Mock Test #1" },
+  { slug: "iadc-ogor-mock-test-2", name: "IADC OGOR Mock Test #2" },
+  { slug: "iadc-ogor-mock-test-3", name: "IADC OGOR Mock Test #3" },
+];
+
+type Tab = "users" | "access";
+
 const AdminPanel = ({ onClose }: AdminPanelProps) => {
+  const [activeTab, setActiveTab] = useState<Tab>("users");
   const [validUsers, setValidUsers] = useState<ValidUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [newUserId, setNewUserId] = useState("");
@@ -41,10 +57,30 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
   const [selectedUser, setSelectedUser] = useState<ValidUser | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [dynamicCategories, setDynamicCategories] = useState<CategoryInfo[]>([]);
+  const [userAccess, setUserAccess] = useState<string[]>([]);
+  const [loadingAccess, setLoadingAccess] = useState(false);
+  const [savingAccess, setSavingAccess] = useState(false);
 
   useEffect(() => {
     fetchValidUsers();
+    fetchDynamicCategories();
   }, []);
+
+  const fetchDynamicCategories = async () => {
+    const { data } = await supabase
+      .from("question_categories")
+      .select("name, slug")
+      .order("display_order");
+    if (data) {
+      setDynamicCategories(data.map(d => ({ slug: d.slug, name: d.name })));
+    }
+  };
+
+  const allCategories = [
+    ...ALL_CATEGORIES,
+    ...dynamicCategories.filter(d => !ALL_CATEGORIES.some(a => a.slug === d.slug)),
+  ];
 
   const fetchValidUsers = async () => {
     setLoading(true);
@@ -55,7 +91,6 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
 
     if (error) {
       toast.error("Failed to fetch users");
-      console.error(error);
     } else {
       setValidUsers(data || []);
     }
@@ -77,7 +112,6 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
         toast.error("This ID already exists");
       } else {
         toast.error("Failed to add user");
-        console.error(error);
       }
     } else {
       toast.success("User added successfully");
@@ -93,20 +127,17 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
       return;
     }
 
-    const { error } = await supabase
-      .from("valid_users")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("valid_users").delete().eq("id", id);
 
     if (error) {
       toast.error("Failed to delete user");
-      console.error(error);
     } else {
       toast.success("User deleted successfully");
       fetchValidUsers();
       if (selectedUser?.id === id) {
         setSelectedUser(null);
         setUserStats(null);
+        setUserAccess([]);
       }
     }
   };
@@ -122,27 +153,23 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
 
     if (error) {
       toast.error("Failed to fetch user statistics");
-      console.error(error);
       setLoadingStats(false);
       return;
     }
 
     const progress = progressData || [];
-    
-    // Calculate statistics
     const totalQuestions = progress.length;
     const answeredQuestions = progress.filter(p => p.selected_answer !== null).length;
     const submittedQuestions = progress.filter(p => p.is_submitted).length;
-    
-    // Find last activity
-    const lastActivity = progress.length > 0 
-      ? progress.reduce((latest, p) => {
-          const pDate = new Date(p.updated_at);
-          return pDate > new Date(latest) ? p.updated_at : latest;
-        }, progress[0].updated_at)
-      : null;
 
-    // Group by category
+    const lastActivity =
+      progress.length > 0
+        ? progress.reduce((latest, p) => {
+            const pDate = new Date(p.updated_at);
+            return pDate > new Date(latest) ? p.updated_at : latest;
+          }, progress[0].updated_at)
+        : null;
+
     const categoryMap = new Map<string, { total: number; answered: number; submitted: number }>();
     progress.forEach(p => {
       const existing = categoryMap.get(p.category) || { total: 0, answered: 0, submitted: 0 };
@@ -154,18 +181,62 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
 
     const categoriesProgress = Array.from(categoryMap.entries()).map(([category, stats]) => ({
       category,
-      ...stats
+      ...stats,
     }));
 
-    setUserStats({
-      totalQuestions,
-      answeredQuestions,
-      submittedQuestions,
-      lastActivity,
-      categoriesProgress
-    });
+    setUserStats({ totalQuestions, answeredQuestions, submittedQuestions, lastActivity, categoriesProgress });
     setLoadingStats(false);
+
+    // Also fetch access
+    fetchUserAccess(user.user_id);
   };
+
+  const fetchUserAccess = async (userId: string) => {
+    setLoadingAccess(true);
+    const { data } = await supabase
+      .from("user_category_access")
+      .select("category_slug")
+      .eq("user_id", userId);
+    setUserAccess(data?.map(d => d.category_slug) ?? []);
+    setLoadingAccess(false);
+  };
+
+  const toggleAccess = (slug: string) => {
+    setUserAccess(prev =>
+      prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
+    );
+  };
+
+  const saveAccess = async () => {
+    if (!selectedUser) return;
+    setSavingAccess(true);
+
+    // Delete existing
+    await supabase
+      .from("user_category_access")
+      .delete()
+      .eq("user_id", selectedUser.user_id);
+
+    // Insert new if any
+    if (userAccess.length > 0) {
+      const rows = userAccess.map(slug => ({
+        user_id: selectedUser.user_id,
+        category_slug: slug,
+      }));
+      const { error } = await supabase.from("user_category_access").insert(rows);
+      if (error) {
+        toast.error("Failed to save access settings");
+        setSavingAccess(false);
+        return;
+      }
+    }
+
+    toast.success("Access settings saved");
+    setSavingAccess(false);
+  };
+
+  const grantAll = () => setUserAccess(allCategories.map(c => c.slug));
+  const revokeAll = () => setUserAccess([]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -173,30 +244,29 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
       month: "short",
       day: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   };
 
   const formatCategoryName = (category: string) => {
-    return category.split("-").map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(" ");
+    return category
+      .split("-")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   const getTimeSinceLastActivity = (dateStr: string | null) => {
     if (!dateStr) return "Never";
-    
     const now = new Date();
     const lastActive = new Date(dateStr);
     const diffMs = now.getTime() - lastActive.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
-
     if (diffMinutes < 1) return "Just now";
-    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
     return formatDate(dateStr);
   };
 
@@ -224,9 +294,13 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <User className="w-5 h-5 text-primary" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">User Management</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+              User Management
+            </h1>
           </div>
-          <p className="text-muted-foreground text-sm pl-[52px]">Manage valid users and view their progress</p>
+          <p className="text-muted-foreground text-sm pl-[52px]">
+            Manage valid users, control access, and view progress
+          </p>
         </div>
 
         {/* Add New User */}
@@ -239,16 +313,21 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
             <Input
               placeholder="ID Number"
               value={newUserId}
-              onChange={(e) => setNewUserId(e.target.value)}
+              onChange={e => setNewUserId(e.target.value)}
+              onKeyPress={e => e.key === "Enter" && addNewUser()}
               className="flex-1 h-10"
             />
             <Input
               placeholder="Name (optional)"
               value={newUserName}
-              onChange={(e) => setNewUserName(e.target.value)}
+              onChange={e => setNewUserName(e.target.value)}
+              onKeyPress={e => e.key === "Enter" && addNewUser()}
               className="flex-1 h-10"
             />
-            <Button onClick={addNewUser} className="h-10 gap-2 hover:-translate-y-0.5 transition-all duration-200 shrink-0">
+            <Button
+              onClick={addNewUser}
+              className="h-10 gap-2 hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+            >
               <Plus className="h-4 w-4" />
               Add User
             </Button>
@@ -271,25 +350,34 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
               <div className="text-center py-10 text-muted-foreground text-sm">No users yet</div>
             ) : (
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {validUsers.map((user) => (
+                {validUsers.map(user => (
                   <div
                     key={user.id}
-                    onClick={() => fetchUserStats(user)}
+                    onClick={() => {
+                      fetchUserStats(user);
+                      setActiveTab("users");
+                    }}
                     className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 ${
-                      selectedUser?.id === user.id ? "border-primary/40 bg-primary/5" : "border-border"
+                      selectedUser?.id === user.id
+                        ? "border-primary/40 bg-primary/5"
+                        : "border-border"
                     }`}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-foreground truncate">{user.name || "Unnamed User"}</p>
+                      <p className="font-semibold text-sm text-foreground truncate">
+                        {user.name || "Unnamed User"}
+                      </p>
                       <p className="text-xs text-muted-foreground font-mono">{user.user_id}</p>
                     </div>
                     <div className="flex items-center gap-2 ml-3">
-                      <span className="text-xs text-muted-foreground hidden sm:block">{formatDate(user.created_at)}</span>
+                      <span className="text-xs text-muted-foreground hidden sm:block">
+                        {formatDate(user.created_at)}
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 shrink-0"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           deleteUser(user.id, user.user_id);
                         }}
@@ -304,102 +392,238 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
             )}
           </Card>
 
-          {/* User Details */}
+          {/* User Detail Panel */}
           <Card className="p-5 sm:p-6 border border-border shadow-sm">
-            <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              User Details
-            </h2>
             {!selectedUser ? (
-              <div className="text-center py-16 space-y-2">
-                <User className="w-10 h-10 text-muted-foreground/40 mx-auto" />
-                <p className="text-muted-foreground text-sm">Select a user to view their details</p>
-              </div>
-            ) : loadingStats ? (
-              <div className="text-center py-16 text-muted-foreground text-sm">Loading statistics...</div>
-            ) : userStats ? (
-              <div className="space-y-5">
-                {/* User Info */}
-                <div className="flex items-center gap-3 pb-4 border-b border-border">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <User className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-foreground">{selectedUser.name || "Unnamed User"}</div>
-                    <div className="text-xs text-muted-foreground font-mono">ID: {selectedUser.user_id}</div>
-                  </div>
+              <>
+                <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  User Details
+                </h2>
+                <div className="text-center py-16 space-y-2">
+                  <User className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+                  <p className="text-muted-foreground text-sm">Select a user to view their details</p>
                 </div>
-
-                {/* Last Activity */}
-                <div className="flex items-center gap-3 p-3 bg-muted/60 rounded-xl">
-                  <Clock className="h-4 w-4 text-primary shrink-0" />
-                  <div>
-                    <div className="text-xs text-muted-foreground">Last Activity</div>
-                    <div className="font-semibold text-sm text-foreground">{getTimeSinceLastActivity(userStats.lastActivity)}</div>
+              </>
+            ) : (
+              <>
+                {/* User Info Bar */}
+                <div className="flex items-center gap-3 pb-4 mb-4 border-b border-border">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-primary" />
                   </div>
-                </div>
-
-                {/* Overall Stats */}
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: "Tracked", value: userStats.totalQuestions },
-                    { label: "Answered", value: userStats.answeredQuestions },
-                    { label: "Submitted", value: userStats.submittedQuestions },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="text-center p-3 bg-muted/60 rounded-xl">
-                      <div className="text-2xl font-bold text-primary">{value}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-foreground text-sm truncate">
+                      {selectedUser.name || "Unnamed User"}
                     </div>
-                  ))}
+                    <div className="text-xs text-muted-foreground font-mono">
+                      ID: {selectedUser.user_id}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Completion Rate */}
-                {userStats.totalQuestions > 0 && (
-                  <div>
-                    <div className="flex justify-between text-xs mb-2">
-                      <span className="text-muted-foreground font-medium">Completion Rate</span>
-                      <span className="font-bold text-primary">
-                        {Math.round((userStats.submittedQuestions / userStats.totalQuestions) * 100)}%
-                      </span>
-                    </div>
-                    <Progress
-                      value={(userStats.submittedQuestions / userStats.totalQuestions) * 100}
-                      className="h-2"
-                    />
-                  </div>
-                )}
+                {/* Tabs */}
+                <div className="flex gap-1 mb-5 bg-muted/50 rounded-xl p-1">
+                  <button
+                    onClick={() => setActiveTab("users")}
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold py-2 rounded-lg transition-all duration-200 ${
+                      activeTab === "users"
+                        ? "bg-card text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <BarChart3 className="h-3.5 w-3.5" />
+                    Progress
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("access")}
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold py-2 rounded-lg transition-all duration-200 ${
+                      activeTab === "access"
+                        ? "bg-card text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Access Control
+                  </button>
+                </div>
 
-                {/* Category Breakdown */}
-                {userStats.categoriesProgress.length > 0 && (
-                  <div>
-                    <h3 className="font-bold text-sm text-foreground mb-3 flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-primary" />
-                      Progress by Category
-                    </h3>
-                    <div className="space-y-3 max-h-48 overflow-y-auto">
-                      {userStats.categoriesProgress.map((cat) => (
-                        <div key={cat.category} className="space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-foreground font-medium">{formatCategoryName(cat.category)}</span>
-                            <span className="text-muted-foreground">{cat.submitted}/{cat.total}</span>
+                {/* Progress Tab */}
+                {activeTab === "users" && (
+                  <>
+                    {loadingStats ? (
+                      <div className="text-center py-10 text-muted-foreground text-sm">
+                        Loading statistics...
+                      </div>
+                    ) : userStats ? (
+                      <div className="space-y-4">
+                        {/* Last Activity */}
+                        <div className="flex items-center gap-3 p-3 bg-muted/60 rounded-xl">
+                          <Clock className="h-4 w-4 text-primary shrink-0" />
+                          <div>
+                            <div className="text-xs text-muted-foreground">Last Activity</div>
+                            <div className="font-semibold text-sm text-foreground">
+                              {getTimeSinceLastActivity(userStats.lastActivity)}
+                            </div>
                           </div>
-                          <Progress
-                            value={cat.total > 0 ? (cat.submitted / cat.total) * 100 : 0}
-                            className="h-1.5"
-                          />
                         </div>
-                      ))}
-                    </div>
-                  </div>
+
+                        {/* Overall Stats */}
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: "Tracked", value: userStats.totalQuestions },
+                            { label: "Answered", value: userStats.answeredQuestions },
+                            { label: "Submitted", value: userStats.submittedQuestions },
+                          ].map(({ label, value }) => (
+                            <div key={label} className="text-center p-3 bg-muted/60 rounded-xl">
+                              <div className="text-2xl font-bold text-primary">{value}</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Completion Rate */}
+                        {userStats.totalQuestions > 0 && (
+                          <div>
+                            <div className="flex justify-between text-xs mb-2">
+                              <span className="text-muted-foreground font-medium">
+                                Completion Rate
+                              </span>
+                              <span className="font-bold text-primary">
+                                {Math.round(
+                                  (userStats.submittedQuestions / userStats.totalQuestions) * 100
+                                )}
+                                %
+                              </span>
+                            </div>
+                            <Progress
+                              value={
+                                (userStats.submittedQuestions / userStats.totalQuestions) * 100
+                              }
+                              className="h-2"
+                            />
+                          </div>
+                        )}
+
+                        {/* Category Breakdown */}
+                        {userStats.categoriesProgress.length > 0 && (
+                          <div>
+                            <h3 className="font-bold text-xs text-foreground mb-3 uppercase tracking-wide">
+                              Progress by Category
+                            </h3>
+                            <div className="space-y-3 max-h-40 overflow-y-auto">
+                              {userStats.categoriesProgress.map(cat => (
+                                <div key={cat.category} className="space-y-1">
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-foreground font-medium">
+                                      {formatCategoryName(cat.category)}
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                      {cat.submitted}/{cat.total}
+                                    </span>
+                                  </div>
+                                  <Progress
+                                    value={cat.total > 0 ? (cat.submitted / cat.total) * 100 : 0}
+                                    className="h-1.5"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {userStats.totalQuestions === 0 && (
+                          <p className="text-center text-sm text-muted-foreground py-4">
+                            This user hasn't started any questions yet
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
+                  </>
                 )}
 
-                {userStats.totalQuestions === 0 && (
-                  <p className="text-center text-sm text-muted-foreground py-4">
-                    This user hasn't started any questions yet
-                  </p>
+                {/* Access Control Tab */}
+                {activeTab === "access" && (
+                  <div className="space-y-4">
+                    {loadingAccess ? (
+                      <div className="text-center py-8 text-muted-foreground text-sm">
+                        Loading access settings...
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground">
+                            Toggle which question sets this user can access.
+                          </p>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={grantAll}
+                              className="text-xs text-primary font-semibold hover:underline"
+                            >
+                              All
+                            </button>
+                            <span className="text-muted-foreground text-xs">·</span>
+                            <button
+                              onClick={revokeAll}
+                              className="text-xs text-destructive font-semibold hover:underline"
+                            >
+                              None
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 max-h-52 overflow-y-auto">
+                          {allCategories.map(cat => {
+                            const hasAccess = userAccess.includes(cat.slug);
+                            return (
+                              <button
+                                key={cat.slug}
+                                onClick={() => toggleAccess(cat.slug)}
+                                className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all duration-200 ${
+                                  hasAccess
+                                    ? "border-primary/40 bg-primary/5"
+                                    : "border-border hover:border-border/80 hover:bg-muted/30"
+                                }`}
+                              >
+                                <span className="text-sm font-medium text-foreground">
+                                  {cat.name}
+                                </span>
+                                <span
+                                  className={`flex items-center gap-1 text-xs font-semibold ${
+                                    hasAccess ? "text-primary" : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {hasAccess ? (
+                                    <>
+                                      <Unlock className="h-3.5 w-3.5" />
+                                      Allowed
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Lock className="h-3.5 w-3.5" />
+                                      Blocked
+                                    </>
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <Button
+                          onClick={saveAccess}
+                          disabled={savingAccess}
+                          className="w-full h-10 gap-2 hover:-translate-y-0.5 transition-all duration-200"
+                        >
+                          <ShieldCheck className="h-4 w-4" />
+                          {savingAccess ? "Saving..." : "Save Access Settings"}
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 )}
-              </div>
-            ) : null}
+              </>
+            )}
           </Card>
         </div>
       </div>

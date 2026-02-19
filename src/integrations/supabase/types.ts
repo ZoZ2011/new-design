@@ -77,6 +77,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_category_access: {
+        Row: {
+          category_slug: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          category_slug: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          category_slug?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_progress: {
         Row: {
           category: string
