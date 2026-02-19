@@ -56,21 +56,29 @@ const SignIn = () => {
       return;
     }
 
-    // Check category access — if no rows at all for user, allow everything (open access)
-    // If rows exist, user must have access to this specific category
+    // Check category access — uses access_restricted flag on the user
+    // If access_restricted=true, user can only access slugs in user_category_access table
     if (category) {
-      const { data: accessData, error: accessError } = await supabase
-        .from("user_category_access")
-        .select("category_slug")
-        .eq("user_id", trimmedId);
+      const { data: userData } = await supabase
+        .from("valid_users")
+        .select("access_restricted")
+        .eq("user_id", trimmedId)
+        .single();
 
-      if (!accessError && accessData && accessData.length > 0) {
-        const allowedSlugs = accessData.map(r => r.category_slug);
-        if (!allowedSlugs.includes(category)) {
-          toast.error("Access Denied", {
-            description: "You don't have permission to access this section.",
-          });
-          return;
+      if (userData?.access_restricted) {
+        const { data: accessData, error: accessError } = await supabase
+          .from("user_category_access")
+          .select("category_slug")
+          .eq("user_id", trimmedId);
+
+        if (!accessError) {
+          const allowedSlugs = accessData?.map(r => r.category_slug) ?? [];
+          if (!allowedSlugs.includes(category)) {
+            toast.error("Access Denied", {
+              description: "You don't have permission to access this section.",
+            });
+            return;
+          }
         }
       }
     }

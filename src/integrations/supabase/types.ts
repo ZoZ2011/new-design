@@ -166,6 +166,7 @@ export type Database = {
       }
       valid_users: {
         Row: {
+          access_restricted: boolean
           created_at: string
           id: string
           name: string | null
@@ -173,6 +174,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_restricted?: boolean
           created_at?: string
           id?: string
           name?: string | null
@@ -180,6 +182,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_restricted?: boolean
           created_at?: string
           id?: string
           name?: string | null

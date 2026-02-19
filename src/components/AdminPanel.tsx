@@ -61,6 +61,7 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
   const [userAccess, setUserAccess] = useState<string[]>([]);
   const [loadingAccess, setLoadingAccess] = useState(false);
   const [savingAccess, setSavingAccess] = useState(false);
+  const [isRestricted, setIsRestricted] = useState(false);
 
   useEffect(() => {
     fetchValidUsers();
@@ -138,6 +139,7 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
         setSelectedUser(null);
         setUserStats(null);
         setUserAccess([]);
+        setIsRestricted(false);
       }
     }
   };
@@ -193,11 +195,12 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
 
   const fetchUserAccess = async (userId: string) => {
     setLoadingAccess(true);
-    const { data } = await supabase
-      .from("user_category_access")
-      .select("category_slug")
-      .eq("user_id", userId);
-    setUserAccess(data?.map(d => d.category_slug) ?? []);
+    const [accessRes, userRes] = await Promise.all([
+      supabase.from("user_category_access").select("category_slug").eq("user_id", userId),
+      supabase.from("valid_users").select("access_restricted").eq("user_id", userId).single(),
+    ]);
+    setUserAccess(accessRes.data?.map(d => d.category_slug) ?? []);
+    setIsRestricted((userRes.data as any)?.access_restricted ?? false);
     setLoadingAccess(false);
   };
 
@@ -211,14 +214,20 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
     if (!selectedUser) return;
     setSavingAccess(true);
 
-    // Delete existing
+    // Delete existing access rows
     await supabase
       .from("user_category_access")
       .delete()
       .eq("user_id", selectedUser.user_id);
 
-    // Insert new if any
-    if (userAccess.length > 0) {
+    // Set access_restricted flag on valid_users
+    await supabase
+      .from("valid_users")
+      .update({ access_restricted: isRestricted } as any)
+      .eq("user_id", selectedUser.user_id);
+
+    // Insert allowed slugs only if restricted
+    if (isRestricted && userAccess.length > 0) {
       const rows = userAccess.map(slug => ({
         user_id: selectedUser.user_id,
         category_slug: slug,
@@ -551,64 +560,93 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-muted-foreground">
-                            Toggle which question sets this user can access.
-                          </p>
-                          <div className="flex gap-1.5">
-                            <button
-                              onClick={grantAll}
-                              className="text-xs text-primary font-semibold hover:underline"
-                            >
-                              All
-                            </button>
-                            <span className="text-muted-foreground text-xs">·</span>
-                            <button
-                              onClick={revokeAll}
-                              className="text-xs text-destructive font-semibold hover:underline"
-                            >
-                              None
-                            </button>
+                        {/* Restrict toggle */}
+                        <button
+                          onClick={() => setIsRestricted(r => !r)}
+                          className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
+                            isRestricted
+                              ? "border-destructive/40 bg-destructive/5"
+                              : "border-primary/30 bg-primary/5"
+                          }`}
+                        >
+                          <div className="text-left">
+                            <p className="text-sm font-semibold text-foreground">
+                              {isRestricted ? "Access Restricted" : "Open Access"}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {isRestricted
+                                ? "User can only access allowed sections below"
+                                : "User can access all sections"}
+                            </p>
                           </div>
-                        </div>
+                          <span className={`flex items-center gap-1.5 text-xs font-bold ${isRestricted ? "text-destructive" : "text-primary"}`}>
+                            {isRestricted ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                            {isRestricted ? "Restricted" : "Open"}
+                          </span>
+                        </button>
 
-                        <div className="space-y-2 max-h-52 overflow-y-auto">
-                          {allCategories.map(cat => {
-                            const hasAccess = userAccess.includes(cat.slug);
-                            return (
-                              <button
-                                key={cat.slug}
-                                onClick={() => toggleAccess(cat.slug)}
-                                className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all duration-200 ${
-                                  hasAccess
-                                    ? "border-primary/40 bg-primary/5"
-                                    : "border-border hover:border-border/80 hover:bg-muted/30"
-                                }`}
-                              >
-                                <span className="text-sm font-medium text-foreground">
-                                  {cat.name}
-                                </span>
-                                <span
-                                  className={`flex items-center gap-1 text-xs font-semibold ${
-                                    hasAccess ? "text-primary" : "text-muted-foreground"
-                                  }`}
+                        {isRestricted && (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-muted-foreground">
+                                Select which sections this user can access:
+                              </p>
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={grantAll}
+                                  className="text-xs text-primary font-semibold hover:underline"
                                 >
-                                  {hasAccess ? (
-                                    <>
-                                      <Unlock className="h-3.5 w-3.5" />
-                                      Allowed
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Lock className="h-3.5 w-3.5" />
-                                      Blocked
-                                    </>
-                                  )}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                                  All
+                                </button>
+                                <span className="text-muted-foreground text-xs">·</span>
+                                <button
+                                  onClick={revokeAll}
+                                  className="text-xs text-destructive font-semibold hover:underline"
+                                >
+                                  None
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2 max-h-44 overflow-y-auto">
+                              {allCategories.map(cat => {
+                                const hasAccess = userAccess.includes(cat.slug);
+                                return (
+                                  <button
+                                    key={cat.slug}
+                                    onClick={() => toggleAccess(cat.slug)}
+                                    className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all duration-200 ${
+                                      hasAccess
+                                        ? "border-primary/40 bg-primary/5"
+                                        : "border-border hover:border-border/80 hover:bg-muted/30"
+                                    }`}
+                                  >
+                                    <span className="text-sm font-medium text-foreground">
+                                      {cat.name}
+                                    </span>
+                                    <span
+                                      className={`flex items-center gap-1 text-xs font-semibold ${
+                                        hasAccess ? "text-primary" : "text-muted-foreground"
+                                      }`}
+                                    >
+                                      {hasAccess ? (
+                                        <>
+                                          <Unlock className="h-3.5 w-3.5" />
+                                          Allowed
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Lock className="h-3.5 w-3.5" />
+                                          Blocked
+                                        </>
+                                      )}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
 
                         <Button
                           onClick={saveAccess}
