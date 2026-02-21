@@ -23,6 +23,7 @@ export function useDynamicQuestions(category: string) {
           question: q.question_text,
           options: Array.isArray(q.options) ? (q.options as string[]) : [],
           correctAnswer: q.correct_answer,
+          image: (q as any).image_url || undefined,
         }));
         setQuestions(mapped);
       } else {

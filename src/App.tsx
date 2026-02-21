@@ -17,6 +17,8 @@ import SignIn from "./pages/SignIn";
 import Questions from "./pages/Questions";
 import Settings from "./pages/Settings";
 import QuestionManager from "./pages/QuestionManager";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +44,9 @@ const App = () => (
           <Route path="/questions/:category" element={<Questions />} />
           <Route path="/settings/:category" element={<Settings />} />
           <Route path="/question-manager" element={<QuestionManager />} />
+          <Route path="/control-center" element={<AdminDashboard />} />
+          <Route path="/control-center/users" element={<AdminUsers />} />
+          <Route path="/control-center/questions" element={<QuestionManager />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

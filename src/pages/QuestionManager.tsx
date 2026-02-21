@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Upload, Plus, Trash2, FileText, Check, AlertCircle, FolderOpen, RefreshCw } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Trash2, FileText, Check, AlertCircle, FolderOpen, RefreshCw, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import mammoth from "mammoth";
@@ -12,6 +12,9 @@ interface ParsedQuestion {
   question: string;
   options: string[];
   correctAnswer: number;
+  imageFile?: File | null;
+  imagePreview?: string | null;
+  existingImageUrl?: string | null;
 }
 
 interface CategoryInfo {
@@ -32,7 +35,9 @@ const EXISTING_CATEGORIES: CategoryInfo[] = [
 
 const QuestionManager = () => {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"menu" | "update" | "add">("menu");
+  const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get("mode") as "update" | "add" | null;
+  const [mode, setMode] = useState<"menu" | "update" | "add">(initialMode || "menu");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryParent, setNewCategoryParent] = useState("/exercises/iacd/well-services");
@@ -74,8 +79,6 @@ const QuestionManager = () => {
       const result = await mammoth.extractRawText({ arrayBuffer });
       const text = result.value;
 
-      console.log("Raw mammoth text (first 2000 chars):", text.substring(0, 2000));
-
       const questions = parseQuestionsFromText(text);
 
       if (questions.length === 0) {
@@ -95,23 +98,19 @@ const QuestionManager = () => {
   }, []);
 
   const parseQuestionsFromText = (text: string): ParsedQuestion[] => {
-    // Split into blocks separated by 2+ blank lines
     const blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
     const questions: ParsedQuestion[] = [];
 
     for (const block of blocks) {
       const lines = block.split("\n").map(l => l.trim()).filter(l => l);
-      if (lines.length < 3) continue; // Need at least question + 2 options
+      if (lines.length < 3) continue;
 
-      // Skip page markers or metadata
       if (/^Page\s+\d+/i.test(lines[0])) continue;
 
-      // Try numbered question format first: "1. question text"
       const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)]\s*(.*)/);
-      // Try lettered option format: "a. option text"  
       const isFirstLineOption = /^[a-dA-D]\s*[\.\)]\s/.test(lines[0]);
 
-      if (isFirstLineOption) continue; // Skip blocks that start with options
+      if (isFirstLineOption) continue;
 
       let questionText = "";
       let optionStartIdx = -1;
@@ -122,8 +121,6 @@ const QuestionManager = () => {
         questionText = lines[0];
       }
 
-      // Find where options start - look for lettered options OR plain text options
-      // First check for lettered options (a. b. c. d.)
       for (let j = 1; j < lines.length; j++) {
         if (/^[a-dA-D]\s*[\.\)]\s/.test(lines[j])) {
           optionStartIdx = j;
@@ -131,27 +128,20 @@ const QuestionManager = () => {
         }
       }
 
-      // If no lettered options found, treat all lines after the first as options
       if (optionStartIdx === -1) {
-        // The question is line(s) that end with ? or other punctuation
-        // Options are the remaining lines
         let qEndIdx = 0;
         for (let j = 0; j < lines.length; j++) {
           const line = lines[j];
-          // A question line typically ends with ? . : or contains "______"
           if (line.match(/[?.:]\s*$/) || line.includes("______") || line.includes("___")) {
             qEndIdx = j;
             break;
           }
         }
         
-        // Build question from lines 0..qEndIdx
         questionText = lines.slice(0, qEndIdx + 1).join(" ").trim();
-        // Remove leading number if present
         questionText = questionText.replace(/^\d+\s*[\.\)]\s*/, "");
         optionStartIdx = qEndIdx + 1;
       } else {
-        // Build question from lines before optionStartIdx
         const qLines = numberedMatch 
           ? [numberedMatch[2], ...lines.slice(1, optionStartIdx)]
           : lines.slice(0, optionStartIdx);
@@ -160,20 +150,16 @@ const QuestionManager = () => {
 
       if (!questionText || optionStartIdx >= lines.length) continue;
 
-      // Parse options
       const options: string[] = [];
       let correctAnswer = -1;
 
       for (let j = optionStartIdx; j < lines.length; j++) {
         let optLine = lines[j];
         
-        // Skip page markers
         if (/^Page\s+\d+/i.test(optLine)) continue;
 
-        // Remove letter prefix if present (a. b. c. d.)
         optLine = optLine.replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
 
-        // Check for correct answer marker (trailing "1" with spaces before it)
         if (/\s{2,}1\s*$/.test(optLine) || optLine.match(/\t+1\s*$/)) {
           correctAnswer = options.length;
           optLine = optLine.replace(/\s+1\s*$/, "").trim();
@@ -184,12 +170,14 @@ const QuestionManager = () => {
         }
       }
 
-      // Only add if we have at least 2 options
       if (options.length >= 2 && questionText.trim()) {
         questions.push({
           question: questionText,
           options,
           correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
+          imageFile: null,
+          imagePreview: null,
+          existingImageUrl: null,
         });
       }
     }
@@ -209,11 +197,68 @@ const QuestionManager = () => {
     parseWordFile(file);
   };
 
+  const handleImageUpload = (questionIdx: number, file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setParsedQuestions(prev => prev.map((q, i) => 
+        i === questionIdx 
+          ? { ...q, imageFile: file, imagePreview: e.target?.result as string }
+          : q
+      ));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = (questionIdx: number) => {
+    setParsedQuestions(prev => prev.map((q, i) => 
+      i === questionIdx 
+        ? { ...q, imageFile: null, imagePreview: null, existingImageUrl: null }
+        : q
+    ));
+  };
+
+  const uploadQuestionImage = async (file: File, categorySlug: string, questionIdx: number): Promise<string | null> => {
+    const ext = file.name.split(".").pop() || "png";
+    const path = `${categorySlug}/q${questionIdx + 1}-${Date.now()}.${ext}`;
+    
+    const { error } = await supabase.storage
+      .from("question-images")
+      .upload(path, file, { upsert: true });
+
+    if (error) {
+      console.error("Image upload error:", error);
+      return null;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("question-images")
+      .getPublicUrl(path);
+
+    return urlData.publicUrl;
+  };
+
   const handleSaveUpdate = async () => {
     if (!selectedCategory || parsedQuestions.length === 0) return;
 
     setSaving(true);
     try {
+      // Upload images first
+      const imageUrls: (string | null)[] = [];
+      for (let i = 0; i < parsedQuestions.length; i++) {
+        const q = parsedQuestions[i];
+        if (q.imageFile) {
+          const url = await uploadQuestionImage(q.imageFile, selectedCategory, i);
+          imageUrls.push(url);
+        } else {
+          imageUrls.push(q.existingImageUrl || null);
+        }
+      }
+
       await supabase
         .from("dynamic_questions")
         .delete()
@@ -225,6 +270,7 @@ const QuestionManager = () => {
         options: q.options,
         correct_answer: q.correctAnswer,
         display_order: idx + 1,
+        image_url: imageUrls[idx] || null,
       }));
 
       const { error } = await supabase.from("dynamic_questions").insert(rows);
@@ -261,12 +307,25 @@ const QuestionManager = () => {
       });
       if (catError) throw catError;
 
+      // Upload images
+      const imageUrls: (string | null)[] = [];
+      for (let i = 0; i < parsedQuestions.length; i++) {
+        const q = parsedQuestions[i];
+        if (q.imageFile) {
+          const url = await uploadQuestionImage(q.imageFile, slug, i);
+          imageUrls.push(url);
+        } else {
+          imageUrls.push(null);
+        }
+      }
+
       const rows = parsedQuestions.map((q, idx) => ({
         category_slug: slug,
         question_text: q.question,
         options: q.options,
         correct_answer: q.correctAnswer,
         display_order: idx + 1,
+        image_url: imageUrls[idx] || null,
       }));
 
       const { error } = await supabase.from("dynamic_questions").insert(rows);
@@ -308,15 +367,14 @@ const QuestionManager = () => {
 
   return (
     <div className="min-h-screen bg-background font-jakarta">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <button
-            onClick={() => (mode === "menu" ? navigate("/") : setMode("menu"))}
+            onClick={() => (mode === "menu" ? navigate("/control-center") : setMode("menu"))}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
           >
             <ArrowLeft className="w-4 h-4" />
-            {mode === "menu" ? "Home" : "Back to Menu"}
+            {mode === "menu" ? "Control Center" : "Back to Menu"}
           </button>
           <span className="text-border">›</span>
           <span className="text-sm font-semibold text-foreground">Question Manager</span>
@@ -324,7 +382,6 @@ const QuestionManager = () => {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
-        {/* Page Title */}
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -389,6 +446,8 @@ const QuestionManager = () => {
                 uploading={uploading}
                 parsedQuestions={parsedQuestions}
                 onFileUpload={handleFileUpload}
+                onImageUpload={handleImageUpload}
+                onRemoveImage={removeImage}
               />
             )}
 
@@ -440,6 +499,8 @@ const QuestionManager = () => {
               uploading={uploading}
               parsedQuestions={parsedQuestions}
               onFileUpload={handleFileUpload}
+              onImageUpload={handleImageUpload}
+              onRemoveImage={removeImage}
             />
 
             {parsedQuestions.length > 0 && newCategoryName.trim() && (
@@ -518,6 +579,7 @@ None of the above`}
             <p>• Questions are separated by blank lines</p>
             <p>• Each option is on its own line</p>
             <p>• The correct answer has a <strong>"1" at the end</strong> of the line (with spaces before it)</p>
+            <p>• After uploading, you can attach images to any question using drag & drop</p>
           </div>
         </Card>
       </div>
@@ -525,16 +587,102 @@ None of the above`}
   );
 };
 
+/* ── Image Drop Zone per Question ── */
+const QuestionImageUploader = ({
+  questionIdx,
+  question,
+  onImageUpload,
+  onRemoveImage,
+}: {
+  questionIdx: number;
+  question: ParsedQuestion;
+  onImageUpload: (idx: number, file: File) => void;
+  onRemoveImage: (idx: number) => void;
+}) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) onImageUpload(questionIdx, file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => setIsDragOver(false);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onImageUpload(questionIdx, file);
+  };
+
+  const previewSrc = question.imagePreview || question.existingImageUrl;
+
+  if (previewSrc) {
+    return (
+      <div className="relative group mt-2">
+        <img 
+          src={previewSrc} 
+          alt={`Q${questionIdx + 1} image`} 
+          className="max-h-32 rounded-lg border border-border object-contain"
+        />
+        <button
+          onClick={() => onRemoveImage(questionIdx)}
+          className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onClick={() => fileInputRef.current?.click()}
+      className={`mt-2 border-2 border-dashed rounded-xl p-3 text-center cursor-pointer transition-all duration-200 ${
+        isDragOver 
+          ? "border-primary bg-primary/5" 
+          : "border-border/60 hover:border-primary/40 hover:bg-primary/5"
+      }`}
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <ImagePlus className="w-4 h-4" />
+        <span>{isDragOver ? "Drop image here" : "Click or drag & drop image"}</span>
+      </div>
+    </div>
+  );
+};
+
+/* ── Upload Section ── */
 const UploadSection = ({
   fileName,
   uploading,
   parsedQuestions,
   onFileUpload,
+  onImageUpload,
+  onRemoveImage,
 }: {
   fileName: string;
   uploading: boolean;
   parsedQuestions: ParsedQuestion[];
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImageUpload: (idx: number, file: File) => void;
+  onRemoveImage: (idx: number) => void;
 }) => (
   <div className="space-y-4">
     <div className="space-y-2">
@@ -571,18 +719,27 @@ const UploadSection = ({
     </div>
 
     {parsedQuestions.length > 0 && (
-      <div className="space-y-2">
+      <div className="space-y-3">
         <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
           <Check className="h-4 w-4 text-success" />
           Preview — {parsedQuestions.length} questions parsed
         </h3>
-        <div className="max-h-64 overflow-y-auto space-y-2">
-          {parsedQuestions.slice(0, 5).map((q, idx) => (
-            <div key={idx} className="p-3 bg-muted/60 border border-border rounded-xl text-sm">
+        <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1">
+          {parsedQuestions.map((q, idx) => (
+            <div key={idx} className="p-4 bg-muted/60 border border-border rounded-xl text-sm">
               <p className="font-semibold text-foreground">
                 Q{idx + 1}: {q.question}
               </p>
-              <div className="mt-1.5 space-y-0.5">
+              
+              {/* Image upload area */}
+              <QuestionImageUploader
+                questionIdx={idx}
+                question={q}
+                onImageUpload={onImageUpload}
+                onRemoveImage={onRemoveImage}
+              />
+
+              <div className="mt-2 space-y-0.5">
                 {q.options.map((opt, oi) => (
                   <p
                     key={oi}
@@ -595,11 +752,6 @@ const UploadSection = ({
               </div>
             </div>
           ))}
-          {parsedQuestions.length > 5 && (
-            <p className="text-xs text-muted-foreground text-center py-2">
-              + {parsedQuestions.length - 5} more questions
-            </p>
-          )}
         </div>
       </div>
     )}
