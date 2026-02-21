@@ -1,84 +1,8 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Shield, ArrowLeft, Users, FileText, RefreshCw, LogIn } from "lucide-react";
-import { toast } from "sonner";
-
-const ADMIN_CODE = "WELLCONTROL.ADMIN.2025";
+import { Shield, ArrowLeft, Users, FileText, RefreshCw } from "lucide-react";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [accessCode, setAccessCode] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
-
-  const handleAuth = () => {
-    if (accessCode.trim() === ADMIN_CODE) {
-      setAuthenticated(true);
-      toast.success("Admin access granted");
-    } else {
-      toast.error("Invalid access code");
-    }
-  };
-
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen bg-background font-jakarta flex flex-col">
-        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-            <button
-              onClick={() => navigate("/")}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Home
-            </button>
-            <span className="text-border">›</span>
-            <span className="text-sm font-semibold text-foreground">Administration</span>
-          </div>
-        </header>
-
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="w-full max-w-sm space-y-8 animate-fade-in">
-            <div className="text-center space-y-3">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
-                <Shield className="w-7 h-7 text-primary" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                Admin Access
-              </h1>
-              <p className="text-muted-foreground text-sm">Enter your administration code to continue</p>
-            </div>
-
-            <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
-              <div className="space-y-2">
-                <label htmlFor="accessCode" className="text-sm font-semibold text-foreground">
-                  Access Code
-                </label>
-                <Input
-                  id="accessCode"
-                  type="password"
-                  value={accessCode}
-                  onChange={e => setAccessCode(e.target.value)}
-                  placeholder="Enter admin access code"
-                  onKeyPress={e => e.key === "Enter" && handleAuth()}
-                  className="h-11 text-base"
-                />
-              </div>
-
-              <Button
-                onClick={handleAuth}
-                className="w-full h-11 font-semibold text-base gap-2 hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-primary/20"
-              >
-                <LogIn className="w-4 h-4" />
-                Authenticate
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const panels = [
     {
