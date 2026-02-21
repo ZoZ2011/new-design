@@ -16,22 +16,12 @@ export const QuestionCard = ({
   isSubmitted,
   onAnswerSelect,
 }: QuestionCardProps) => {
-  const formatQuestionText = (text: string) => {
-    const lines = text.split('\n');
-    return lines.map((line, index) => {
-      if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
-        return <li key={index} className="ml-4">{line.trim().substring(1).trim()}</li>;
-      }
-      return <p key={index}>{line}</p>;
-    });
-  };
-
   return (
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="text-foreground">
           <span className="font-bold">Q{questionIndex + 1}. </span>
-          <span className="whitespace-pre-wrap">{formatQuestionText(question.question)}</span>
+          <span className="whitespace-pre-wrap">{question.question}</span>
         </div>
         
         {question.image && (
