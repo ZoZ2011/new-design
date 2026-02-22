@@ -1,5 +1,8 @@
 import { Question } from "@/data/questions";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface QuestionCardProps {
   question: Question;
@@ -7,6 +10,8 @@ interface QuestionCardProps {
   selectedAnswer: number | undefined;
   isSubmitted: boolean;
   onAnswerSelect: (answerIndex: number) => void;
+  textAnswer?: string;
+  onTextAnswerChange?: (value: string) => void;
 }
 
 export const QuestionCard = ({
@@ -15,6 +20,8 @@ export const QuestionCard = ({
   selectedAnswer,
   isSubmitted,
   onAnswerSelect,
+  textAnswer = "",
+  onTextAnswerChange,
 }: QuestionCardProps) => {
   const isStructured = question.questionType === "combination" && question.options.length === 0;
 
@@ -38,10 +45,24 @@ export const QuestionCard = ({
       </div>
 
       {/* Structured answer display */}
-      {isStructured && question.answerText && (
-        <div className="p-4 rounded-xl bg-muted/50 border border-border">
-          <p className="text-sm font-semibold text-foreground mb-1">Correct Answer:</p>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{question.answerText}</p>
+      {isStructured && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Your Answer:</label>
+            <Textarea
+              value={textAnswer}
+              onChange={(e) => onTextAnswerChange?.(e.target.value)}
+              placeholder="Type your answer here..."
+              disabled={isSubmitted}
+              className="min-h-[80px] resize-y"
+            />
+          </div>
+          {isSubmitted && question.answerText && (
+            <div className="p-4 rounded-xl bg-success/10 border border-success">
+              <p className="text-sm font-semibold text-success mb-1">Correct Answer:</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{question.answerText}</p>
+            </div>
+          )}
         </div>
       )}
 

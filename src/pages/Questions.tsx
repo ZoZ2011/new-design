@@ -15,6 +15,7 @@ import { QuestionNavigation } from "@/components/questions/QuestionNavigation";
 const Questions = () => {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
   const [submittedAnswers, setSubmittedAnswers] = useState<{ [key: number]: boolean }>({});
+  const [textAnswers, setTextAnswers] = useState<{ [key: number]: string }>({});
   const [showAIChat, setShowAIChat] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [autoSubmit, setAutoSubmit] = useState(false);
@@ -188,9 +189,10 @@ const Questions = () => {
   const handleSubmit = () => {
     if (!currentQuestion) return;
     
+    const isStructured = currentQuestion.questionType === "combination" && currentQuestion.options.length === 0;
     const selectedAnswer = selectedAnswers[currentQuestion.id];
     
-    if (selectedAnswer === undefined) {
+    if (!isStructured && selectedAnswer === undefined) {
       return;
     }
 
@@ -199,14 +201,14 @@ const Questions = () => {
       [currentQuestion.id]: true
     }));
 
-    saveProgress(currentQuestion.id, selectedAnswer, true);
+    saveProgress(currentQuestion.id, isStructured ? -1 : selectedAnswer, true);
 
-    const isCorrect = currentQuestion.correctAnswers 
-      ? currentQuestion.correctAnswers.includes(selectedAnswer)
-      : selectedAnswer === currentQuestion.correctAnswer;
-    playSound(isCorrect);
-
-    // sound feedback only
+    if (!isStructured) {
+      const isCorrect = currentQuestion.correctAnswers 
+        ? currentQuestion.correctAnswers.includes(selectedAnswer)
+        : selectedAnswer === currentQuestion.correctAnswer;
+      playSound(isCorrect);
+    }
   };
 
   const handleClearProgress = async () => {
@@ -326,6 +328,8 @@ const Questions = () => {
                   selectedAnswer={selectedAnswers[currentQuestion.id]}
                   isSubmitted={submittedAnswers[currentQuestion.id] || false}
                   onAnswerSelect={handleAnswerSelect}
+                  textAnswer={textAnswers[currentQuestion.id] || ""}
+                  onTextAnswerChange={(value) => setTextAnswers(prev => ({ ...prev, [currentQuestion.id]: value }))}
                 />
               </div>
 
@@ -333,7 +337,7 @@ const Questions = () => {
                 currentIndex={currentQuestionIndex}
                 totalQuestions={questions.length}
                 isSubmitted={submittedAnswers[currentQuestion.id] || false}
-                hasSelectedAnswer={selectedAnswers[currentQuestion.id] !== undefined}
+                hasSelectedAnswer={selectedAnswers[currentQuestion.id] !== undefined || (currentQuestion.questionType === "combination" && currentQuestion.options.length === 0)}
                 autoSubmit={autoSubmit}
                 onPrevious={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
                 onNext={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
