@@ -177,8 +177,19 @@ export const QuestionCard = ({
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="text-foreground">
-          <span className="font-bold">{questionIndex + 1}. </span>
-          <span className="whitespace-pre-wrap">{question.question}</span>
+          {question.question.includes('\n\n') ? (
+            question.question.split('\n\n').map((paragraph, i) => (
+              <p key={i} className={cn("whitespace-pre-wrap", i > 0 && "mt-4")}>
+                {i === 0 && <span className="font-bold">{questionIndex + 1}. </span>}
+                {paragraph}
+              </p>
+            ))
+          ) : (
+            <>
+              <span className="font-bold">{questionIndex + 1}. </span>
+              <span className="whitespace-pre-wrap">{question.question}</span>
+            </>
+          )}
         </div>
 
         {getSelectLabel() && (

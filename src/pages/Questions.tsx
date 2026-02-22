@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trash2, Menu } from "lucide-react";
 import { Question } from "@/data/questions";
@@ -312,7 +312,16 @@ const Questions = () => {
             <div className="flex items-center justify-between mb-6">
               <Button
                 variant="ghost"
-                onClick={() => navigate(-1)}
+                onClick={() => {
+                  // For IWCF drilling level 4 categories, navigate back to day selection
+                  const dayMatch = category?.match(/^iwcf-drilling-level4-(day\d)/);
+                  if (dayMatch) {
+                    const daySlug = `iwcf-drilling-level4-${dayMatch[1]}`;
+                    navigate('/exercises/iwcf/drilling', { state: { level: 4, day: daySlug } });
+                  } else {
+                    navigate(-1);
+                  }
+                }}
                 className="gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
