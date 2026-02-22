@@ -111,7 +111,10 @@ const QuestionManager = () => {
 
   const parseCombinationQuestionsFromText = (text: string): ParsedQuestion[] => {
     const questions: ParsedQuestion[] = [];
-    const allLines = text.split("\n").map(l => l.trim()).filter(l => l);
+    // Normalize: ensure option letters start on new lines
+    let normalized = text.replace(/([^\n])\s+([A-D])\s*\.\s/g, '$1\n$2. ');
+    normalized = normalized.replace(/([^\n])\s+([a-d])\s*\.\s/g, '$1\n$2. ');
+    const allLines = normalized.split("\n").map(l => l.trim()).filter(l => l);
 
     // Find question starts
     const questionStarts: number[] = [];
@@ -225,27 +228,39 @@ const QuestionManager = () => {
     return questions;
   };
 
+  const extractCorrectMarker = (text: string): { text: string; isCorrect: boolean } => {
+    if (/\s+1\s*$/.test(text)) {
+      return { text: text.replace(/\s+1\s*$/, "").trim(), isCorrect: true };
+    }
+    return { text, isCorrect: false };
+  };
+
   const parseQuestionsFromText = (text: string): ParsedQuestion[] => {
     const questions: ParsedQuestion[] = [];
-    const allLines = text.split("\n").map(l => l.trim()).filter(l => l);
+    
+    // Normalize: ensure option letters (A. B. C. D.) start on new lines
+    let normalized = text.replace(/([^\n])\s+([A-D])\s*\.\s/g, '$1\n$2. ');
+    // Also handle lowercase a. b. c. d.
+    normalized = normalized.replace(/([^\n])\s+([a-d])\s*\.\s/g, '$1\n$2. ');
+    
+    const allLines = normalized.split("\n").map(l => l.trim()).filter(l => l);
     
     // Find all question start indices (lines starting with a number followed by . ) or -)
     const questionStarts: number[] = [];
     for (let i = 0; i < allLines.length; i++) {
-      if (/^\d+\s*[\.\)\-]\s/.test(allLines[i]) && !/^[a-dA-D]\s*[\.\)]\s/.test(allLines[i])) {
-        // Make sure it's not just a continuation line — check it looks like a real question number
-        const match = allLines[i].match(/^(\d+)\s*[\.\)\-]\s/);
-        if (match) {
-          const num = parseInt(match[1]);
-          // Accept if it's question 1 or follows sequence
-          if (num >= 1) {
-            questionStarts.push(i);
-          }
-        }
+      // Skip if line starts with an option letter
+      if (/^[a-dA-D]\s*[\.\)]\s/.test(allLines[i])) continue;
+      
+      const match = allLines[i].match(/^(\d+)\s*[\.\)\-]\s/);
+      if (match && parseInt(match[1]) >= 1) {
+        questionStarts.push(i);
       }
     }
 
-    if (questionStarts.length === 0) return questions;
+    if (questionStarts.length === 0) {
+      // Fallback: try the old block-based approach
+      return parseQuestionsFromBlocks(text);
+    }
 
     for (let qi = 0; qi < questionStarts.length; qi++) {
       const startIdx = questionStarts[qi];
@@ -256,7 +271,6 @@ const QuestionManager = () => {
 
       // Extract question text
       const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)\-]\s*(.*)/);
-      let questionText = numberedMatch ? numberedMatch[2].trim() : lines[0];
 
       // Find first option line
       let optionStartIdx = -1;
@@ -267,15 +281,51 @@ const QuestionManager = () => {
         }
       }
 
-      if (optionStartIdx === -1) continue;
+      if (optionStartIdx === -1) {
+        // Try old fallback for this question (no lettered options found)
+        // Check for unlabeled options separated by lines
+        let qEndIdx = 0;
+        for (let j = 0; j < lines.length; j++) {
+          if (lines[j].match(/[?.:]\s*$/) || lines[j].includes("______") || lines[j].includes("___")) {
+            qEndIdx = j;
+            break;
+          }
+        }
+        let questionText = lines.slice(0, qEndIdx + 1).join(" ").trim();
+        questionText = questionText.replace(/^\d+\s*[\.\)\-]\s*/, "");
+        optionStartIdx = qEndIdx + 1;
+
+        if (!questionText || optionStartIdx >= lines.length) continue;
+
+        const options: string[] = [];
+        let correctAnswer = -1;
+        for (let j = optionStartIdx; j < lines.length; j++) {
+          let optLine = lines[j];
+          if (/\s+1\s*$/.test(optLine)) {
+            correctAnswer = options.length;
+            optLine = optLine.replace(/\s+1\s*$/, "").trim();
+          }
+          if (optLine.trim()) options.push(optLine.trim());
+        }
+
+        if (options.length >= 2 && questionText.trim()) {
+          questions.push({
+            question: questionText,
+            options,
+            correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
+            imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
+          });
+        }
+        continue;
+      }
 
       // Question text is everything from first line to before options
       const qLines = numberedMatch
         ? [numberedMatch[2], ...lines.slice(1, optionStartIdx)]
         : lines.slice(0, optionStartIdx);
-      questionText = qLines.join(" ").trim();
+      const questionText = qLines.join(" ").trim();
 
-      // Parse options — handle multi-line options (continuation lines not starting with A-D)
+      // Parse options — handle multi-line options
       const options: string[] = [];
       let correctAnswer = -1;
       let currentOption = "";
@@ -285,7 +335,6 @@ const QuestionManager = () => {
         const isOptionStart = /^[a-dA-D]\s*[\.\)]\s/.test(line);
 
         if (isOptionStart) {
-          // Save previous option if exists
           if (currentOption) {
             const { text, isCorrect } = extractCorrectMarker(currentOption);
             if (isCorrect) correctAnswer = options.length;
@@ -293,11 +342,9 @@ const QuestionManager = () => {
           }
           currentOption = line.replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
         } else {
-          // Continuation of previous option
           currentOption += " " + line;
         }
       }
-      // Don't forget the last option
       if (currentOption) {
         const { text, isCorrect } = extractCorrectMarker(currentOption);
         if (isCorrect) correctAnswer = options.length;
@@ -309,10 +356,7 @@ const QuestionManager = () => {
           question: questionText,
           options,
           correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
-          imageFile: null,
-          imagePreview: null,
-          existingImageUrl: null,
-          answerText: null,
+          imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
         });
       }
     }
@@ -320,12 +364,50 @@ const QuestionManager = () => {
     return questions;
   };
 
-  const extractCorrectMarker = (text: string): { text: string; isCorrect: boolean } => {
-    // Check for trailing " 1" (spaces or tabs before the 1)
-    if (/\s+1\s*$/.test(text)) {
-      return { text: text.replace(/\s+1\s*$/, "").trim(), isCorrect: true };
+  // Fallback block-based parser for old format
+  const parseQuestionsFromBlocks = (text: string): ParsedQuestion[] => {
+    const blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
+    const questions: ParsedQuestion[] = [];
+
+    for (const block of blocks) {
+      const lines = block.split("\n").map(l => l.trim()).filter(l => l);
+      if (lines.length < 3) continue;
+      if (/^Page\s+\d+/i.test(lines[0])) continue;
+      if (/^[a-dA-D]\s*[\.\)]\s/.test(lines[0])) continue;
+
+      let qEndIdx = 0;
+      for (let j = 0; j < lines.length; j++) {
+        if (lines[j].match(/[?.:]\s*$/) || lines[j].includes("______") || lines[j].includes("___")) {
+          qEndIdx = j;
+          break;
+        }
+      }
+      let questionText = lines.slice(0, qEndIdx + 1).join(" ").trim();
+      questionText = questionText.replace(/^\d+\s*[\.\)\-]\s*/, "");
+      const optionStartIdx = qEndIdx + 1;
+
+      if (!questionText || optionStartIdx >= lines.length) continue;
+
+      const options: string[] = [];
+      let correctAnswer = -1;
+      for (let j = optionStartIdx; j < lines.length; j++) {
+        let optLine = lines[j].replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
+        if (/\s+1\s*$/.test(optLine)) {
+          correctAnswer = options.length;
+          optLine = optLine.replace(/\s+1\s*$/, "").trim();
+        }
+        if (optLine.trim()) options.push(optLine.trim());
+      }
+
+      if (options.length >= 2 && questionText.trim()) {
+        questions.push({
+          question: questionText, options,
+          correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
+          imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
+        });
+      }
     }
-    return { text, isCorrect: false };
+    return questions;
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -788,8 +870,6 @@ Calibrate
 Kill sheet
 
 Control risk              1
-
-
 Which of the following statements best describe Well Integrity?
 
 Option A text here
