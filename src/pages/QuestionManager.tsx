@@ -110,12 +110,67 @@ const QuestionManager = () => {
     setUploading(false);
   }, [questionType]);
 
+  // Pre-process text: split inline options after "(Select X Answer)" into labeled lines
+  const preprocessInlineOptions = (text: string): string => {
+    const lines = text.split("\n");
+    const result: string[] = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Match: question text ending with ? then (Select X Answer) then inline options
+      const selectMatch = trimmed.match(
+        /^(.*?\?)\s*\(Select\s+\d+\s+Answers?\)\s*\.?\s*(.+)/i
+      );
+
+      if (selectMatch && selectMatch[2].trim().length > 10) {
+        const qPart = selectMatch[1].trim();
+        result.push(qPart + " (Select 1 Answer)");
+
+        const optionsRaw = selectMatch[2].trim();
+        // Split at sentence boundaries: ". " followed by uppercase or "1"
+        const segments = optionsRaw.split(/\.\s+(?=[A-Z1])/);
+        const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+        let letterIdx = 0;
+
+        for (let i = 0; i < segments.length; i++) {
+          let seg = segments[i].trim().replace(/\.$/, "").trim();
+          if (!seg) continue;
+
+          // If starts with "1 " — previous option is correct
+          if (/^1\s+/.test(seg)) {
+            seg = seg.replace(/^1\s+/, "").trim();
+            if (result.length > 0 && letterIdx > 0) {
+              result[result.length - 1] = result[result.length - 1] + " 1";
+            }
+          }
+
+          // If ends with " 1" — this option is correct
+          let markThis = false;
+          if (/\s+1$/.test(seg)) {
+            seg = seg.replace(/\s+1$/, "").trim();
+            markThis = true;
+          }
+
+          if (seg && letterIdx < letters.length) {
+            result.push(`${letters[letterIdx]}. ${seg}${markThis ? " 1" : ""}`);
+            letterIdx++;
+          }
+        }
+      } else {
+        result.push(line);
+      }
+    }
+
+    return result.join("\n");
+  };
+
   const parseCombinationQuestionsFromText = (text: string): ParsedQuestion[] => {
+    text = preprocessInlineOptions(text);
     const questions: ParsedQuestion[] = [];
     const lines = text.split("\n");
 
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
-    const optionStartRegex = /^\s*([A-Ea-e])\s*[\.\)\-]\s+(.*)/;
+    const optionStartRegex = /^\s*([A-Ha-h])\s*[\.\)\-]\s+(.*)/;
 
     let currentQuestion: { question: string; options: string[]; correctAnswer: number; correctAnswers: number[]; answerText: string } | null = null;
     let currentOptionText = "";
@@ -151,7 +206,6 @@ const QuestionManager = () => {
             imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
           });
         } else {
-          // Structured question — collect any stray option text as part of answer
           let fullAnswer = currentQuestion.answerText.trim();
           if (currentQuestion.options.length === 1) {
             fullAnswer = (currentQuestion.options[0] + "\n" + fullAnswer).trim();
@@ -175,8 +229,7 @@ const QuestionManager = () => {
       if (!trimmed) continue;
       if (/^Page\s+\d+/i.test(trimmed)) continue;
 
-      // Handle "(Select X Answer)" lines — append to question text
-      if (/^\(?\s*select\s+\d+\s+answer\s*\)?$/i.test(trimmed)) {
+      if (/^\(?\s*select\s+\d+\s+answers?\s*\)?$/i.test(trimmed)) {
         if (currentQuestion && !currentOptionText) {
           currentQuestion.question += " " + trimmed;
         }
@@ -197,11 +250,8 @@ const QuestionManager = () => {
         currentOptionText = oMatch[2].trim();
       } else if (currentQuestion) {
         if (currentOptionText) {
-          // Continuation of current option text
           currentOptionText += " " + trimmed;
         } else if (currentQuestion.options.length === 0 && !inStructuredAnswer) {
-          // No options yet — could be question continuation or start of structured answer
-          // Only enter structured mode if the question clearly ended AND this line doesn't look like it could be part of the question
           if (currentQuestion.question.match(/[?:]\s*$/) && !trimmed.match(/^\(/)) {
             inStructuredAnswer = true;
             currentQuestion.answerText = trimmed;
@@ -211,7 +261,6 @@ const QuestionManager = () => {
         } else if (inStructuredAnswer) {
           currentQuestion.answerText += "\n" + trimmed;
         } else {
-          // After options, any non-option text is ignored or appended to answer
           currentQuestion.answerText += "\n" + trimmed;
         }
       }
@@ -224,6 +273,8 @@ const QuestionManager = () => {
   };
 
   const parseQuestionsFromText = (text: string, type: QuestionType = "mcq_single"): ParsedQuestion[] => {
+    // Pre-process to split inline options
+    text = preprocessInlineOptions(text);
     const questions: ParsedQuestion[] = [];
     const lines = text.split("\n");
     const autoDetectCorrect = type === "mcq_multiple";
