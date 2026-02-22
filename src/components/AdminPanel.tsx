@@ -82,19 +82,16 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
       .order("display_order");
     if (data) {
       // Separate day-grouped categories from standalone ones
-      const day1Slugs = data.filter(d => d.parent_path === "iwcf-drilling-level4-day1").map(d => d.slug);
-      const day2Slugs = data.filter(d => d.parent_path === "iwcf-drilling-level4-day2").map(d => d.slug);
-      const day3Slugs = data.filter(d => d.parent_path === "iwcf-drilling-level4-day3").map(d => d.slug);
+      const level4Slugs = data
+        .filter(d => d.parent_path.startsWith("iwcf-drilling-level4"))
+        .map(d => d.slug);
       
       const groups: DayGroup[] = [];
-      if (day1Slugs.length > 0) groups.push({ label: "Day #1", parentPath: "iwcf-drilling-level4-day1", slugs: day1Slugs });
-      if (day2Slugs.length > 0) groups.push({ label: "Day #2", parentPath: "iwcf-drilling-level4-day2", slugs: day2Slugs });
-      if (day3Slugs.length > 0) groups.push({ label: "Day #3", parentPath: "iwcf-drilling-level4-day3", slugs: day3Slugs });
+      if (level4Slugs.length > 0) groups.push({ label: "Level 4", parentPath: "iwcf-drilling-level4", slugs: level4Slugs });
       setDayGroups(groups);
 
-      // Standalone categories (not under any day)
-      const dayPaths = ["iwcf-drilling-level4-day1", "iwcf-drilling-level4-day2", "iwcf-drilling-level4-day3"];
-      const standalone = data.filter(d => !dayPaths.includes(d.parent_path));
+      // Standalone categories (not under level 4)
+      const standalone = data.filter(d => !d.parent_path.startsWith("iwcf-drilling-level4"));
       setDynamicCategories(standalone.map(d => ({ slug: d.slug, name: d.name })));
     }
   };
