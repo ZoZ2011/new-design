@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trash2, Menu } from "lucide-react";
-import { toast } from "sonner";
 import { Question } from "@/data/questions";
 import { useDynamicQuestions } from "@/hooks/useDynamicQuestions";
 import AIChat from "@/components/AIChat";
@@ -190,7 +189,6 @@ const Questions = () => {
     const selectedAnswer = selectedAnswers[currentQuestion.id];
     
     if (selectedAnswer === undefined) {
-      toast.error("Please select an answer");
       return;
     }
 
@@ -204,11 +202,7 @@ const Questions = () => {
     const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
     playSound(isCorrect);
 
-    if (isCorrect) {
-      toast.success("Correct! Well done!");
-    } else {
-      toast.error("Incorrect. Try reviewing the material.");
-    }
+    // sound feedback only
   };
 
   const handleClearProgress = async () => {
@@ -225,10 +219,8 @@ const Questions = () => {
         setSelectedAnswers({});
         setSubmittedAnswers({});
         setCurrentQuestionIndex(0);
-        toast.success("Progress cleared");
       } catch (error) {
         console.error("Error clearing progress:", error);
-        toast.error("Failed to clear progress");
       }
     }
   };
@@ -274,11 +266,11 @@ const Questions = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 no-select">
+    <div className="min-h-screen bg-background p-3 sm:p-6 no-select overflow-x-hidden">
       <ScreenshotBlocker />
       
-      <div className="max-w-7xl mx-auto">
-        <div className="flex gap-8">
+      <div className="max-w-7xl mx-auto w-full">
+        <div className="flex gap-4 lg:gap-8">
           {/* Main Content */}
           <div className="flex-1">
             {/* Header */}
@@ -313,7 +305,7 @@ const Questions = () => {
             </div>
 
             {/* Quiz Card */}
-            <div className="bg-card rounded-2xl shadow-lg p-8">
+            <div className="bg-card rounded-2xl shadow-lg p-4 sm:p-8 overflow-hidden">
               <h1 className="text-2xl font-bold text-foreground mb-4">
                 {getCategoryTitle()}
               </h1>
