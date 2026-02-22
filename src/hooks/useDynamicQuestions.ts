@@ -19,8 +19,9 @@ export function useDynamicQuestions(category: string) {
 
       if (!error && data && data.length > 0) {
         const mapped: Question[] = data.map((q, idx) => {
+          const qType = q.question_type || "mcq_single";
           let correctAnswers: number[] | undefined;
-          if ((q as any).question_type === "mcq_multiple" && q.answer_text) {
+          if (qType === "mcq_multiple" && q.answer_text) {
             try {
               correctAnswers = JSON.parse(q.answer_text);
             } catch {}
@@ -31,9 +32,9 @@ export function useDynamicQuestions(category: string) {
             options: Array.isArray(q.options) ? (q.options as string[]) : [],
             correctAnswer: q.correct_answer,
             correctAnswers,
-            image: (q as any).image_url || undefined,
-            questionType: (q as any).question_type || "mcq_single",
-            answerText: (q as any).question_type === "mcq_multiple" ? null : q.answer_text || null,
+            image: q.image_url || undefined,
+            questionType: qType === "combination" ? "combination" : qType === "mcq_multiple" ? "mcq_multiple" : "mcq_single",
+            answerText: qType === "mcq_multiple" ? null : q.answer_text || null,
           };
         });
         setQuestions(mapped);
