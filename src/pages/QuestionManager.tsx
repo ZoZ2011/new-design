@@ -213,19 +213,11 @@ const QuestionManager = () => {
     const finishOption = () => {
       if (currentQuestion && currentOptionText) {
         let text = currentOptionText.trim();
-        let isCorrect = currentOptionIsCorrect;
-        // Check for trailing " 1" marker
-        if (/\s+1\s*$/.test(text)) {
-          text = text.replace(/\s+1\s*$/, "").trim();
-          isCorrect = true;
-        }
-        if (isCorrect) {
-          currentQuestion.correctAnswer = currentQuestion.options.length;
-        }
+        // Strip trailing "1" marker if present (cleanup only, don't use for correct answer)
+        text = text.replace(/\s+1\s*$/, "").trim();
         if (text) currentQuestion.options.push(text);
       }
       currentOptionText = "";
-      currentOptionIsCorrect = false;
     };
 
     const finishQuestion = () => {
@@ -233,7 +225,7 @@ const QuestionManager = () => {
         questions.push({
           question: currentQuestion.question,
           options: currentQuestion.options,
-          correctAnswer: currentQuestion.correctAnswer >= 0 ? currentQuestion.correctAnswer : 0,
+          correctAnswer: 0, // Default, admin will select
           imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
         });
       }
@@ -361,6 +353,12 @@ const QuestionManager = () => {
       i === questionIdx 
         ? { ...q, imageFile: null, imagePreview: null, existingImageUrl: null }
         : q
+    ));
+  };
+
+  const handleCorrectAnswerChange = (questionIdx: number, answerIdx: number) => {
+    setParsedQuestions(prev => prev.map((q, i) =>
+      i === questionIdx ? { ...q, correctAnswer: answerIdx } : q
     ));
   };
 
@@ -647,6 +645,7 @@ const QuestionManager = () => {
               onFileUpload={handleFileUpload}
               onImageUpload={handleImageUpload}
               onRemoveImage={removeImage}
+              onCorrectAnswerChange={handleCorrectAnswerChange}
             />
 
             {parsedQuestions.length > 0 && (
@@ -724,6 +723,7 @@ const QuestionManager = () => {
               onFileUpload={handleFileUpload}
               onImageUpload={handleImageUpload}
               onRemoveImage={removeImage}
+              onCorrectAnswerChange={handleCorrectAnswerChange}
             />
 
             {parsedQuestions.length > 0 && newCategoryName.trim() && (
@@ -905,6 +905,7 @@ const UploadSection = ({
   onFileUpload,
   onImageUpload,
   onRemoveImage,
+  onCorrectAnswerChange,
 }: {
   fileName: string;
   uploading: boolean;
@@ -913,6 +914,7 @@ const UploadSection = ({
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUpload: (idx: number, file: File) => void;
   onRemoveImage: (idx: number) => void;
+  onCorrectAnswerChange: (questionIdx: number, answerIdx: number) => void;
 }) => (
   <div className="space-y-4">
     <div className="space-y-2">
@@ -969,15 +971,22 @@ const UploadSection = ({
               />
 
               {q.options.length > 0 ? (
-                <div className="mt-2 space-y-0.5">
+              <div className="mt-2 space-y-1">
+                  <p className="text-xs text-muted-foreground mb-1">Click to select correct answer:</p>
                   {q.options.map((opt, oi) => (
-                    <p
+                    <button
                       key={oi}
-                      className={oi === q.correctAnswer ? "text-success font-medium" : "text-muted-foreground"}
+                      type="button"
+                      onClick={() => onCorrectAnswerChange(idx, oi)}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-all ${
+                        oi === q.correctAnswer
+                          ? "bg-success/15 text-success font-medium border border-success/30"
+                          : "text-muted-foreground hover:bg-muted border border-transparent"
+                      }`}
                     >
                       {String.fromCharCode(65 + oi)}. {opt}
                       {oi === q.correctAnswer && " ✓"}
-                    </p>
+                    </button>
                   ))}
                 </div>
               ) : q.answerText ? (
