@@ -111,260 +111,178 @@ const QuestionManager = () => {
 
   const parseCombinationQuestionsFromText = (text: string): ParsedQuestion[] => {
     const questions: ParsedQuestion[] = [];
-    // Normalize: ensure option letters start on new lines
-    let normalized = text.replace(/([^\n])\s+([A-D])\s*\.\s/g, '$1\n$2. ');
-    normalized = normalized.replace(/([^\n])\s+([a-d])\s*\.\s/g, '$1\n$2. ');
-    const allLines = normalized.split("\n").map(l => l.trim()).filter(l => l);
+    const lines = text.split("\n");
 
-    // Find question starts
-    const questionStarts: number[] = [];
-    for (let i = 0; i < allLines.length; i++) {
-      if (/^\d+\s*[\.\)\-]\s/.test(allLines[i]) && !/^[a-dA-D]\s*[\.\)]\s/.test(allLines[i])) {
-        const match = allLines[i].match(/^(\d+)\s*[\.\)\-]\s/);
-        if (match && parseInt(match[1]) >= 1) {
-          questionStarts.push(i);
+    const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
+    const optionStartRegex = /^\s*([A-Da-d])\s*[\.\)]\s+(.*)/;
+
+    let currentQuestion: { question: string; options: string[]; correctAnswer: number; answerText: string } | null = null;
+    let currentOptionText = "";
+    let inStructuredAnswer = false;
+
+    const finishOption = () => {
+      if (currentQuestion && currentOptionText) {
+        let text = currentOptionText.trim();
+        let isCorrect = false;
+        if (/\s+1\s*$/.test(text)) {
+          text = text.replace(/\s+1\s*$/, "").trim();
+          isCorrect = true;
         }
+        if (isCorrect) currentQuestion.correctAnswer = currentQuestion.options.length;
+        if (text) currentQuestion.options.push(text);
       }
-    }
+      currentOptionText = "";
+    };
 
-    if (questionStarts.length === 0) return questions;
-
-    for (let qi = 0; qi < questionStarts.length; qi++) {
-      const startIdx = questionStarts[qi];
-      const endIdx = qi + 1 < questionStarts.length ? questionStarts[qi + 1] : allLines.length;
-      const lines = allLines.slice(startIdx, endIdx).filter(l => !/^Page\s+\d+/i.test(l));
-
-      if (lines.length < 2) continue;
-
-      const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)\-]\s*(.*)/);
-      let questionText = numberedMatch ? numberedMatch[2].trim() : lines[0];
-
-      // Check for MCQ options
-      let optionStartIdx = -1;
-      for (let j = 1; j < lines.length; j++) {
-        if (/^[a-dA-D]\s*[\.\)]\s/.test(lines[j])) {
-          optionStartIdx = j;
-          break;
-        }
-      }
-
-      if (optionStartIdx > -1) {
-        // MCQ question
-        const qLines = numberedMatch
-          ? [numberedMatch[2], ...lines.slice(1, optionStartIdx)]
-          : lines.slice(0, optionStartIdx);
-        questionText = qLines.join(" ").trim();
-
-        const options: string[] = [];
-        let correctAnswer = -1;
-        let currentOption = "";
-
-        for (let j = optionStartIdx; j < lines.length; j++) {
-          const line = lines[j];
-          const isOptionStart = /^[a-dA-D]\s*[\.\)]\s/.test(line);
-
-          if (isOptionStart) {
-            if (currentOption) {
-              if (/\s+1\s*$/.test(currentOption)) {
-                correctAnswer = options.length;
-                currentOption = currentOption.replace(/\s+1\s*$/, "").trim();
-              }
-              if (currentOption.trim()) options.push(currentOption.trim());
-            }
-            currentOption = line.replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
-          } else {
-            currentOption += " " + line;
-          }
-        }
-        if (currentOption) {
-          if (/\s+1\s*$/.test(currentOption)) {
-            correctAnswer = options.length;
-            currentOption = currentOption.replace(/\s+1\s*$/, "").trim();
-          }
-          if (currentOption.trim()) options.push(currentOption.trim());
-        }
-
-        if (options.length >= 2 && questionText.trim()) {
+    const finishQuestion = () => {
+      if (currentQuestion && currentQuestion.question.trim()) {
+        if (currentQuestion.options.length >= 2) {
           questions.push({
-            question: questionText,
-            options,
-            correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
-            imageFile: null,
-            imagePreview: null,
-            existingImageUrl: null,
-            answerText: null,
+            question: currentQuestion.question,
+            options: currentQuestion.options,
+            correctAnswer: currentQuestion.correctAnswer >= 0 ? currentQuestion.correctAnswer : 0,
+            imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
           });
-        }
-      } else {
-        // Structured question
-        const qLines = numberedMatch ? [numberedMatch[2]] : [lines[0]];
-        let answerStartIdx = 1;
-        for (let j = 1; j < lines.length; j++) {
-          if (!lines[j - 1].match(/[?:]\s*$/)) {
-            qLines.push(lines[j]);
-            answerStartIdx = j + 1;
-          } else {
-            answerStartIdx = j;
-            break;
-          }
-        }
-        questionText = qLines.join(" ").trim();
-        const answerText = lines.slice(answerStartIdx).join("\n").trim();
-
-        if (questionText) {
+        } else {
+          // Structured question
           questions.push({
-            question: questionText,
+            question: currentQuestion.question,
             options: [],
             correctAnswer: -1,
-            imageFile: null,
-            imagePreview: null,
-            existingImageUrl: null,
-            answerText: answerText || null,
+            imageFile: null, imagePreview: null, existingImageUrl: null,
+            answerText: currentQuestion.answerText.trim() || null,
           });
+        }
+      }
+      currentQuestion = null;
+      inStructuredAnswer = false;
+    };
+
+    for (const rawLine of lines) {
+      const trimmed = rawLine.trim();
+      if (!trimmed) continue;
+      if (/^Page\s+\d+/i.test(trimmed)) continue;
+
+      const qMatch = trimmed.match(questionStartRegex);
+      const oMatch = trimmed.match(optionStartRegex);
+
+      if (qMatch && !oMatch) {
+        finishOption();
+        finishQuestion();
+        currentQuestion = { question: qMatch[2].trim(), options: [], correctAnswer: -1, answerText: "" };
+        inStructuredAnswer = false;
+      } else if (oMatch && currentQuestion) {
+        finishOption();
+        inStructuredAnswer = false;
+        currentOptionText = oMatch[2].trim();
+      } else if (currentQuestion) {
+        if (currentOptionText) {
+          currentOptionText += " " + trimmed;
+        } else if (currentQuestion.options.length === 0 && !inStructuredAnswer) {
+          // Could be continuation of question or start of structured answer
+          if (currentQuestion.question.match(/[?:]\s*$/)) {
+            inStructuredAnswer = true;
+            currentQuestion.answerText = trimmed;
+          } else {
+            currentQuestion.question += " " + trimmed;
+          }
+        } else {
+          currentQuestion.answerText += "\n" + trimmed;
         }
       }
     }
 
-    return questions;
-  };
+    finishOption();
+    finishQuestion();
 
-  const extractCorrectMarker = (text: string): { text: string; isCorrect: boolean } => {
-    if (/\s+1\s*$/.test(text)) {
-      return { text: text.replace(/\s+1\s*$/, "").trim(), isCorrect: true };
-    }
-    return { text, isCorrect: false };
+    return questions;
   };
 
   const parseQuestionsFromText = (text: string): ParsedQuestion[] => {
     const questions: ParsedQuestion[] = [];
-    
-    // Normalize: ensure option letters (A. B. C. D.) start on new lines
-    let normalized = text.replace(/([^\n])\s+([A-D])\s*\.\s/g, '$1\n$2. ');
-    // Also handle lowercase a. b. c. d.
-    normalized = normalized.replace(/([^\n])\s+([a-d])\s*\.\s/g, '$1\n$2. ');
-    
-    const allLines = normalized.split("\n").map(l => l.trim()).filter(l => l);
-    
-    // Find all question start indices (lines starting with a number followed by . ) or -)
-    const questionStarts: number[] = [];
-    for (let i = 0; i < allLines.length; i++) {
-      // Skip if line starts with an option letter
-      if (/^[a-dA-D]\s*[\.\)]\s/.test(allLines[i])) continue;
-      
-      const match = allLines[i].match(/^(\d+)\s*[\.\)\-]\s/);
-      if (match && parseInt(match[1]) >= 1) {
-        questionStarts.push(i);
-      }
-    }
+    const lines = text.split("\n");
 
-    if (questionStarts.length === 0) {
-      // Fallback: try the old block-based approach
-      return parseQuestionsFromBlocks(text);
-    }
+    // Regex patterns
+    const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
+    const optionStartRegex = /^\s*([A-Da-d])\s*[\.\)]\s+(.*)/;
 
-    for (let qi = 0; qi < questionStarts.length; qi++) {
-      const startIdx = questionStarts[qi];
-      const endIdx = qi + 1 < questionStarts.length ? questionStarts[qi + 1] : allLines.length;
-      const lines = allLines.slice(startIdx, endIdx).filter(l => !/^Page\s+\d+/i.test(l));
+    let currentQuestion: { question: string; options: string[]; correctAnswer: number } | null = null;
+    let currentOptionText = "";
+    let currentOptionIsCorrect = false;
 
-      if (lines.length < 2) continue;
-
-      // Extract question text
-      const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)\-]\s*(.*)/);
-
-      // Find first option line
-      let optionStartIdx = -1;
-      for (let j = 1; j < lines.length; j++) {
-        if (/^[a-dA-D]\s*[\.\)]\s/.test(lines[j])) {
-          optionStartIdx = j;
-          break;
+    const finishOption = () => {
+      if (currentQuestion && currentOptionText) {
+        let text = currentOptionText.trim();
+        let isCorrect = currentOptionIsCorrect;
+        // Check for trailing " 1" marker
+        if (/\s+1\s*$/.test(text)) {
+          text = text.replace(/\s+1\s*$/, "").trim();
+          isCorrect = true;
         }
-      }
-
-      if (optionStartIdx === -1) {
-        // Try old fallback for this question (no lettered options found)
-        // Check for unlabeled options separated by lines
-        let qEndIdx = 0;
-        for (let j = 0; j < lines.length; j++) {
-          if (lines[j].match(/[?.:]\s*$/) || lines[j].includes("______") || lines[j].includes("___")) {
-            qEndIdx = j;
-            break;
-          }
+        if (isCorrect) {
+          currentQuestion.correctAnswer = currentQuestion.options.length;
         }
-        let questionText = lines.slice(0, qEndIdx + 1).join(" ").trim();
-        questionText = questionText.replace(/^\d+\s*[\.\)\-]\s*/, "");
-        optionStartIdx = qEndIdx + 1;
-
-        if (!questionText || optionStartIdx >= lines.length) continue;
-
-        const options: string[] = [];
-        let correctAnswer = -1;
-        for (let j = optionStartIdx; j < lines.length; j++) {
-          let optLine = lines[j];
-          if (/\s+1\s*$/.test(optLine)) {
-            correctAnswer = options.length;
-            optLine = optLine.replace(/\s+1\s*$/, "").trim();
-          }
-          if (optLine.trim()) options.push(optLine.trim());
-        }
-
-        if (options.length >= 2 && questionText.trim()) {
-          questions.push({
-            question: questionText,
-            options,
-            correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
-            imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
-          });
-        }
-        continue;
+        if (text) currentQuestion.options.push(text);
       }
+      currentOptionText = "";
+      currentOptionIsCorrect = false;
+    };
 
-      // Question text is everything from first line to before options
-      const qLines = numberedMatch
-        ? [numberedMatch[2], ...lines.slice(1, optionStartIdx)]
-        : lines.slice(0, optionStartIdx);
-      const questionText = qLines.join(" ").trim();
-
-      // Parse options — handle multi-line options
-      const options: string[] = [];
-      let correctAnswer = -1;
-      let currentOption = "";
-
-      for (let j = optionStartIdx; j < lines.length; j++) {
-        const line = lines[j];
-        const isOptionStart = /^[a-dA-D]\s*[\.\)]\s/.test(line);
-
-        if (isOptionStart) {
-          if (currentOption) {
-            const { text, isCorrect } = extractCorrectMarker(currentOption);
-            if (isCorrect) correctAnswer = options.length;
-            if (text.trim()) options.push(text.trim());
-          }
-          currentOption = line.replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
-        } else {
-          currentOption += " " + line;
-        }
-      }
-      if (currentOption) {
-        const { text, isCorrect } = extractCorrectMarker(currentOption);
-        if (isCorrect) correctAnswer = options.length;
-        if (text.trim()) options.push(text.trim());
-      }
-
-      if (options.length >= 2 && questionText.trim()) {
+    const finishQuestion = () => {
+      if (currentQuestion && currentQuestion.options.length >= 2 && currentQuestion.question.trim()) {
         questions.push({
-          question: questionText,
-          options,
-          correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
+          question: currentQuestion.question,
+          options: currentQuestion.options,
+          correctAnswer: currentQuestion.correctAnswer >= 0 ? currentQuestion.correctAnswer : 0,
           imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
         });
       }
+      currentQuestion = null;
+    };
+
+    for (const rawLine of lines) {
+      const trimmed = rawLine.trim();
+      if (!trimmed) continue;
+      if (/^Page\s+\d+/i.test(trimmed)) continue;
+
+      // Check if this line starts a new question
+      const qMatch = trimmed.match(questionStartRegex);
+      // But make sure it's not actually an option (A-D)
+      const oMatch = trimmed.match(optionStartRegex);
+
+      if (qMatch && !oMatch) {
+        // Save previous option & question
+        finishOption();
+        finishQuestion();
+        currentQuestion = { question: qMatch[2].trim(), options: [], correctAnswer: -1 };
+      } else if (oMatch && currentQuestion) {
+        // Save previous option
+        finishOption();
+        currentOptionText = oMatch[2].trim();
+      } else if (currentQuestion) {
+        if (currentOptionText) {
+          // Continuation of current option
+          currentOptionText += " " + trimmed;
+        } else {
+          // Continuation of question text
+          currentQuestion.question += " " + trimmed;
+        }
+      }
+    }
+
+    // Finish last option & question
+    finishOption();
+    finishQuestion();
+
+    // If nothing found, try old block-based fallback
+    if (questions.length === 0) {
+      return parseQuestionsFromBlocks(text);
     }
 
     return questions;
   };
 
-  // Fallback block-based parser for old format
+  // Fallback block-based parser for old format (no A. B. C. D. labels)
   const parseQuestionsFromBlocks = (text: string): ParsedQuestion[] => {
     const blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
     const questions: ParsedQuestion[] = [];
@@ -373,7 +291,6 @@ const QuestionManager = () => {
       const lines = block.split("\n").map(l => l.trim()).filter(l => l);
       if (lines.length < 3) continue;
       if (/^Page\s+\d+/i.test(lines[0])) continue;
-      if (/^[a-dA-D]\s*[\.\)]\s/.test(lines[0])) continue;
 
       let qEndIdx = 0;
       for (let j = 0; j < lines.length; j++) {
