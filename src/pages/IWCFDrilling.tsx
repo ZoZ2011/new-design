@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, BookOpen, Clock, ChevronRight, Calendar } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, ChevronRight, Calendar, Shield, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const IWCFDrilling = () => {
   const navigate = useNavigate();
@@ -9,6 +11,49 @@ const IWCFDrilling = () => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [dayCategories, setDayCategories] = useState<{ name: string; slug: string }[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [idNumber, setIdNumber] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [validIds, setValidIds] = useState<string[]>([]);
+  const [loadingIds, setLoadingIds] = useState(false);
+
+  const fetchValidIds = async () => {
+    setLoadingIds(true);
+    const { data, error } = await supabase.from("valid_users").select("user_id");
+    if (!error && data) setValidIds(data.map(u => u.user_id));
+    setLoadingIds(false);
+  };
+
+  const handleLevel4SignIn = async () => {
+    const trimmedId = idNumber.trim();
+    if (!validIds.includes(trimmedId)) {
+      setErrorMsg("Invalid ID Number");
+      return;
+    }
+
+    const { data: userData } = await supabase
+      .from("valid_users")
+      .select("access_restricted")
+      .eq("user_id", trimmedId)
+      .single();
+
+    if (userData?.access_restricted) {
+      const { data: accessData } = await supabase
+        .from("user_category_access")
+        .select("category_slug")
+        .eq("user_id", trimmedId);
+      const allowed = accessData?.map(r => r.category_slug) ?? [];
+      const hasAnyLevel4 = allowed.some(s => s.startsWith("iwcf-drilling-level4"));
+      if (!hasAnyLevel4) {
+        setErrorMsg("Access Denied");
+        return;
+      }
+    }
+
+    localStorage.setItem("userId", trimmedId);
+    setAuthenticated(true);
+    setErrorMsg("");
+  };
 
   useEffect(() => {
     if (!selectedDay) return;
@@ -56,6 +101,54 @@ const IWCFDrilling = () => {
   }
 
   if (selectedLevel === 4) {
+    // Sign-in gate
+    if (!authenticated) {
+      return (
+        <div className="min-h-screen bg-background font-jakarta flex flex-col">
+          <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+              <button onClick={() => setSelectedLevel(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+                <ArrowLeft className="w-4 h-4" /> Back
+              </button>
+              <span className="text-border">›</span>
+              <span className="text-sm font-semibold text-foreground">Level 4</span>
+            </div>
+          </header>
+          <div className="flex-1 flex items-center justify-center px-4 py-12">
+            <div className="w-full max-w-sm space-y-8 animate-fade-in">
+              <div className="text-center space-y-3">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
+                  <Shield className="w-7 h-7 text-primary" />
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">IWCF Drilling Level 4</h1>
+                <p className="text-muted-foreground text-sm">Enter your ID number to access exercises</p>
+              </div>
+              <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+                <div className="space-y-2">
+                  <label htmlFor="idNumber" className="text-sm font-semibold text-foreground">ID Number</label>
+                  <Input
+                    id="idNumber"
+                    type="text"
+                    value={idNumber}
+                    onChange={e => { setIdNumber(e.target.value); setErrorMsg(""); }}
+                    placeholder="Enter your ID number"
+                    onKeyPress={e => e.key === "Enter" && handleLevel4SignIn()}
+                    disabled={loadingIds}
+                    className="h-11 text-base"
+                  />
+                  {errorMsg && <p className="text-destructive text-xs mt-1">{errorMsg}</p>}
+                </div>
+                <Button onClick={handleLevel4SignIn} className="w-full h-11 font-semibold text-base gap-2" disabled={loadingIds}>
+                  <LogIn className="w-4 h-4" />
+                  {loadingIds ? "Loading..." : "Sign In"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     const days = [
       { title: "Day #1", subtitle: "P&P Part 1", slug: "iwcf-drilling-level4-day1" },
       { title: "Day #2", subtitle: "P&P Part 2", slug: "iwcf-drilling-level4-day2" },
@@ -94,7 +187,7 @@ const IWCFDrilling = () => {
                 {dayCategories.map((cat, idx) => (
                   <button
                     key={cat.slug}
-                    onClick={() => navigate(`/signin/${cat.slug}`)}
+                    onClick={() => navigate(`/questions/${cat.slug}`)}
                     className="w-full text-left p-4 rounded-xl bg-card border border-border hover:border-primary/40 hover:shadow-md transition-all duration-200 flex items-center gap-3"
                   >
                     <span className="text-primary font-bold text-lg min-w-[2rem]">{idx + 1}.</span>
@@ -113,7 +206,7 @@ const IWCFDrilling = () => {
       <div className="min-h-screen bg-background font-jakarta flex flex-col">
         <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-            <button onClick={() => setSelectedLevel(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+            <button onClick={() => { setSelectedLevel(null); setAuthenticated(false); }} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
             <span className="text-border">›</span>
@@ -178,7 +271,7 @@ const IWCFDrilling = () => {
           ].map(item => (
             <button
               key={item.level}
-              onClick={() => setSelectedLevel(item.level)}
+              onClick={() => { setSelectedLevel(item.level); if (item.level === 4) fetchValidIds(); }}
               className="group relative bg-card border border-border rounded-2xl p-6 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               <div className="flex items-center justify-between">
