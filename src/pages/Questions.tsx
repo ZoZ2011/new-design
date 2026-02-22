@@ -268,6 +268,14 @@ const Questions = () => {
       return `IADC OGOR Mock Test #${testNumber}`;
     }
     
+    // For level 4 day categories, show only the topic name
+    const dayTopicMatch = category.match(/^iwcf-drilling-level4-day\d-(.+)$/);
+    if (dayTopicMatch) {
+      return dayTopicMatch[1].split("-").map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(" ");
+    }
+    
     return category.split("-").map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(" ");
