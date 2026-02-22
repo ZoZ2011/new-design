@@ -115,22 +115,27 @@ const QuestionManager = () => {
     const lines = text.split("\n");
 
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
-    const optionStartRegex = /^\s*([A-Da-d])\s*[\.\)]\s+(.*)/;
+    const optionStartRegex = /^\s*([A-Ea-e])\s*[\.\)\-]\s+(.*)/;
 
-    let currentQuestion: { question: string; options: string[]; correctAnswer: number; answerText: string } | null = null;
+    let currentQuestion: { question: string; options: string[]; correctAnswer: number; correctAnswers: number[]; answerText: string } | null = null;
     let currentOptionText = "";
     let inStructuredAnswer = false;
 
     const finishOption = () => {
       if (currentQuestion && currentOptionText) {
         let text = currentOptionText.trim();
-        let isCorrect = false;
-        if (/\s+1\s*$/.test(text)) {
-          text = text.replace(/\s+1\s*$/, "").trim();
-          isCorrect = true;
+        const hasMarker = /\s+1\s*$/.test(text);
+        text = text.replace(/\s+1\s*$/, "").trim();
+        if (text) {
+          const optIdx = currentQuestion.options.length;
+          if (hasMarker) {
+            currentQuestion.correctAnswers.push(optIdx);
+            if (currentQuestion.correctAnswer < 0) {
+              currentQuestion.correctAnswer = optIdx;
+            }
+          }
+          currentQuestion.options.push(text);
         }
-        if (isCorrect) currentQuestion.correctAnswer = currentQuestion.options.length;
-        if (text) currentQuestion.options.push(text);
       }
       currentOptionText = "";
     };
@@ -141,19 +146,23 @@ const QuestionManager = () => {
           questions.push({
             question: currentQuestion.question,
             options: currentQuestion.options,
-            correctAnswer: currentQuestion.correctAnswer >= 0 ? currentQuestion.correctAnswer : 0,
-            correctAnswers: currentQuestion.correctAnswer >= 0 ? [currentQuestion.correctAnswer] : [],
+            correctAnswer: currentQuestion.correctAnswers.length > 0 ? currentQuestion.correctAnswers[0] : 0,
+            correctAnswers: currentQuestion.correctAnswers.length > 0 ? currentQuestion.correctAnswers : [],
             imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
           });
         } else {
-          // Structured question
+          // Structured question — collect any stray option text as part of answer
+          let fullAnswer = currentQuestion.answerText.trim();
+          if (currentQuestion.options.length === 1) {
+            fullAnswer = (currentQuestion.options[0] + "\n" + fullAnswer).trim();
+          }
           questions.push({
             question: currentQuestion.question,
             options: [],
             correctAnswer: -1,
             correctAnswers: [],
             imageFile: null, imagePreview: null, existingImageUrl: null,
-            answerText: currentQuestion.answerText.trim() || null,
+            answerText: fullAnswer || null,
           });
         }
       }
@@ -166,13 +175,21 @@ const QuestionManager = () => {
       if (!trimmed) continue;
       if (/^Page\s+\d+/i.test(trimmed)) continue;
 
+      // Handle "(Select X Answer)" lines — append to question text
+      if (/^\(?\s*select\s+\d+\s+answer\s*\)?$/i.test(trimmed)) {
+        if (currentQuestion && !currentOptionText) {
+          currentQuestion.question += " " + trimmed;
+        }
+        continue;
+      }
+
       const qMatch = trimmed.match(questionStartRegex);
       const oMatch = trimmed.match(optionStartRegex);
 
       if (qMatch && !oMatch) {
         finishOption();
         finishQuestion();
-        currentQuestion = { question: qMatch[2].trim(), options: [], correctAnswer: -1, answerText: "" };
+        currentQuestion = { question: qMatch[2].trim(), options: [], correctAnswer: -1, correctAnswers: [], answerText: "" };
         inStructuredAnswer = false;
       } else if (oMatch && currentQuestion) {
         finishOption();
@@ -180,16 +197,21 @@ const QuestionManager = () => {
         currentOptionText = oMatch[2].trim();
       } else if (currentQuestion) {
         if (currentOptionText) {
+          // Continuation of current option text
           currentOptionText += " " + trimmed;
         } else if (currentQuestion.options.length === 0 && !inStructuredAnswer) {
-          // Could be continuation of question or start of structured answer
-          if (currentQuestion.question.match(/[?:]\s*$/)) {
+          // No options yet — could be question continuation or start of structured answer
+          // Only enter structured mode if the question clearly ended AND this line doesn't look like it could be part of the question
+          if (currentQuestion.question.match(/[?:]\s*$/) && !trimmed.match(/^\(/)) {
             inStructuredAnswer = true;
             currentQuestion.answerText = trimmed;
           } else {
             currentQuestion.question += " " + trimmed;
           }
+        } else if (inStructuredAnswer) {
+          currentQuestion.answerText += "\n" + trimmed;
         } else {
+          // After options, any non-option text is ignored or appended to answer
           currentQuestion.answerText += "\n" + trimmed;
         }
       }
