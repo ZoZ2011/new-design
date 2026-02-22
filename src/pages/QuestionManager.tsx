@@ -110,21 +110,33 @@ const QuestionManager = () => {
   }, [questionType]);
 
   const parseCombinationQuestionsFromText = (text: string): ParsedQuestion[] => {
-    let blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
-    if (blocks.length <= 1) {
-      blocks = text.split(/\n(?=\d+\s*[\.\)\-]\s)/).filter(b => b.trim());
-    }
     const questions: ParsedQuestion[] = [];
+    const allLines = text.split("\n").map(l => l.trim()).filter(l => l);
 
-    for (const block of blocks) {
-      const lines = block.split("\n").map(l => l.trim()).filter(l => l);
+    // Find question starts
+    const questionStarts: number[] = [];
+    for (let i = 0; i < allLines.length; i++) {
+      if (/^\d+\s*[\.\)\-]\s/.test(allLines[i]) && !/^[a-dA-D]\s*[\.\)]\s/.test(allLines[i])) {
+        const match = allLines[i].match(/^(\d+)\s*[\.\)\-]\s/);
+        if (match && parseInt(match[1]) >= 1) {
+          questionStarts.push(i);
+        }
+      }
+    }
+
+    if (questionStarts.length === 0) return questions;
+
+    for (let qi = 0; qi < questionStarts.length; qi++) {
+      const startIdx = questionStarts[qi];
+      const endIdx = qi + 1 < questionStarts.length ? questionStarts[qi + 1] : allLines.length;
+      const lines = allLines.slice(startIdx, endIdx).filter(l => !/^Page\s+\d+/i.test(l));
+
       if (lines.length < 2) continue;
-      if (/^Page\s+\d+/i.test(lines[0])) continue;
 
       const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)\-]\s*(.*)/);
       let questionText = numberedMatch ? numberedMatch[2].trim() : lines[0];
 
-      // Check if this block has MCQ options (a. b. c. d. or A. B. C. D.)
+      // Check for MCQ options
       let optionStartIdx = -1;
       for (let j = 1; j < lines.length; j++) {
         if (/^[a-dA-D]\s*[\.\)]\s/.test(lines[j])) {
@@ -134,7 +146,7 @@ const QuestionManager = () => {
       }
 
       if (optionStartIdx > -1) {
-        // MCQ question within combination
+        // MCQ question
         const qLines = numberedMatch
           ? [numberedMatch[2], ...lines.slice(1, optionStartIdx)]
           : lines.slice(0, optionStartIdx);
@@ -142,16 +154,31 @@ const QuestionManager = () => {
 
         const options: string[] = [];
         let correctAnswer = -1;
+        let currentOption = "";
 
         for (let j = optionStartIdx; j < lines.length; j++) {
-          let optLine = lines[j];
-          if (/^Page\s+\d+/i.test(optLine)) continue;
-          optLine = optLine.replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
-          if (/\s{2,}1\s*$/.test(optLine) || optLine.match(/\t+1\s*$/)) {
-            correctAnswer = options.length;
-            optLine = optLine.replace(/\s+1\s*$/, "").trim();
+          const line = lines[j];
+          const isOptionStart = /^[a-dA-D]\s*[\.\)]\s/.test(line);
+
+          if (isOptionStart) {
+            if (currentOption) {
+              if (/\s+1\s*$/.test(currentOption)) {
+                correctAnswer = options.length;
+                currentOption = currentOption.replace(/\s+1\s*$/, "").trim();
+              }
+              if (currentOption.trim()) options.push(currentOption.trim());
+            }
+            currentOption = line.replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
+          } else {
+            currentOption += " " + line;
           }
-          if (optLine.trim()) options.push(optLine.trim());
+        }
+        if (currentOption) {
+          if (/\s+1\s*$/.test(currentOption)) {
+            correctAnswer = options.length;
+            currentOption = currentOption.replace(/\s+1\s*$/, "").trim();
+          }
+          if (currentOption.trim()) options.push(currentOption.trim());
         }
 
         if (options.length >= 2 && questionText.trim()) {
@@ -166,9 +193,8 @@ const QuestionManager = () => {
           });
         }
       } else {
-        // Structured question — answer is everything after the question line
+        // Structured question
         const qLines = numberedMatch ? [numberedMatch[2]] : [lines[0]];
-        // Check for multi-line question ending with ? or :
         let answerStartIdx = 1;
         for (let j = 1; j < lines.length; j++) {
           if (!lines[j - 1].match(/[?:]\s*$/)) {
@@ -200,34 +226,40 @@ const QuestionManager = () => {
   };
 
   const parseQuestionsFromText = (text: string): ParsedQuestion[] => {
-    // Try triple-newline split first, fall back to splitting on numbered question patterns
-    let blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
-    if (blocks.length <= 1) {
-      // Fall back: split on lines starting with a number followed by . ) or -
-      blocks = text.split(/\n(?=\d+\s*[\.\)\-]\s)/).filter(b => b.trim());
-    }
     const questions: ParsedQuestion[] = [];
-
-    for (const block of blocks) {
-      const lines = block.split("\n").map(l => l.trim()).filter(l => l);
-      if (lines.length < 3) continue;
-
-      if (/^Page\s+\d+/i.test(lines[0])) continue;
-
-      const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)\-]\s*(.*)/);
-      const isFirstLineOption = /^[a-dA-D]\s*[\.\)]\s/.test(lines[0]);
-
-      if (isFirstLineOption) continue;
-
-      let questionText = "";
-      let optionStartIdx = -1;
-
-      if (numberedMatch) {
-        questionText = numberedMatch[2].trim();
-      } else {
-        questionText = lines[0];
+    const allLines = text.split("\n").map(l => l.trim()).filter(l => l);
+    
+    // Find all question start indices (lines starting with a number followed by . ) or -)
+    const questionStarts: number[] = [];
+    for (let i = 0; i < allLines.length; i++) {
+      if (/^\d+\s*[\.\)\-]\s/.test(allLines[i]) && !/^[a-dA-D]\s*[\.\)]\s/.test(allLines[i])) {
+        // Make sure it's not just a continuation line — check it looks like a real question number
+        const match = allLines[i].match(/^(\d+)\s*[\.\)\-]\s/);
+        if (match) {
+          const num = parseInt(match[1]);
+          // Accept if it's question 1 or follows sequence
+          if (num >= 1) {
+            questionStarts.push(i);
+          }
+        }
       }
+    }
 
+    if (questionStarts.length === 0) return questions;
+
+    for (let qi = 0; qi < questionStarts.length; qi++) {
+      const startIdx = questionStarts[qi];
+      const endIdx = qi + 1 < questionStarts.length ? questionStarts[qi + 1] : allLines.length;
+      const lines = allLines.slice(startIdx, endIdx).filter(l => !/^Page\s+\d+/i.test(l));
+
+      if (lines.length < 2) continue;
+
+      // Extract question text
+      const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)\-]\s*(.*)/);
+      let questionText = numberedMatch ? numberedMatch[2].trim() : lines[0];
+
+      // Find first option line
+      let optionStartIdx = -1;
       for (let j = 1; j < lines.length; j++) {
         if (/^[a-dA-D]\s*[\.\)]\s/.test(lines[j])) {
           optionStartIdx = j;
@@ -235,46 +267,41 @@ const QuestionManager = () => {
         }
       }
 
-      if (optionStartIdx === -1) {
-        let qEndIdx = 0;
-        for (let j = 0; j < lines.length; j++) {
-          const line = lines[j];
-          if (line.match(/[?.:]\s*$/) || line.includes("______") || line.includes("___")) {
-            qEndIdx = j;
-            break;
-          }
-        }
-        
-        questionText = lines.slice(0, qEndIdx + 1).join(" ").trim();
-        questionText = questionText.replace(/^\d+\s*[\.\)\-]\s*/, "");
-        optionStartIdx = qEndIdx + 1;
-      } else {
-        const qLines = numberedMatch 
-          ? [numberedMatch[2], ...lines.slice(1, optionStartIdx)]
-          : lines.slice(0, optionStartIdx);
-        questionText = qLines.join(" ").trim();
-      }
+      if (optionStartIdx === -1) continue;
 
-      if (!questionText || optionStartIdx >= lines.length) continue;
+      // Question text is everything from first line to before options
+      const qLines = numberedMatch
+        ? [numberedMatch[2], ...lines.slice(1, optionStartIdx)]
+        : lines.slice(0, optionStartIdx);
+      questionText = qLines.join(" ").trim();
 
+      // Parse options — handle multi-line options (continuation lines not starting with A-D)
       const options: string[] = [];
       let correctAnswer = -1;
+      let currentOption = "";
 
       for (let j = optionStartIdx; j < lines.length; j++) {
-        let optLine = lines[j];
-        
-        if (/^Page\s+\d+/i.test(optLine)) continue;
+        const line = lines[j];
+        const isOptionStart = /^[a-dA-D]\s*[\.\)]\s/.test(line);
 
-        optLine = optLine.replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
-
-        if (/\s{2,}1\s*$/.test(optLine) || optLine.match(/\t+1\s*$/)) {
-          correctAnswer = options.length;
-          optLine = optLine.replace(/\s+1\s*$/, "").trim();
+        if (isOptionStart) {
+          // Save previous option if exists
+          if (currentOption) {
+            const { text, isCorrect } = extractCorrectMarker(currentOption);
+            if (isCorrect) correctAnswer = options.length;
+            if (text.trim()) options.push(text.trim());
+          }
+          currentOption = line.replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
+        } else {
+          // Continuation of previous option
+          currentOption += " " + line;
         }
-
-        if (optLine.trim()) {
-          options.push(optLine.trim());
-        }
+      }
+      // Don't forget the last option
+      if (currentOption) {
+        const { text, isCorrect } = extractCorrectMarker(currentOption);
+        if (isCorrect) correctAnswer = options.length;
+        if (text.trim()) options.push(text.trim());
       }
 
       if (options.length >= 2 && questionText.trim()) {
@@ -291,6 +318,14 @@ const QuestionManager = () => {
     }
 
     return questions;
+  };
+
+  const extractCorrectMarker = (text: string): { text: string; isCorrect: boolean } => {
+    // Check for trailing " 1" (spaces or tabs before the 1)
+    if (/\s+1\s*$/.test(text)) {
+      return { text: text.replace(/\s+1\s*$/, "").trim(), isCorrect: true };
+    }
+    return { text, isCorrect: false };
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
