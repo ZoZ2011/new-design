@@ -91,7 +91,7 @@ const QuestionManager = () => {
 
       const questions = questionType === "combination"
         ? parseCombinationQuestionsFromText(text)
-        : parseQuestionsFromText(text);
+        : parseQuestionsFromText(text, questionType);
 
       if (questions.length === 0) {
         toast.error("No questions found in the file. Please check the format.");
@@ -198,9 +198,10 @@ const QuestionManager = () => {
     return questions;
   };
 
-  const parseQuestionsFromText = (text: string): ParsedQuestion[] => {
+  const parseQuestionsFromText = (text: string, type: QuestionType = "mcq_single"): ParsedQuestion[] => {
     const questions: ParsedQuestion[] = [];
     const lines = text.split("\n");
+    const autoDetectCorrect = type === "mcq_multiple";
 
     // Regex patterns
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
@@ -213,11 +214,17 @@ const QuestionManager = () => {
     const finishOption = () => {
       if (currentQuestion && currentOptionText) {
         let text = currentOptionText.trim();
-        // Strip trailing "1" marker if present (cleanup only, don't use for correct answer)
+        const hasMarker = /\s+1\s*$/.test(text);
         text = text.replace(/\s+1\s*$/, "").trim();
-        if (text) currentQuestion.options.push(text);
+        if (text) {
+          if (autoDetectCorrect && hasMarker) {
+            currentQuestion.correctAnswer = currentQuestion.options.length;
+          }
+          currentQuestion.options.push(text);
+        }
       }
       currentOptionText = "";
+      currentOptionIsCorrect = false;
     };
 
     const finishQuestion = () => {
@@ -225,7 +232,7 @@ const QuestionManager = () => {
         questions.push({
           question: currentQuestion.question,
           options: currentQuestion.options,
-          correctAnswer: 0, // Default, admin will select
+          correctAnswer: autoDetectCorrect && currentQuestion.correctAnswer >= 0 ? currentQuestion.correctAnswer : 0, // Default 0 if not detected
           imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
         });
       }
