@@ -26,6 +26,12 @@ export function useDynamicQuestions(category: string) {
               correctAnswers = JSON.parse(q.answer_text);
             } catch {}
           }
+          let killSheetAnswers: string[] | undefined;
+          if (qType === "kill_sheet" && q.answer_text) {
+            try {
+              killSheetAnswers = JSON.parse(q.answer_text);
+            } catch {}
+          }
           return {
             id: idx + 1,
             question: q.question_text,
@@ -33,8 +39,9 @@ export function useDynamicQuestions(category: string) {
             correctAnswer: q.correct_answer,
             correctAnswers,
             image: q.image_url || undefined,
-            questionType: qType === "combination" ? "combination" : qType === "mcq_multiple" ? "mcq_multiple" : "mcq_single",
-            answerText: qType === "mcq_multiple" ? null : q.answer_text || null,
+            questionType: qType === "kill_sheet" ? "kill_sheet" : qType === "combination" ? "combination" : qType === "mcq_multiple" ? "mcq_multiple" : "mcq_single",
+            answerText: qType === "mcq_multiple" ? null : (qType === "kill_sheet" ? null : q.answer_text || null),
+            killSheetAnswers,
           };
         });
         setQuestions(mapped);

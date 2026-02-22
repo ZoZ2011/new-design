@@ -21,6 +21,7 @@ export interface Question {
   image?: string;
   questionType?: string;
   answerText?: string | null;
+  killSheetAnswers?: string[];
 }
 
 export const coiledTubingQuestions: Question[] = [
