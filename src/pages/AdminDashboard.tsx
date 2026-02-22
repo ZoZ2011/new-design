@@ -6,22 +6,22 @@ const AdminDashboard = () => {
 
   const panels = [
     {
-      title: "User Management",
-      description: "Add, remove, and manage user IDs and access permissions",
-      icon: Users,
-      action: () => navigate("/control-center/users"),
-    },
-    {
-      title: "Upload Questions",
-      description: "Add new question categories with Word file uploads and image attachments",
-      icon: FileText,
-      action: () => navigate("/control-center/questions?mode=add"),
-    },
-    {
       title: "Update Questions",
       description: "Replace or modify questions in existing categories",
       icon: RefreshCw,
       action: () => navigate("/control-center/questions?mode=update"),
+    },
+    {
+      title: "Add New Category",
+      description: "Create a new question category with uploaded questions",
+      icon: FileText,
+      action: () => navigate("/control-center/questions?mode=add"),
+    },
+    {
+      title: "Control ID Numbers",
+      description: "Add, remove, and manage user IDs and access permissions",
+      icon: Users,
+      action: () => navigate("/control-center/users"),
     },
   ];
 

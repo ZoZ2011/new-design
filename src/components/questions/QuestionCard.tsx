@@ -16,11 +16,13 @@ export const QuestionCard = ({
   isSubmitted,
   onAnswerSelect,
 }: QuestionCardProps) => {
+  const isStructured = question.questionType === "combination" && question.options.length === 0;
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="text-foreground">
-          <span className="font-bold">Q{questionIndex + 1}. </span>
+          <span className="font-bold">{questionIndex + 1}. </span>
           <span className="whitespace-pre-wrap">{question.question}</span>
         </div>
         
@@ -35,45 +37,56 @@ export const QuestionCard = ({
         )}
       </div>
 
-      <div className="space-y-3">
-        {question.options.map((option, optionIndex) => {
-          const isCorrectAnswer = optionIndex === question.correctAnswer;
-          const isSelectedAnswer = selectedAnswer === optionIndex;
-          
-          let optionStyles = "bg-muted/50 hover:bg-muted border-transparent";
-          
-          if (isSubmitted) {
-            if (isCorrectAnswer) {
-              optionStyles = "bg-success/10 border-success text-success";
-            } else if (isSelectedAnswer) {
-              optionStyles = "bg-destructive/10 border-destructive text-destructive";
-            }
-          } else if (isSelectedAnswer) {
-            optionStyles = "bg-primary/10 border-primary";
-          }
-          
-          const letter = String.fromCharCode(65 + optionIndex);
-          
-          return (
-            <button
-              key={optionIndex}
-              onClick={() => !isSubmitted && onAnswerSelect(optionIndex)}
-              disabled={isSubmitted}
-              className={cn(
-                "w-full text-left p-4 rounded-xl border-2 transition-all duration-200",
-                optionStyles,
-                !isSubmitted && "cursor-pointer",
-                isSubmitted && "cursor-default"
-              )}
-            >
-              <span className="font-medium">{letter}) </span>
-              {option}
-            </button>
-          );
-        })}
-      </div>
+      {/* Structured answer display */}
+      {isStructured && question.answerText && (
+        <div className="p-4 rounded-xl bg-muted/50 border border-border">
+          <p className="text-sm font-semibold text-foreground mb-1">Correct Answer:</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{question.answerText}</p>
+        </div>
+      )}
 
-      {isSubmitted && (
+      {/* MCQ options */}
+      {!isStructured && question.options.length > 0 && (
+        <div className="space-y-3">
+          {question.options.map((option, optionIndex) => {
+            const isCorrectAnswer = optionIndex === question.correctAnswer;
+            const isSelectedAnswer = selectedAnswer === optionIndex;
+            
+            let optionStyles = "bg-muted/50 hover:bg-muted border-transparent";
+            
+            if (isSubmitted) {
+              if (isCorrectAnswer) {
+                optionStyles = "bg-success/10 border-success text-success";
+              } else if (isSelectedAnswer) {
+                optionStyles = "bg-destructive/10 border-destructive text-destructive";
+              }
+            } else if (isSelectedAnswer) {
+              optionStyles = "bg-primary/10 border-primary";
+            }
+            
+            const letter = String.fromCharCode(65 + optionIndex);
+            
+            return (
+              <button
+                key={optionIndex}
+                onClick={() => !isSubmitted && onAnswerSelect(optionIndex)}
+                disabled={isSubmitted}
+                className={cn(
+                  "w-full text-left p-4 rounded-xl border-2 transition-all duration-200",
+                  optionStyles,
+                  !isSubmitted && "cursor-pointer",
+                  isSubmitted && "cursor-default"
+                )}
+              >
+                <span className="font-medium">{letter}) </span>
+                {option}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {!isStructured && isSubmitted && (
         <div className={cn(
           "p-4 rounded-xl",
           selectedAnswer === question.correctAnswer

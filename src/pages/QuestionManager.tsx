@@ -15,6 +15,7 @@ interface ParsedQuestion {
   imageFile?: File | null;
   imagePreview?: string | null;
   existingImageUrl?: string | null;
+  answerText?: string | null;
 }
 
 interface CategoryInfo {
@@ -22,6 +23,8 @@ interface CategoryInfo {
   slug: string;
   parentPath: string;
 }
+
+type QuestionType = "mcq_single" | "mcq_multiple" | "combination";
 
 const EXISTING_CATEGORIES: CategoryInfo[] = [
   { name: "Coiled Tubing", slug: "coiled-tubing", parentPath: "/exercises/iacd/well-services" },
@@ -33,11 +36,18 @@ const EXISTING_CATEGORIES: CategoryInfo[] = [
   { name: "IADC OGOR Mock Test 3", slug: "iadc-ogor-mock-test-3", parentPath: "/exercises/iacd/well-services/mock-test" },
 ];
 
+const QUESTION_TYPE_OPTIONS = [
+  { value: "mcq_single" as QuestionType, label: "MCQ — Single Answer", description: "Each question has one correct answer" },
+  { value: "mcq_multiple" as QuestionType, label: "MCQ — Multiple Answers", description: "Each question can have multiple correct answers" },
+  { value: "combination" as QuestionType, label: "MCQ + Structured", description: "Combination of MCQ and structured (written) answers" },
+];
+
 const QuestionManager = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get("mode") as "update" | "add" | null;
   const [mode, setMode] = useState<"menu" | "update" | "add">(initialMode || "menu");
+  const [questionType, setQuestionType] = useState<QuestionType | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryParent, setNewCategoryParent] = useState("/exercises/iacd/well-services");
@@ -79,7 +89,9 @@ const QuestionManager = () => {
       const result = await mammoth.extractRawText({ arrayBuffer });
       const text = result.value;
 
-      const questions = parseQuestionsFromText(text);
+      const questions = questionType === "combination"
+        ? parseCombinationQuestionsFromText(text)
+        : parseQuestionsFromText(text);
 
       if (questions.length === 0) {
         toast.error("No questions found in the file. Please check the format.");
@@ -95,7 +107,94 @@ const QuestionManager = () => {
     }
 
     setUploading(false);
-  }, []);
+  }, [questionType]);
+
+  const parseCombinationQuestionsFromText = (text: string): ParsedQuestion[] => {
+    const blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
+    const questions: ParsedQuestion[] = [];
+
+    for (const block of blocks) {
+      const lines = block.split("\n").map(l => l.trim()).filter(l => l);
+      if (lines.length < 2) continue;
+      if (/^Page\s+\d+/i.test(lines[0])) continue;
+
+      const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)]\s*(.*)/);
+      let questionText = numberedMatch ? numberedMatch[2].trim() : lines[0];
+
+      // Check if this block has MCQ options (a. b. c. d.)
+      let optionStartIdx = -1;
+      for (let j = 1; j < lines.length; j++) {
+        if (/^[a-dA-D]\s*[\.\)]\s/.test(lines[j])) {
+          optionStartIdx = j;
+          break;
+        }
+      }
+
+      if (optionStartIdx > -1) {
+        // MCQ question within combination
+        const qLines = numberedMatch
+          ? [numberedMatch[2], ...lines.slice(1, optionStartIdx)]
+          : lines.slice(0, optionStartIdx);
+        questionText = qLines.join(" ").trim();
+
+        const options: string[] = [];
+        let correctAnswer = -1;
+
+        for (let j = optionStartIdx; j < lines.length; j++) {
+          let optLine = lines[j];
+          if (/^Page\s+\d+/i.test(optLine)) continue;
+          optLine = optLine.replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
+          if (/\s{2,}1\s*$/.test(optLine) || optLine.match(/\t+1\s*$/)) {
+            correctAnswer = options.length;
+            optLine = optLine.replace(/\s+1\s*$/, "").trim();
+          }
+          if (optLine.trim()) options.push(optLine.trim());
+        }
+
+        if (options.length >= 2 && questionText.trim()) {
+          questions.push({
+            question: questionText,
+            options,
+            correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
+            imageFile: null,
+            imagePreview: null,
+            existingImageUrl: null,
+            answerText: null,
+          });
+        }
+      } else {
+        // Structured question — answer is everything after the question line
+        const qLines = numberedMatch ? [numberedMatch[2]] : [lines[0]];
+        // Check for multi-line question ending with ? or :
+        let answerStartIdx = 1;
+        for (let j = 1; j < lines.length; j++) {
+          if (!lines[j - 1].match(/[?:]\s*$/)) {
+            qLines.push(lines[j]);
+            answerStartIdx = j + 1;
+          } else {
+            answerStartIdx = j;
+            break;
+          }
+        }
+        questionText = qLines.join(" ").trim();
+        const answerText = lines.slice(answerStartIdx).join("\n").trim();
+
+        if (questionText) {
+          questions.push({
+            question: questionText,
+            options: [],
+            correctAnswer: -1,
+            imageFile: null,
+            imagePreview: null,
+            existingImageUrl: null,
+            answerText: answerText || null,
+          });
+        }
+      }
+    }
+
+    return questions;
+  };
 
   const parseQuestionsFromText = (text: string): ParsedQuestion[] => {
     const blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
@@ -178,6 +277,7 @@ const QuestionManager = () => {
           imageFile: null,
           imagePreview: null,
           existingImageUrl: null,
+          answerText: null,
         });
       }
     }
@@ -243,11 +343,10 @@ const QuestionManager = () => {
   };
 
   const handleSaveUpdate = async () => {
-    if (!selectedCategory || parsedQuestions.length === 0) return;
+    if (!selectedCategory || parsedQuestions.length === 0 || !questionType) return;
 
     setSaving(true);
     try {
-      // Upload images first
       const imageUrls: (string | null)[] = [];
       for (let i = 0; i < parsedQuestions.length; i++) {
         const q = parsedQuestions[i];
@@ -268,18 +367,21 @@ const QuestionManager = () => {
         category_slug: selectedCategory,
         question_text: q.question,
         options: q.options,
-        correct_answer: q.correctAnswer,
+        correct_answer: q.correctAnswer >= 0 ? q.correctAnswer : 0,
         display_order: idx + 1,
         image_url: imageUrls[idx] || null,
+        question_type: questionType,
+        answer_text: q.answerText || null,
       }));
 
       const { error } = await supabase.from("dynamic_questions").insert(rows);
       if (error) throw error;
 
-      toast.success(`Updated ${parsedQuestions.length} questions for "${allCategories.find(c => c.slug === selectedCategory)?.name}"`);
+      toast.success(`Updated ${parsedQuestions.length} questions`);
       setParsedQuestions([]);
       setFileName("");
       setSelectedCategory("");
+      setQuestionType(null);
       setMode("menu");
     } catch (error) {
       console.error("Error saving questions:", error);
@@ -289,7 +391,7 @@ const QuestionManager = () => {
   };
 
   const handleSaveNew = async () => {
-    if (!newCategoryName.trim() || parsedQuestions.length === 0) return;
+    if (!newCategoryName.trim() || parsedQuestions.length === 0 || !questionType) return;
 
     const slug = newCategoryName
       .trim()
@@ -307,7 +409,6 @@ const QuestionManager = () => {
       });
       if (catError) throw catError;
 
-      // Upload images
       const imageUrls: (string | null)[] = [];
       for (let i = 0; i < parsedQuestions.length; i++) {
         const q = parsedQuestions[i];
@@ -323,9 +424,11 @@ const QuestionManager = () => {
         category_slug: slug,
         question_text: q.question,
         options: q.options,
-        correct_answer: q.correctAnswer,
+        correct_answer: q.correctAnswer >= 0 ? q.correctAnswer : 0,
         display_order: idx + 1,
         image_url: imageUrls[idx] || null,
+        question_type: questionType,
+        answer_text: q.answerText || null,
       }));
 
       const { error } = await supabase.from("dynamic_questions").insert(rows);
@@ -335,6 +438,7 @@ const QuestionManager = () => {
       setParsedQuestions([]);
       setFileName("");
       setNewCategoryName("");
+      setQuestionType(null);
       setMode("menu");
       fetchDynamicCategories();
     } catch (error) {
@@ -360,21 +464,53 @@ const QuestionManager = () => {
   const parentOptions = [
     { label: "IADC Well Services", value: "/exercises/iacd/well-services" },
     { label: "IADC Drilling", value: "/exercises/iacd/drilling" },
-    { label: "IWCF Drilling", value: "/exercises/iwcf/drilling" },
+    { label: "IWCF Drilling Level 4", value: "/exercises/iwcf/drilling/level4" },
     { label: "IWCF Well Intervention", value: "/exercises/iwcf/well-intervention" },
     { label: "IADC Mock Tests", value: "/exercises/iacd/well-services/mock-test" },
   ];
+
+  // Question type selection component
+  const QuestionTypeSelector = () => (
+    <div className="space-y-3">
+      <label className="text-sm font-semibold text-foreground">What type of questions?</label>
+      <div className="grid gap-3">
+        {QUESTION_TYPE_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setQuestionType(opt.value)}
+            className={`text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+              questionType === opt.value
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/40"
+            }`}
+          >
+            <p className="font-semibold text-sm text-foreground">{opt.label}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background font-jakarta">
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <button
-            onClick={() => (mode === "menu" ? navigate("/control-center") : setMode("menu"))}
+            onClick={() => {
+              if (mode === "menu") navigate("/control-center");
+              else if (questionType && (mode === "update" || mode === "add")) {
+                setQuestionType(null);
+                setParsedQuestions([]);
+                setFileName("");
+              } else {
+                setMode("menu");
+              }
+            }}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
           >
             <ArrowLeft className="w-4 h-4" />
-            {mode === "menu" ? "Control Center" : "Back to Menu"}
+            {mode === "menu" ? "Control Center" : questionType ? "Change Type" : "Back to Menu"}
           </button>
           <span className="text-border">›</span>
           <span className="text-sm font-semibold text-foreground">Question Manager</span>
@@ -420,10 +556,10 @@ const QuestionManager = () => {
           </div>
         )}
 
-        {mode === "update" && (
+        {/* Update mode */}
+        {mode === "update" && !questionType && (
           <Card className="p-5 sm:p-6 space-y-5 border border-border shadow-sm rounded-2xl">
             <h2 className="text-lg font-bold text-foreground">Update Existing Questions</h2>
-
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Select Category</label>
               <select
@@ -433,25 +569,34 @@ const QuestionManager = () => {
               >
                 <option value="">— Select a category —</option>
                 {allCategories.map((cat) => (
-                  <option key={cat.slug} value={cat.slug}>
-                    {cat.name}
-                  </option>
+                  <option key={cat.slug} value={cat.slug}>{cat.name}</option>
                 ))}
               </select>
             </div>
+            {selectedCategory && <QuestionTypeSelector />}
+          </Card>
+        )}
 
-            {selectedCategory && (
-              <UploadSection
-                fileName={fileName}
-                uploading={uploading}
-                parsedQuestions={parsedQuestions}
-                onFileUpload={handleFileUpload}
-                onImageUpload={handleImageUpload}
-                onRemoveImage={removeImage}
-              />
-            )}
+        {mode === "update" && questionType && (
+          <Card className="p-5 sm:p-6 space-y-5 border border-border shadow-sm rounded-2xl">
+            <h2 className="text-lg font-bold text-foreground">
+              Update: {allCategories.find(c => c.slug === selectedCategory)?.name}
+              <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full ml-2">
+                {QUESTION_TYPE_OPTIONS.find(o => o.value === questionType)?.label}
+              </span>
+            </h2>
 
-            {parsedQuestions.length > 0 && selectedCategory && (
+            <UploadSection
+              fileName={fileName}
+              uploading={uploading}
+              parsedQuestions={parsedQuestions}
+              questionType={questionType}
+              onFileUpload={handleFileUpload}
+              onImageUpload={handleImageUpload}
+              onRemoveImage={removeImage}
+            />
+
+            {parsedQuestions.length > 0 && (
               <Button
                 onClick={handleSaveUpdate}
                 disabled={saving}
@@ -465,10 +610,10 @@ const QuestionManager = () => {
           </Card>
         )}
 
-        {mode === "add" && (
+        {/* Add mode */}
+        {mode === "add" && !questionType && (
           <Card className="p-5 sm:p-6 space-y-5 border border-border shadow-sm rounded-2xl">
             <h2 className="text-lg font-bold text-foreground">Add New Question Category</h2>
-
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Category Name</label>
               <Input
@@ -478,7 +623,6 @@ const QuestionManager = () => {
                 className="h-10"
               />
             </div>
-
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Where should it be placed?</label>
               <select
@@ -487,17 +631,28 @@ const QuestionManager = () => {
                 onChange={(e) => setNewCategoryParent(e.target.value)}
               >
                 {parentOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
             </div>
+            {newCategoryName.trim() && <QuestionTypeSelector />}
+          </Card>
+        )}
+
+        {mode === "add" && questionType && (
+          <Card className="p-5 sm:p-6 space-y-5 border border-border shadow-sm rounded-2xl">
+            <h2 className="text-lg font-bold text-foreground">
+              New: {newCategoryName}
+              <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full ml-2">
+                {QUESTION_TYPE_OPTIONS.find(o => o.value === questionType)?.label}
+              </span>
+            </h2>
 
             <UploadSection
               fileName={fileName}
               uploading={uploading}
               parsedQuestions={parsedQuestions}
+              questionType={questionType}
               onFileUpload={handleFileUpload}
               onImageUpload={handleImageUpload}
               onRemoveImage={removeImage}
@@ -580,6 +735,13 @@ None of the above`}
             <p>• Each option is on its own line</p>
             <p>• The correct answer has a <strong>"1" at the end</strong> of the line (with spaces before it)</p>
             <p>• After uploading, you can attach images to any question using drag & drop</p>
+            {questionType === "combination" && (
+              <>
+                <p className="font-semibold text-foreground mt-2">For structured questions:</p>
+                <p>• Write the question text followed by the answer on the next line(s)</p>
+                <p>• The answer will be displayed as "Correct Answer:" below the question</p>
+              </>
+            )}
           </div>
         </Card>
       </div>
@@ -673,6 +835,7 @@ const UploadSection = ({
   fileName,
   uploading,
   parsedQuestions,
+  questionType,
   onFileUpload,
   onImageUpload,
   onRemoveImage,
@@ -680,6 +843,7 @@ const UploadSection = ({
   fileName: string;
   uploading: boolean;
   parsedQuestions: ParsedQuestion[];
+  questionType: QuestionType;
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUpload: (idx: number, file: File) => void;
   onRemoveImage: (idx: number) => void;
@@ -728,10 +892,9 @@ const UploadSection = ({
           {parsedQuestions.map((q, idx) => (
             <div key={idx} className="p-4 bg-muted/60 border border-border rounded-xl text-sm">
               <p className="font-semibold text-foreground">
-                Q{idx + 1}: {q.question}
+                {idx + 1}. {q.question}
               </p>
               
-              {/* Image upload area */}
               <QuestionImageUploader
                 questionIdx={idx}
                 question={q}
@@ -739,17 +902,24 @@ const UploadSection = ({
                 onRemoveImage={onRemoveImage}
               />
 
-              <div className="mt-2 space-y-0.5">
-                {q.options.map((opt, oi) => (
-                  <p
-                    key={oi}
-                    className={oi === q.correctAnswer ? "text-success font-medium" : "text-muted-foreground"}
-                  >
-                    {String.fromCharCode(65 + oi)}. {opt}
-                    {oi === q.correctAnswer && " ✓"}
-                  </p>
-                ))}
-              </div>
+              {q.options.length > 0 ? (
+                <div className="mt-2 space-y-0.5">
+                  {q.options.map((opt, oi) => (
+                    <p
+                      key={oi}
+                      className={oi === q.correctAnswer ? "text-success font-medium" : "text-muted-foreground"}
+                    >
+                      {String.fromCharCode(65 + oi)}. {opt}
+                      {oi === q.correctAnswer && " ✓"}
+                    </p>
+                  ))}
+                </div>
+              ) : q.answerText ? (
+                <div className="mt-2 p-2 bg-success/10 rounded-lg">
+                  <p className="text-xs font-semibold text-success">Correct Answer:</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{q.answerText}</p>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

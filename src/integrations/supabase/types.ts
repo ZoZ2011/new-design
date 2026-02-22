@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       dynamic_questions: {
         Row: {
+          answer_text: string | null
           category_slug: string
           correct_answer: number
           created_at: string
@@ -24,9 +25,11 @@ export type Database = {
           image_url: string | null
           options: Json
           question_text: string
+          question_type: string
           updated_at: string
         }
         Insert: {
+          answer_text?: string | null
           category_slug: string
           correct_answer?: number
           created_at?: string
@@ -35,9 +38,11 @@ export type Database = {
           image_url?: string | null
           options?: Json
           question_text: string
+          question_type?: string
           updated_at?: string
         }
         Update: {
+          answer_text?: string | null
           category_slug?: string
           correct_answer?: number
           created_at?: string
@@ -46,6 +51,7 @@ export type Database = {
           image_url?: string | null
           options?: Json
           question_text?: string
+          question_type?: string
           updated_at?: string
         }
         Relationships: []
