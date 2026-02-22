@@ -1,10 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, Clock, ChevronRight, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const IWCFDrilling = () => {
   const navigate = useNavigate();
   const [selectedLevel, setSelectedLevel] = useState<null | 3 | 4>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [dayCategories, setDayCategories] = useState<{ name: string; slug: string }[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
+  useEffect(() => {
+    if (!selectedDay) return;
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      const { data } = await supabase
+        .from("question_categories")
+        .select("name, slug")
+        .eq("parent_path", selectedDay)
+        .order("display_order");
+      setDayCategories(data ?? []);
+      setLoadingCategories(false);
+    };
+    fetchCategories();
+  }, [selectedDay]);
 
   if (selectedLevel === 3) {
     return (
@@ -43,6 +62,53 @@ const IWCFDrilling = () => {
       { title: "Day #3", subtitle: "Equipment", slug: "iwcf-drilling-level4-day3" },
     ];
 
+    const selectedDayInfo = selectedDay ? days.find(d => d.slug === selectedDay) : null;
+
+    if (selectedDay && selectedDayInfo) {
+      return (
+        <div className="min-h-screen bg-background font-jakarta flex flex-col">
+          <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+              <button onClick={() => { setSelectedDay(null); setDayCategories([]); }} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+                <ArrowLeft className="w-4 h-4" /> Back
+              </button>
+              <span className="text-border">›</span>
+              <span className="text-sm text-muted-foreground">Level 4</span>
+              <span className="text-border">›</span>
+              <span className="text-sm font-semibold text-foreground">{selectedDayInfo.title}</span>
+            </div>
+          </header>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 animate-fade-in w-full">
+            <div className="mb-8">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight mb-1">{selectedDayInfo.title}</h1>
+              <p className="text-muted-foreground text-sm">{selectedDayInfo.subtitle}</p>
+            </div>
+            {loadingCategories ? (
+              <p className="text-muted-foreground text-sm">Loading...</p>
+            ) : dayCategories.length === 0 ? (
+              <div className="text-center py-12 space-y-2">
+                <p className="text-muted-foreground text-sm">No questions added yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dayCategories.map((cat, idx) => (
+                  <button
+                    key={cat.slug}
+                    onClick={() => navigate(`/signin/${cat.slug}`)}
+                    className="w-full text-left p-4 rounded-xl bg-card border border-border hover:border-primary/40 hover:shadow-md transition-all duration-200 flex items-center gap-3"
+                  >
+                    <span className="text-primary font-bold text-lg min-w-[2rem]">{idx + 1}.</span>
+                    <span className="font-semibold text-foreground">{cat.name}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-background font-jakarta flex flex-col">
         <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -65,7 +131,7 @@ const IWCFDrilling = () => {
             {days.map(day => (
               <button
                 key={day.slug}
-                onClick={() => navigate(`/signin/${day.slug}`)}
+                onClick={() => setSelectedDay(day.slug)}
                 className="group relative bg-card border border-border rounded-2xl p-6 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
                 <div className="flex flex-col items-center text-center gap-3">
