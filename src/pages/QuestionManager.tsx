@@ -380,24 +380,25 @@ const QuestionManager = () => {
     ));
   };
 
-  const handleCorrectAnswerChange = (questionIdx: number, answerIdx: number) => {
+  const handleCorrectAnswerChange = useCallback((questionIdx: number, answerIdx: number) => {
     setParsedQuestions(prev => prev.map((q, i) => {
       if (i !== questionIdx) return q;
+      // For mcq_multiple, toggle answers on/off
       if (questionType === "mcq_multiple") {
-        // Toggle: add or remove from correctAnswers
-        const exists = q.correctAnswers.includes(answerIdx);
+        const exists = (q.correctAnswers || []).includes(answerIdx);
         const newCorrectAnswers = exists
-          ? q.correctAnswers.filter(a => a !== answerIdx)
-          : [...q.correctAnswers, answerIdx].sort();
+          ? (q.correctAnswers || []).filter(a => a !== answerIdx)
+          : [...(q.correctAnswers || []), answerIdx].sort();
         return {
           ...q,
           correctAnswers: newCorrectAnswers,
           correctAnswer: newCorrectAnswers.length > 0 ? newCorrectAnswers[0] : 0,
         };
       }
+      // For single answer, replace
       return { ...q, correctAnswer: answerIdx, correctAnswers: [answerIdx] };
     }));
-  };
+  }, [questionType]);
 
   const uploadQuestionImage = async (file: File, categorySlug: string, questionIdx: number): Promise<string | null> => {
     const ext = file.name.split(".").pop() || "png";
