@@ -110,7 +110,10 @@ const QuestionManager = () => {
   }, [questionType]);
 
   const parseCombinationQuestionsFromText = (text: string): ParsedQuestion[] => {
-    const blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
+    let blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
+    if (blocks.length <= 1) {
+      blocks = text.split(/\n(?=\d+\s*[\.\)\-]\s)/).filter(b => b.trim());
+    }
     const questions: ParsedQuestion[] = [];
 
     for (const block of blocks) {
@@ -118,10 +121,10 @@ const QuestionManager = () => {
       if (lines.length < 2) continue;
       if (/^Page\s+\d+/i.test(lines[0])) continue;
 
-      const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)]\s*(.*)/);
+      const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)\-]\s*(.*)/);
       let questionText = numberedMatch ? numberedMatch[2].trim() : lines[0];
 
-      // Check if this block has MCQ options (a. b. c. d.)
+      // Check if this block has MCQ options (a. b. c. d. or A. B. C. D.)
       let optionStartIdx = -1;
       for (let j = 1; j < lines.length; j++) {
         if (/^[a-dA-D]\s*[\.\)]\s/.test(lines[j])) {
@@ -197,7 +200,12 @@ const QuestionManager = () => {
   };
 
   const parseQuestionsFromText = (text: string): ParsedQuestion[] => {
-    const blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
+    // Try triple-newline split first, fall back to splitting on numbered question patterns
+    let blocks = text.split(/\n\s*\n\s*\n/).filter(b => b.trim());
+    if (blocks.length <= 1) {
+      // Fall back: split on lines starting with a number followed by . ) or -
+      blocks = text.split(/\n(?=\d+\s*[\.\)\-]\s)/).filter(b => b.trim());
+    }
     const questions: ParsedQuestion[] = [];
 
     for (const block of blocks) {
@@ -206,7 +214,7 @@ const QuestionManager = () => {
 
       if (/^Page\s+\d+/i.test(lines[0])) continue;
 
-      const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)]\s*(.*)/);
+      const numberedMatch = lines[0].match(/^(\d+)\s*[\.\)\-]\s*(.*)/);
       const isFirstLineOption = /^[a-dA-D]\s*[\.\)]\s/.test(lines[0]);
 
       if (isFirstLineOption) continue;
@@ -238,7 +246,7 @@ const QuestionManager = () => {
         }
         
         questionText = lines.slice(0, qEndIdx + 1).join(" ").trim();
-        questionText = questionText.replace(/^\d+\s*[\.\)]\s*/, "");
+        questionText = questionText.replace(/^\d+\s*[\.\)\-]\s*/, "");
         optionStartIdx = qEndIdx + 1;
       } else {
         const qLines = numberedMatch 
