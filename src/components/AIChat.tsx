@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+
 
 interface Message {
   role: "user" | "assistant";
@@ -86,15 +86,14 @@ const AIChat = ({ onClose, category, userId, currentQuestion }: AIChatProps) => 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to get AI response");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl h-[600px] flex flex-col">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <Card className="w-full sm:max-w-2xl h-[85vh] sm:h-[600px] flex flex-col rounded-t-2xl sm:rounded-2xl">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="text-xl font-semibold">AI Assistant</h2>
           <Button

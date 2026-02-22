@@ -25,7 +25,7 @@ export const QuestionNavigation = ({
   onAskAI,
 }: QuestionNavigationProps) => {
   return (
-    <div className="flex items-center justify-center gap-3 pt-6">
+    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-6">
       <Button
         variant="outline"
         onClick={onPrevious}

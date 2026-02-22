@@ -3,17 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Shield, LogIn } from "lucide-react";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import AdminPanel from "@/components/AdminPanel";
 
-const ADMIN_CODE = "USERS.400315";
-const QUESTION_MANAGER_CODE = "CONTROL QUESTIONS";
+
+const ADMIN_CODE = "ADMIN CONTROL";
 
 const SignIn = () => {
   const [idNumber, setIdNumber] = useState("");
   const [validIds, setValidIds] = useState<string[]>([]);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { category } = useParams();
@@ -37,22 +35,14 @@ const SignIn = () => {
   const handleSignIn = async () => {
     // Check for admin code
     if (idNumber.trim().toUpperCase() === ADMIN_CODE) {
-      setShowAdminPanel(true);
-      return;
-    }
-
-    // Check for question manager code
-    if (idNumber.trim().toUpperCase() === QUESTION_MANAGER_CODE) {
-      navigate("/question-manager");
+      navigate("/control-center");
       return;
     }
 
     const trimmedId = idNumber.trim();
 
     if (!validIds.includes(trimmedId)) {
-      toast.error("Invalid ID Number", {
-        description: "Please enter a valid ID number",
-      });
+      setErrorMsg("Invalid ID Number");
       return;
     }
 
@@ -74,11 +64,9 @@ const SignIn = () => {
         if (!accessError) {
           const allowedSlugs = accessData?.map(r => r.category_slug) ?? [];
           if (!allowedSlugs.includes(category)) {
-            toast.error("Access Denied", {
-              description: "You don't have permission to access this section.",
-            });
-            return;
-          }
+              setErrorMsg("Access Denied");
+              return;
+            }
         }
       }
     }
@@ -101,15 +89,6 @@ const SignIn = () => {
       .join(" ");
   };
 
-  const handleAdminClose = () => {
-    setShowAdminPanel(false);
-    setIdNumber("");
-    fetchValidIds();
-  };
-
-  if (showAdminPanel) {
-    return <AdminPanel onClose={handleAdminClose} />;
-  }
 
   return (
     <div className="min-h-screen bg-background font-jakarta flex flex-col">
@@ -153,12 +132,13 @@ const SignIn = () => {
                 id="idNumber"
                 type="text"
                 value={idNumber}
-                onChange={e => setIdNumber(e.target.value)}
+                onChange={e => { setIdNumber(e.target.value); setErrorMsg(""); }}
                 placeholder="Enter your ID number"
                 onKeyPress={e => e.key === "Enter" && handleSignIn()}
                 disabled={loading}
                 className="h-11 text-base"
               />
+              {errorMsg && <p className="text-destructive text-xs mt-1">{errorMsg}</p>}
             </div>
 
             <Button
