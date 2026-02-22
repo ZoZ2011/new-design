@@ -1,15 +1,16 @@
 import { Question } from "@/data/questions";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 
 interface QuestionCardProps {
   question: Question;
   questionIndex: number;
   selectedAnswer: number | undefined;
+  selectedAnswers?: number[];
   isSubmitted: boolean;
   onAnswerSelect: (answerIndex: number) => void;
+  onMultiAnswerToggle?: (answerIndex: number) => void;
   textAnswer?: string;
   onTextAnswerChange?: (value: string) => void;
 }
@@ -18,12 +19,23 @@ export const QuestionCard = ({
   question,
   questionIndex,
   selectedAnswer,
+  selectedAnswers = [],
   isSubmitted,
   onAnswerSelect,
+  onMultiAnswerToggle,
   textAnswer = "",
   onTextAnswerChange,
 }: QuestionCardProps) => {
   const isStructured = question.questionType === "combination" && question.options.length === 0;
+  const isMultiple = question.questionType === "mcq_multiple";
+  const requiredCount = question.correctAnswers?.length || 1;
+
+  // Determine select count label
+  const getSelectLabel = () => {
+    if (isStructured) return null;
+    if (isMultiple) return `(Select ${requiredCount} Answer${requiredCount > 1 ? "s" : ""})`;
+    return "(Select 1 Answer)";
+  };
 
   return (
     <div className="space-y-6">
@@ -32,6 +44,12 @@ export const QuestionCard = ({
           <span className="font-bold">{questionIndex + 1}. </span>
           <span className="whitespace-pre-wrap">{question.question}</span>
         </div>
+
+        {getSelectLabel() && (
+          <Badge variant="outline" className="text-xs font-medium text-muted-foreground">
+            {getSelectLabel()}
+          </Badge>
+        )}
         
         {question.image && (
           <div className="mt-4">
@@ -73,7 +91,10 @@ export const QuestionCard = ({
             const isCorrectAnswer = question.correctAnswers 
               ? question.correctAnswers.includes(optionIndex)
               : optionIndex === question.correctAnswer;
-            const isSelectedAnswer = selectedAnswer === optionIndex;
+            
+            const isSelectedAnswer = isMultiple
+              ? selectedAnswers.includes(optionIndex)
+              : selectedAnswer === optionIndex;
             
             let optionStyles = "bg-muted/50 hover:bg-muted border-transparent";
             
@@ -92,7 +113,14 @@ export const QuestionCard = ({
             return (
               <button
                 key={optionIndex}
-                onClick={() => !isSubmitted && onAnswerSelect(optionIndex)}
+                onClick={() => {
+                  if (isSubmitted) return;
+                  if (isMultiple && onMultiAnswerToggle) {
+                    onMultiAnswerToggle(optionIndex);
+                  } else {
+                    onAnswerSelect(optionIndex);
+                  }
+                }}
                 disabled={isSubmitted}
                 className={cn(
                   "w-full text-left p-4 rounded-xl border-2 transition-all duration-200",
@@ -106,26 +134,49 @@ export const QuestionCard = ({
               </button>
             );
           })}
+
+          {isMultiple && !isSubmitted && (
+            <p className="text-xs text-muted-foreground text-center">
+              {selectedAnswers.length} of {requiredCount} selected
+            </p>
+          )}
         </div>
       )}
 
+      {/* Result feedback */}
       {!isStructured && isSubmitted && (
         <div className={cn(
           "p-4 rounded-xl",
-          (question.correctAnswers 
-            ? question.correctAnswers.includes(selectedAnswer!)
-            : selectedAnswer === question.correctAnswer)
-            ? "bg-success/10 text-success"
-            : "bg-destructive/10 text-destructive"
+          (() => {
+            if (isMultiple && question.correctAnswers) {
+              const allCorrect = question.correctAnswers.every(i => selectedAnswers.includes(i)) 
+                && selectedAnswers.length === question.correctAnswers.length;
+              return allCorrect ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive";
+            }
+            return (question.correctAnswers 
+              ? question.correctAnswers.includes(selectedAnswer!)
+              : selectedAnswer === question.correctAnswer)
+              ? "bg-success/10 text-success"
+              : "bg-destructive/10 text-destructive";
+          })()
         )}>
-          {(question.correctAnswers 
-            ? question.correctAnswers.includes(selectedAnswer!)
-            : selectedAnswer === question.correctAnswer)
-            ? "✓ Correct!"
-            : question.correctAnswers && question.correctAnswers.length > 1
-              ? `✗ Incorrect. The correct answers are: ${question.correctAnswers.map(i => question.options[i]).join(", ")}`
-              : `✗ Incorrect. The correct answer is: ${question.options[question.correctAnswer]}`
-          }
+          {(() => {
+            if (isMultiple && question.correctAnswers) {
+              const allCorrect = question.correctAnswers.every(i => selectedAnswers.includes(i)) 
+                && selectedAnswers.length === question.correctAnswers.length;
+              return allCorrect
+                ? "✓ Correct!"
+                : `✗ Incorrect. The correct answers are: ${question.correctAnswers.map(i => String.fromCharCode(65 + i) + ") " + question.options[i]).join(", ")}`;
+            }
+            const isCorrect = question.correctAnswers 
+              ? question.correctAnswers.includes(selectedAnswer!)
+              : selectedAnswer === question.correctAnswer;
+            return isCorrect
+              ? "✓ Correct!"
+              : question.correctAnswers && question.correctAnswers.length > 1
+                ? `✗ Incorrect. The correct answers are: ${question.correctAnswers.map(i => question.options[i]).join(", ")}`
+                : `✗ Incorrect. The correct answer is: ${question.options[question.correctAnswer]}`;
+          })()}
         </div>
       )}
     </div>

@@ -16,6 +16,7 @@ const Questions = () => {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
   const [submittedAnswers, setSubmittedAnswers] = useState<{ [key: number]: boolean }>({});
   const [textAnswers, setTextAnswers] = useState<{ [key: number]: string }>({});
+  const [multiSelectedAnswers, setMultiSelectedAnswers] = useState<{ [key: number]: number[] }>({});
   const [showAIChat, setShowAIChat] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [autoSubmit, setAutoSubmit] = useState(false);
@@ -186,13 +187,30 @@ const Questions = () => {
     }
   };
 
+  const handleMultiAnswerToggle = (answerIndex: number) => {
+    if (!currentQuestion || submittedAnswers[currentQuestion.id]) return;
+    
+    setMultiSelectedAnswers(prev => {
+      const current = prev[currentQuestion.id] || [];
+      const updated = current.includes(answerIndex)
+        ? current.filter(i => i !== answerIndex)
+        : [...current, answerIndex];
+      return { ...prev, [currentQuestion.id]: updated };
+    });
+  };
+
   const handleSubmit = () => {
     if (!currentQuestion) return;
     
     const isStructured = currentQuestion.questionType === "combination" && currentQuestion.options.length === 0;
+    const isMultiple = currentQuestion.questionType === "mcq_multiple";
     const selectedAnswer = selectedAnswers[currentQuestion.id];
+    const multiSelected = multiSelectedAnswers[currentQuestion.id] || [];
     
-    if (!isStructured && selectedAnswer === undefined) {
+    if (isMultiple) {
+      const requiredCount = currentQuestion.correctAnswers?.length || 1;
+      if (multiSelected.length !== requiredCount) return;
+    } else if (!isStructured && selectedAnswer === undefined) {
       return;
     }
 
@@ -201,12 +219,18 @@ const Questions = () => {
       [currentQuestion.id]: true
     }));
 
-    saveProgress(currentQuestion.id, isStructured ? -1 : selectedAnswer, true);
+    saveProgress(currentQuestion.id, isStructured ? -1 : (isMultiple ? -1 : selectedAnswer), true);
 
     if (!isStructured) {
-      const isCorrect = currentQuestion.correctAnswers 
-        ? currentQuestion.correctAnswers.includes(selectedAnswer)
-        : selectedAnswer === currentQuestion.correctAnswer;
+      let isCorrect: boolean;
+      if (isMultiple && currentQuestion.correctAnswers) {
+        isCorrect = currentQuestion.correctAnswers.every(i => multiSelected.includes(i))
+          && multiSelected.length === currentQuestion.correctAnswers.length;
+      } else {
+        isCorrect = currentQuestion.correctAnswers 
+          ? currentQuestion.correctAnswers.includes(selectedAnswer)
+          : selectedAnswer === currentQuestion.correctAnswer;
+      }
       playSound(isCorrect);
     }
   };
@@ -326,8 +350,10 @@ const Questions = () => {
                   question={currentQuestion}
                   questionIndex={currentQuestionIndex}
                   selectedAnswer={selectedAnswers[currentQuestion.id]}
+                  selectedAnswers={multiSelectedAnswers[currentQuestion.id] || []}
                   isSubmitted={submittedAnswers[currentQuestion.id] || false}
                   onAnswerSelect={handleAnswerSelect}
+                  onMultiAnswerToggle={handleMultiAnswerToggle}
                   textAnswer={textAnswers[currentQuestion.id] || ""}
                   onTextAnswerChange={(value) => setTextAnswers(prev => ({ ...prev, [currentQuestion.id]: value }))}
                 />
@@ -337,7 +363,16 @@ const Questions = () => {
                 currentIndex={currentQuestionIndex}
                 totalQuestions={questions.length}
                 isSubmitted={submittedAnswers[currentQuestion.id] || false}
-                hasSelectedAnswer={selectedAnswers[currentQuestion.id] !== undefined || (currentQuestion.questionType === "combination" && currentQuestion.options.length === 0)}
+                hasSelectedAnswer={(() => {
+                  const isStructured = currentQuestion.questionType === "combination" && currentQuestion.options.length === 0;
+                  const isMultiple = currentQuestion.questionType === "mcq_multiple";
+                  if (isStructured) return true;
+                  if (isMultiple) {
+                    const requiredCount = currentQuestion.correctAnswers?.length || 1;
+                    return (multiSelectedAnswers[currentQuestion.id] || []).length === requiredCount;
+                  }
+                  return selectedAnswers[currentQuestion.id] !== undefined;
+                })()}
                 autoSubmit={autoSubmit}
                 onPrevious={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
                 onNext={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
