@@ -54,10 +54,59 @@ export const QuestionCard = ({
     return "(Select 1 Answer)";
   };
 
+  // Parse kill sheet question text into structured sections
+  const renderKillSheetContent = (text: string) => {
+    const lines = text.split("\n").filter(l => l.trim().length > 0);
+    const elements: React.ReactNode[] = [];
+    let currentList: string[] = [];
+
+    const flushList = () => {
+      if (currentList.length > 0) {
+        elements.push(
+          <ul key={`list-${elements.length}`} className="list-disc list-inside space-y-1.5 pl-2 text-sm text-foreground/90">
+            {currentList.map((item, i) => <li key={i}>{item}</li>)}
+          </ul>
+        );
+        currentList = [];
+      }
+    };
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("•") || trimmed.startsWith("-")) {
+        currentList.push(trimmed.replace(/^[•\-]\s*/, ""));
+      } else if (trimmed.endsWith(":") || /^[A-Z]/.test(trimmed) && !trimmed.startsWith("•")) {
+        flushList();
+        // Check if it looks like a section header (short, no punctuation except colon)
+        const isHeader = trimmed.length < 80 && (trimmed.endsWith(":") || /^[A-Z][a-z]/.test(trimmed));
+        if (isHeader) {
+          elements.push(
+            <h3 key={`h-${elements.length}`} className="text-base font-bold text-foreground mt-4 first:mt-0">
+              {trimmed.replace(/:$/, "")}
+            </h3>
+          );
+        } else {
+          elements.push(
+            <p key={`p-${elements.length}`} className="text-sm text-foreground/90">{trimmed}</p>
+          );
+        }
+      } else {
+        flushList();
+        elements.push(
+          <p key={`p-${elements.length}`} className="text-sm text-foreground/90">{trimmed}</p>
+        );
+      }
+    }
+    flushList();
+    return elements;
+  };
+
   if (isKillSheet) {
     return (
       <div className="space-y-6">
-        <div className="text-foreground whitespace-pre-wrap">{question.question}</div>
+        <div className="bg-card border rounded-xl p-5 space-y-3">
+          {renderKillSheetContent(question.question)}
+        </div>
         
         {question.image && (
           <div className="mt-4">
