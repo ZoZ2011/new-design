@@ -136,16 +136,14 @@ const QuestionManager = () => {
           let seg = segments[i].trim().replace(/\.$/, "").trim();
           if (!seg) continue;
 
-          // If starts with "1 " — previous option is correct
+          // Check if starts with "1 " — THIS option is the correct one
+          let markThis = false;
           if (/^1\s+/.test(seg)) {
             seg = seg.replace(/^1\s+/, "").trim();
-            if (result.length > 0 && letterIdx > 0) {
-              result[result.length - 1] = result[result.length - 1] + " 1";
-            }
+            markThis = true;
           }
 
-          // If ends with " 1" — this option is correct
-          let markThis = false;
+          // If ends with " 1" — this option is also correct
           if (/\s+1$/.test(seg)) {
             seg = seg.replace(/\s+1$/, "").trim();
             markThis = true;
