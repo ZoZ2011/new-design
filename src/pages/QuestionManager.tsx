@@ -237,6 +237,14 @@ const QuestionManager = () => {
       if (!trimmed) continue;
       if (/^Page\s+\d+/i.test(trimmed)) continue;
 
+      // Skip lines like "(Select 1 Answer)" — treat as part of the question
+      if (/^\(?\s*select\s+\d+\s+answer\s*\)?$/i.test(trimmed)) {
+        if (currentQuestion && !currentOptionText) {
+          currentQuestion.question += " " + trimmed;
+        }
+        continue;
+      }
+
       // Check if this line starts a new question
       const qMatch = trimmed.match(questionStartRegex);
       // But make sure it's not actually an option (A-D)
