@@ -46,6 +46,12 @@ const ALL_CATEGORIES: CategoryInfo[] = [
   { slug: "iadc-ogor-mock-test-3", name: "IADC OGOR Mock Test #3" },
 ];
 
+interface DayGroup {
+  label: string;
+  parentPath: string;
+  slugs: string[];
+}
+
 type Tab = "users" | "access";
 
 const AdminPanel = ({ onClose }: AdminPanelProps) => {
@@ -58,6 +64,7 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [dynamicCategories, setDynamicCategories] = useState<CategoryInfo[]>([]);
+  const [dayGroups, setDayGroups] = useState<DayGroup[]>([]);
   const [userAccess, setUserAccess] = useState<string[]>([]);
   const [loadingAccess, setLoadingAccess] = useState(false);
   const [savingAccess, setSavingAccess] = useState(false);
@@ -71,10 +78,24 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
   const fetchDynamicCategories = async () => {
     const { data } = await supabase
       .from("question_categories")
-      .select("name, slug")
+      .select("name, slug, parent_path")
       .order("display_order");
     if (data) {
-      setDynamicCategories(data.map(d => ({ slug: d.slug, name: d.name })));
+      // Separate day-grouped categories from standalone ones
+      const day1Slugs = data.filter(d => d.parent_path === "iwcf-drilling-level4-day1").map(d => d.slug);
+      const day2Slugs = data.filter(d => d.parent_path === "iwcf-drilling-level4-day2").map(d => d.slug);
+      const day3Slugs = data.filter(d => d.parent_path === "iwcf-drilling-level4-day3").map(d => d.slug);
+      
+      const groups: DayGroup[] = [];
+      if (day1Slugs.length > 0) groups.push({ label: "Day #1", parentPath: "iwcf-drilling-level4-day1", slugs: day1Slugs });
+      if (day2Slugs.length > 0) groups.push({ label: "Day #2", parentPath: "iwcf-drilling-level4-day2", slugs: day2Slugs });
+      if (day3Slugs.length > 0) groups.push({ label: "Day #3", parentPath: "iwcf-drilling-level4-day3", slugs: day3Slugs });
+      setDayGroups(groups);
+
+      // Standalone categories (not under any day)
+      const dayPaths = ["iwcf-drilling-level4-day1", "iwcf-drilling-level4-day2", "iwcf-drilling-level4-day3"];
+      const standalone = data.filter(d => !dayPaths.includes(d.parent_path));
+      setDynamicCategories(standalone.map(d => ({ slug: d.slug, name: d.name })));
     }
   };
 
@@ -82,6 +103,15 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
     ...ALL_CATEGORIES,
     ...dynamicCategories.filter(d => !ALL_CATEGORIES.some(a => a.slug === d.slug)),
   ];
+
+  const toggleDayGroup = (group: DayGroup) => {
+    const allSelected = group.slugs.every(s => userAccess.includes(s));
+    if (allSelected) {
+      setUserAccess(prev => prev.filter(s => !group.slugs.includes(s)));
+    } else {
+      setUserAccess(prev => [...new Set([...prev, ...group.slugs])]);
+    }
+  };
 
   const fetchValidUsers = async () => {
     setLoading(true);
@@ -244,7 +274,8 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
     setSavingAccess(false);
   };
 
-  const grantAll = () => setUserAccess(allCategories.map(c => c.slug));
+  const allSlugs = [...allCategories.map(c => c.slug), ...dayGroups.flatMap(g => g.slugs)];
+  const grantAll = () => setUserAccess([...new Set(allSlugs)]);
   const revokeAll = () => setUserAccess([]);
 
   const formatDate = (dateStr: string) => {
@@ -608,7 +639,8 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
                               </div>
                             </div>
 
-                            <div className="space-y-2 max-h-44 overflow-y-auto">
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                              {/* Standalone categories */}
                               {allCategories.map(cat => {
                                 const hasAccess = userAccess.includes(cat.slug);
                                 return (
@@ -633,6 +665,56 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
                                         <>
                                           <Unlock className="h-3.5 w-3.5" />
                                           Allowed
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Lock className="h-3.5 w-3.5" />
+                                          Blocked
+                                        </>
+                                      )}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+
+                              {/* Day groups */}
+                              {dayGroups.map(group => {
+                                const allSelected = group.slugs.every(s => userAccess.includes(s));
+                                const someSelected = group.slugs.some(s => userAccess.includes(s));
+                                return (
+                                  <button
+                                    key={group.parentPath}
+                                    onClick={() => toggleDayGroup(group)}
+                                    className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all duration-200 ${
+                                      allSelected
+                                        ? "border-primary/40 bg-primary/5"
+                                        : someSelected
+                                        ? "border-primary/20 bg-primary/5"
+                                        : "border-border hover:border-border/80 hover:bg-muted/30"
+                                    }`}
+                                  >
+                                    <div>
+                                      <span className="text-sm font-medium text-foreground">
+                                        {group.label}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground ml-2">
+                                        ({group.slugs.length} topics)
+                                      </span>
+                                    </div>
+                                    <span
+                                      className={`flex items-center gap-1 text-xs font-semibold ${
+                                        allSelected ? "text-primary" : someSelected ? "text-primary/60" : "text-muted-foreground"
+                                      }`}
+                                    >
+                                      {allSelected ? (
+                                        <>
+                                          <Unlock className="h-3.5 w-3.5" />
+                                          Allowed
+                                        </>
+                                      ) : someSelected ? (
+                                        <>
+                                          <Unlock className="h-3.5 w-3.5" />
+                                          Partial
                                         </>
                                       ) : (
                                         <>
