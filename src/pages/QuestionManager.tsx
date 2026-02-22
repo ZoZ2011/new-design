@@ -399,12 +399,15 @@ const QuestionManager = () => {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
+    const actualParent = newCategoryParent === "iwcf-drilling-level4" ? selectedDay : newCategoryParent;
+    if (newCategoryParent === "iwcf-drilling-level4" && !selectedDay) return;
+
     setSaving(true);
     try {
       const { error: catError } = await supabase.from("question_categories").insert({
         name: newCategoryName.trim(),
         slug,
-        parent_path: newCategoryParent,
+        parent_path: actualParent,
         display_order: allCategories.length + 1,
       });
       if (catError) throw catError;
@@ -461,10 +464,18 @@ const QuestionManager = () => {
     }
   };
 
+  const IWCF_LEVEL4_DAYS = [
+    { label: "Day #1 — P&P Part 1", value: "iwcf-drilling-level4-day1" },
+    { label: "Day #2 — P&P Part 2", value: "iwcf-drilling-level4-day2" },
+    { label: "Day #3 — Equipment", value: "iwcf-drilling-level4-day3" },
+  ];
+
+  const [selectedDay, setSelectedDay] = useState("");
+
   const parentOptions = [
     { label: "IADC Well Services", value: "/exercises/iacd/well-services" },
     { label: "IADC Drilling", value: "/exercises/iacd/drilling" },
-    { label: "IWCF Drilling Level 4", value: "/exercises/iwcf/drilling/level4" },
+    { label: "IWCF Drilling Level 4", value: "iwcf-drilling-level4" },
     { label: "IWCF Well Intervention", value: "/exercises/iwcf/well-intervention" },
     { label: "IADC Mock Tests", value: "/exercises/iacd/well-services/mock-test" },
   ];
@@ -635,7 +646,22 @@ const QuestionManager = () => {
                 ))}
               </select>
             </div>
-            {newCategoryName.trim() && <QuestionTypeSelector />}
+            {newCategoryParent === "iwcf-drilling-level4" && (
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Which day?</label>
+                <select
+                  className="w-full h-10 px-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                  value={selectedDay}
+                  onChange={(e) => setSelectedDay(e.target.value)}
+                >
+                  <option value="">— Select a day —</option>
+                  {IWCF_LEVEL4_DAYS.map((d) => (
+                    <option key={d.value} value={d.value}>{d.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {newCategoryName.trim() && (newCategoryParent !== "iwcf-drilling-level4" || selectedDay) && <QuestionTypeSelector />}
           </Card>
         )}
 
