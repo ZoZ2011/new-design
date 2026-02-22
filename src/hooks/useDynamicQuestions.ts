@@ -24,6 +24,8 @@ export function useDynamicQuestions(category: string) {
           options: Array.isArray(q.options) ? (q.options as string[]) : [],
           correctAnswer: q.correct_answer,
           image: (q as any).image_url || undefined,
+          questionType: (q as any).question_type || "mcq_single",
+          answerText: (q as any).answer_text || null,
         }));
         setQuestions(mapped);
       } else {

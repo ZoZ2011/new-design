@@ -18,6 +18,8 @@ export interface Question {
   options: string[];
   correctAnswer: number;
   image?: string;
+  questionType?: string;
+  answerText?: string | null;
 }
 
 export const coiledTubingQuestions: Question[] = [

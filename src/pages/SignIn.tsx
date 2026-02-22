@@ -6,7 +6,7 @@ import { ArrowLeft, Shield, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 
-const ADMIN_CODE = "ADMIN CONTROL";
+const ADMIN_CODE = "ADMIN DASH";
 
 const SignIn = () => {
   const [idNumber, setIdNumber] = useState("");
