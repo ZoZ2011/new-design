@@ -56,55 +56,50 @@ export const QuestionCard = ({
 
   // Parse kill sheet question text into structured sections
   const renderKillSheetContent = (text: string) => {
-    const lines = text.split("\n").filter(l => l.trim().length > 0);
+    // Split by double newlines to get sections
+    const sections = text.split(/\n\n+/);
     const elements: React.ReactNode[] = [];
-    let currentList: string[] = [];
 
-    const flushList = () => {
-      if (currentList.length > 0) {
+    const knownHeaders = ["well data", "capacities", "kick data"];
+
+    for (const section of sections) {
+      const lines = section.split("\n").filter(l => l.trim().length > 0);
+      if (lines.length === 0) continue;
+
+      const firstLine = lines[0].trim();
+      const isHeader = knownHeaders.includes(firstLine.toLowerCase().replace(/:$/, ""));
+
+      if (isHeader) {
+        // Render header + its bullet items
         elements.push(
-          <ul key={`list-${elements.length}`} className="list-disc list-inside space-y-1.5 pl-2 text-sm text-foreground/90">
-            {currentList.map((item, i) => <li key={i}>{item}</li>)}
-          </ul>
+          <div key={`section-${elements.length}`} className="space-y-2">
+            <h3 className="text-base font-bold text-foreground">{firstLine.replace(/:$/, "")}</h3>
+            <ul className="space-y-2 pl-4">
+              {lines.slice(1).map((line, i) => (
+                <li key={i} className="text-sm text-foreground/90 flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-foreground/60 shrink-0" />
+                  <span>{line.trim().replace(/^[•·\-]\s*/, "")}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         );
-        currentList = [];
-      }
-    };
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith("•") || trimmed.startsWith("-")) {
-        currentList.push(trimmed.replace(/^[•\-]\s*/, ""));
-      } else if (trimmed.endsWith(":") || /^[A-Z]/.test(trimmed) && !trimmed.startsWith("•")) {
-        flushList();
-        // Check if it looks like a section header (short, no punctuation except colon)
-        const isHeader = trimmed.length < 80 && (trimmed.endsWith(":") || /^[A-Z][a-z]/.test(trimmed));
-        if (isHeader) {
-          elements.push(
-            <h3 key={`h-${elements.length}`} className="text-base font-bold text-foreground mt-4 first:mt-0">
-              {trimmed.replace(/:$/, "")}
-            </h3>
-          );
-        } else {
-          elements.push(
-            <p key={`p-${elements.length}`} className="text-sm text-foreground/90">{trimmed}</p>
-          );
-        }
       } else {
-        flushList();
+        // Regular paragraph (e.g. the final instruction)
         elements.push(
-          <p key={`p-${elements.length}`} className="text-sm text-foreground/90">{trimmed}</p>
+          <p key={`p-${elements.length}`} className="text-sm font-medium text-foreground/80 italic">
+            {lines.join(" ")}
+          </p>
         );
       }
     }
-    flushList();
     return elements;
   };
 
   if (isKillSheet) {
     return (
       <div className="space-y-6">
-        <div className="bg-card border rounded-xl p-5 space-y-3">
+        <div className="bg-card border rounded-xl p-6 space-y-6">
           {renderKillSheetContent(question.question)}
         </div>
         
