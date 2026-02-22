@@ -75,12 +75,24 @@ export const QuestionCard = ({
               className="min-h-[80px] resize-y"
             />
           </div>
-          {isSubmitted && question.answerText && (
-            <div className="p-4 rounded-xl bg-success/10 border border-success">
-              <p className="text-sm font-semibold text-success mb-1">Correct Answer:</p>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{question.answerText}</p>
-            </div>
-          )}
+          {isSubmitted && question.answerText && (() => {
+            // Extract numeric/text answer from answerText (e.g. "Answer: 130.5 bbl" -> "130.5")
+            const correctRaw = question.answerText.replace(/^answer:\s*/i, "").trim().toLowerCase();
+            const userRaw = textAnswer.trim().toLowerCase();
+            const isCorrect = userRaw.length > 0 && (
+              userRaw === correctRaw || correctRaw.includes(userRaw) || userRaw.includes(correctRaw)
+            );
+            return isCorrect ? (
+              <div className="p-4 rounded-xl bg-success/10 border border-success">
+                <p className="text-sm font-semibold text-success">✓ Correct!</p>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-destructive/10 border border-destructive">
+                <p className="text-sm font-semibold text-destructive mb-1">✗ Incorrect</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">Correct Answer: {question.answerText.replace(/^answer:\s*/i, "").trim()}</p>
+              </div>
+            );
+          })()}
         </div>
       )}
 
