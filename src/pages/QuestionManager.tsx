@@ -17,6 +17,7 @@ interface ParsedQuestion {
   imagePreview?: string | null;
   existingImageUrl?: string | null;
   answerText?: string | null;
+  detectedType?: "mcq_single" | "mcq_multiple" | "combination";
 }
 
 interface CategoryInfo {
@@ -40,7 +41,7 @@ const EXISTING_CATEGORIES: CategoryInfo[] = [
 const QUESTION_TYPE_OPTIONS = [
   { value: "mcq_single" as QuestionType, label: "MCQ — Single Answer", description: "Each question has one correct answer" },
   { value: "mcq_multiple" as QuestionType, label: "MCQ — Multiple Answers", description: "Each question can have multiple correct answers" },
-  { value: "combination" as QuestionType, label: "MCQ + Structured", description: "Combination of MCQ and structured (written) answers" },
+  { value: "combination" as QuestionType, label: "Mixed (All Types)", description: "Mix of MCQ single, MCQ multiple, and structured answers — auto-detected per question" },
 ];
 
 const QuestionManager = () => {
@@ -170,7 +171,7 @@ const QuestionManager = () => {
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
     const optionStartRegex = /^\s*([A-Ha-h])\s*[\.\)\-]\s+(.*)/;
 
-    let currentQuestion: { question: string; options: string[]; correctAnswer: number; correctAnswers: number[]; answerText: string } | null = null;
+    let currentQuestion: { question: string; options: string[]; correctAnswer: number; correctAnswers: number[]; answerText: string; isMultiple: boolean } | null = null;
     let currentOptionText = "";
     let inStructuredAnswer = false;
 
@@ -196,12 +197,18 @@ const QuestionManager = () => {
     const finishQuestion = () => {
       if (currentQuestion && currentQuestion.question.trim()) {
         if (currentQuestion.options.length >= 2) {
+          // Determine detected type: if multiple correct answers or marked as multiple
+          const hasMultipleCorrect = currentQuestion.correctAnswers.length > 1;
+          const detectedType: "mcq_single" | "mcq_multiple" = 
+            (currentQuestion.isMultiple || hasMultipleCorrect) ? "mcq_multiple" : "mcq_single";
+          
           questions.push({
             question: currentQuestion.question,
             options: currentQuestion.options,
             correctAnswer: currentQuestion.correctAnswers.length > 0 ? currentQuestion.correctAnswers[0] : 0,
             correctAnswers: currentQuestion.correctAnswers.length > 0 ? currentQuestion.correctAnswers : [],
             imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
+            detectedType,
           });
         } else {
           let fullAnswer = currentQuestion.answerText.trim();
@@ -215,6 +222,7 @@ const QuestionManager = () => {
             correctAnswers: [],
             imageFile: null, imagePreview: null, existingImageUrl: null,
             answerText: fullAnswer || null,
+            detectedType: "combination",
           });
         }
       }
@@ -227,9 +235,15 @@ const QuestionManager = () => {
       if (!trimmed) continue;
       if (/^Page\s+\d+/i.test(trimmed)) continue;
 
-      if (/^\(?\s*select\s+\d+\s+answers?\s*\)?$/i.test(trimmed)) {
+      // Detect "(Select X Answers)" — mark current question as multiple if X > 1
+      const selectMatch = trimmed.match(/^\(?\s*select\s+(\d+)\s+answers?\s*\)?$/i);
+      if (selectMatch) {
         if (currentQuestion && !currentOptionText) {
           currentQuestion.question += " " + trimmed;
+          const num = parseInt(selectMatch[1], 10);
+          if (num > 1) {
+            currentQuestion.isMultiple = true;
+          }
         }
         continue;
       }
@@ -240,7 +254,15 @@ const QuestionManager = () => {
       if (qMatch && !oMatch) {
         finishOption();
         finishQuestion();
-        currentQuestion = { question: qMatch[2].trim(), options: [], correctAnswer: -1, correctAnswers: [], answerText: "" };
+        // Check if question text itself contains "(Select X Answers)"
+        let qText = qMatch[2].trim();
+        let isMultiple = false;
+        const inlineSelectMatch = qText.match(/\(select\s+(\d+)\s+answers?\)/i);
+        if (inlineSelectMatch) {
+          const num = parseInt(inlineSelectMatch[1], 10);
+          if (num > 1) isMultiple = true;
+        }
+        currentQuestion = { question: qText, options: [], correctAnswer: -1, correctAnswers: [], answerText: "", isMultiple };
         inStructuredAnswer = false;
       } else if (oMatch && currentQuestion) {
         finishOption();
@@ -250,7 +272,13 @@ const QuestionManager = () => {
         if (currentOptionText) {
           currentOptionText += " " + trimmed;
         } else if (currentQuestion.options.length === 0 && !inStructuredAnswer) {
-          if (currentQuestion.question.match(/[?:]\s*$/) && !trimmed.match(/^\(/)) {
+          // Check for inline select pattern in continuation
+          const inlineSelectMatch = trimmed.match(/^\(?\s*select\s+(\d+)\s+answers?\s*\)?/i);
+          if (inlineSelectMatch) {
+            const num = parseInt(inlineSelectMatch[1], 10);
+            if (num > 1) currentQuestion.isMultiple = true;
+            currentQuestion.question += " " + trimmed;
+          } else if (currentQuestion.question.match(/[?:]\s*$/) && !trimmed.match(/^\(/)) {
             inStructuredAnswer = true;
             currentQuestion.answerText = trimmed;
           } else {
@@ -454,8 +482,11 @@ const QuestionManager = () => {
   const handleCorrectAnswerChange = useCallback((questionIdx: number, answerIdx: number) => {
     setParsedQuestions(prev => prev.map((q, i) => {
       if (i !== questionIdx) return q;
-      // For mcq_multiple, toggle answers on/off
-      if (questionType === "mcq_multiple") {
+      // Determine if this question should allow multiple answers
+      const isMulti = questionType === "mcq_multiple" || 
+        (questionType === "combination" && q.detectedType === "mcq_multiple");
+      
+      if (isMulti) {
         const exists = (q.correctAnswers || []).includes(answerIdx);
         const newCorrectAnswers = exists
           ? (q.correctAnswers || []).filter(a => a !== answerIdx)
@@ -512,18 +543,24 @@ const QuestionManager = () => {
         .delete()
         .eq("category_slug", selectedCategory);
 
-      const rows = parsedQuestions.map((q, idx) => ({
-        category_slug: selectedCategory,
-        question_text: q.question,
-        options: q.options,
-        correct_answer: q.correctAnswer >= 0 ? q.correctAnswer : 0,
-        display_order: idx + 1,
-        image_url: imageUrls[idx] || null,
-        question_type: questionType,
-        answer_text: questionType === "mcq_multiple" && q.correctAnswers.length > 0
-          ? JSON.stringify(q.correctAnswers)
-          : q.answerText || null,
-      }));
+      const rows = parsedQuestions.map((q, idx) => {
+        const effectiveType = questionType === "combination" 
+          ? (q.detectedType || "mcq_single") 
+          : questionType;
+        const isMulti = effectiveType === "mcq_multiple";
+        return {
+          category_slug: selectedCategory,
+          question_text: q.question,
+          options: q.options,
+          correct_answer: q.correctAnswer >= 0 ? q.correctAnswer : 0,
+          display_order: idx + 1,
+          image_url: imageUrls[idx] || null,
+          question_type: effectiveType,
+          answer_text: isMulti && q.correctAnswers.length > 0
+            ? JSON.stringify(q.correctAnswers)
+            : q.answerText || null,
+        };
+      });
 
       const { error } = await supabase.from("dynamic_questions").insert(rows);
       if (error) throw error;
@@ -574,18 +611,24 @@ const QuestionManager = () => {
         }
       }
 
-      const rows = parsedQuestions.map((q, idx) => ({
-        category_slug: slug,
-        question_text: q.question,
-        options: q.options,
-        correct_answer: q.correctAnswer >= 0 ? q.correctAnswer : 0,
-        display_order: idx + 1,
-        image_url: imageUrls[idx] || null,
-        question_type: questionType,
-        answer_text: questionType === "mcq_multiple" && q.correctAnswers.length > 0
-          ? JSON.stringify(q.correctAnswers)
-          : q.answerText || null,
-      }));
+      const rows = parsedQuestions.map((q, idx) => {
+        const effectiveType = questionType === "combination" 
+          ? (q.detectedType || "mcq_single") 
+          : questionType;
+        const isMulti = effectiveType === "mcq_multiple";
+        return {
+          category_slug: slug,
+          question_text: q.question,
+          options: q.options,
+          correct_answer: q.correctAnswer >= 0 ? q.correctAnswer : 0,
+          display_order: idx + 1,
+          image_url: imageUrls[idx] || null,
+          question_type: effectiveType,
+          answer_text: isMulti && q.correctAnswers.length > 0
+            ? JSON.stringify(q.correctAnswers)
+            : q.answerText || null,
+        };
+      });
 
       const { error } = await supabase.from("dynamic_questions").insert(rows);
       if (error) throw error;
@@ -916,9 +959,11 @@ None of the above`}
             <p>• After uploading, you can attach images to any question using drag & drop</p>
             {questionType === "combination" && (
               <>
-                <p className="font-semibold text-foreground mt-2">For structured questions:</p>
-                <p>• Write the question text followed by the answer on the next line(s)</p>
-                <p>• The answer will be displayed as "Correct Answer:" below the question</p>
+                <p className="font-semibold text-foreground mt-2">For mixed mode:</p>
+                <p>• Questions with <strong>"(Select 2 Answers)"</strong> or similar are auto-detected as multiple-answer MCQ</p>
+                <p>• Questions with A/B/C/D options are detected as single-answer MCQ</p>
+                <p>• Questions without options are detected as structured (written) answers</p>
+                <p>• Each question type badge (SINGLE / MULTI / STRUCTURED) shows in the preview</p>
               </>
             )}
           </div>
@@ -1072,9 +1117,22 @@ const UploadSection = ({
         <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1">
           {parsedQuestions.map((q, idx) => (
             <div key={idx} className="p-4 bg-muted/60 border border-border rounded-xl text-sm">
-              <p className="font-semibold text-foreground">
-                {idx + 1}. {q.question}
-              </p>
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-semibold text-foreground">
+                  {idx + 1}. {q.question}
+                </p>
+                {questionType === "combination" && q.detectedType && (
+                  <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    q.detectedType === "mcq_multiple" 
+                      ? "bg-blue-500/10 text-blue-600" 
+                      : q.detectedType === "combination" 
+                        ? "bg-amber-500/10 text-amber-600"
+                        : "bg-emerald-500/10 text-emerald-600"
+                  }`}>
+                    {q.detectedType === "mcq_multiple" ? "MULTI" : q.detectedType === "combination" ? "STRUCTURED" : "SINGLE"}
+                  </span>
+                )}
+              </div>
               
               <QuestionImageUploader
                 questionIdx={idx}
@@ -1086,7 +1144,7 @@ const UploadSection = ({
               {q.options.length > 0 ? (
               <div className="mt-2 space-y-1">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Click to select correct answer{questionType === "mcq_multiple" ? "(s)" : ""}:
+                    Click to select correct answer{(questionType === "mcq_multiple" || q.detectedType === "mcq_multiple") ? "(s)" : ""}:
                   </p>
                   {q.options.map((opt, oi) => (
                     <button
