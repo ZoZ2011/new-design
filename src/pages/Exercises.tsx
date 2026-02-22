@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, Drill, Wrench } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
+import iadcLogo from "@/assets/iadc-logo.png";
+import iwcfLogo from "@/assets/iwcf-logo.jpg";
 
 const Exercises = () => {
   const navigate = useNavigate();
@@ -12,8 +14,7 @@ const Exercises = () => {
       path: "/exercises/iacd",
       disciplines: ["Well Services", "Drilling"],
       color: "from-primary/10 to-primary/5",
-      iconColor: "text-primary",
-      iconBg: "bg-primary/10",
+      logo: iadcLogo,
     },
     {
       id: "iwcf",
@@ -22,8 +23,7 @@ const Exercises = () => {
       path: "/exercises/iwcf",
       disciplines: ["Drilling", "Well Intervention"],
       color: "from-accent/10 to-accent/5",
-      iconColor: "text-accent",
-      iconBg: "bg-accent/10",
+      logo: iwcfLogo,
     },
   ];
 
@@ -51,31 +51,29 @@ const Exercises = () => {
         </div>
 
         <div className="grid gap-4">
-          {organizations.map(({ id, name, fullName, path, disciplines, color, iconColor, iconBg }) => (
+          {organizations.map(({ id, name, fullName, path, disciplines, color, logo }) => (
             <button
               key={id}
               onClick={() => navigate(path)}
               className={`group text-left bg-gradient-to-br ${color} border border-border rounded-2xl p-5 sm:p-6 hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden`}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl ${iconBg} mb-3 group-hover:scale-110 transition-transform duration-200`}>
-                    <Drill className={`w-5 h-5 ${iconColor}`} />
-                  </div>
-                  <div className="flex items-baseline gap-2 mb-1">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <img src={logo} alt={`${name} logo`} className="w-16 h-16 object-contain rounded-xl shrink-0" />
+                  <div>
                     <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">{name}</h2>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">{fullName}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {disciplines.map((d) => (
-                      <span key={d} className="text-xs bg-background/60 text-muted-foreground border border-border px-2.5 py-1 rounded-full">
-                        {d}
-                      </span>
-                    ))}
+                    <p className="text-sm text-muted-foreground mb-2">{fullName}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {disciplines.map((d) => (
+                        <span key={d} className="text-xs bg-background/60 text-muted-foreground border border-border px-2.5 py-1 rounded-full">
+                          {d}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <ChevronRight className={`w-5 h-5 ${iconColor} mt-1 group-hover:translate-x-1 transition-transform duration-200 flex-shrink-0`} />
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform duration-200 flex-shrink-0" />
               </div>
             </button>
           ))}
