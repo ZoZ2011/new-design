@@ -49,7 +49,9 @@ export const QuestionCard = ({
       {!isStructured && question.options.length > 0 && (
         <div className="space-y-3">
           {question.options.map((option, optionIndex) => {
-            const isCorrectAnswer = optionIndex === question.correctAnswer;
+            const isCorrectAnswer = question.correctAnswers 
+              ? question.correctAnswers.includes(optionIndex)
+              : optionIndex === question.correctAnswer;
             const isSelectedAnswer = selectedAnswer === optionIndex;
             
             let optionStyles = "bg-muted/50 hover:bg-muted border-transparent";
@@ -89,13 +91,19 @@ export const QuestionCard = ({
       {!isStructured && isSubmitted && (
         <div className={cn(
           "p-4 rounded-xl",
-          selectedAnswer === question.correctAnswer
+          (question.correctAnswers 
+            ? question.correctAnswers.includes(selectedAnswer!)
+            : selectedAnswer === question.correctAnswer)
             ? "bg-success/10 text-success"
             : "bg-destructive/10 text-destructive"
         )}>
-          {selectedAnswer === question.correctAnswer
+          {(question.correctAnswers 
+            ? question.correctAnswers.includes(selectedAnswer!)
+            : selectedAnswer === question.correctAnswer)
             ? "✓ Correct!"
-            : `✗ Incorrect. The correct answer is: ${question.options[question.correctAnswer]}`
+            : question.correctAnswers && question.correctAnswers.length > 1
+              ? `✗ Incorrect. The correct answers are: ${question.correctAnswers.map(i => question.options[i]).join(", ")}`
+              : `✗ Incorrect. The correct answer is: ${question.options[question.correctAnswer]}`
           }
         </div>
       )}
