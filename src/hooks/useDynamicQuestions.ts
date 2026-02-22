@@ -18,15 +18,24 @@ export function useDynamicQuestions(category: string) {
         .order("display_order");
 
       if (!error && data && data.length > 0) {
-        const mapped: Question[] = data.map((q, idx) => ({
-          id: idx + 1,
-          question: q.question_text,
-          options: Array.isArray(q.options) ? (q.options as string[]) : [],
-          correctAnswer: q.correct_answer,
-          image: (q as any).image_url || undefined,
-          questionType: (q as any).question_type || "mcq_single",
-          answerText: (q as any).answer_text || null,
-        }));
+        const mapped: Question[] = data.map((q, idx) => {
+          let correctAnswers: number[] | undefined;
+          if ((q as any).question_type === "mcq_multiple" && q.answer_text) {
+            try {
+              correctAnswers = JSON.parse(q.answer_text);
+            } catch {}
+          }
+          return {
+            id: idx + 1,
+            question: q.question_text,
+            options: Array.isArray(q.options) ? (q.options as string[]) : [],
+            correctAnswer: q.correct_answer,
+            correctAnswers,
+            image: (q as any).image_url || undefined,
+            questionType: (q as any).question_type || "mcq_single",
+            answerText: (q as any).question_type === "mcq_multiple" ? null : q.answer_text || null,
+          };
+        });
         setQuestions(mapped);
       } else {
         // Fall back to static questions

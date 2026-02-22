@@ -12,6 +12,7 @@ interface ParsedQuestion {
   question: string;
   options: string[];
   correctAnswer: number;
+  correctAnswers: number[];
   imageFile?: File | null;
   imagePreview?: string | null;
   existingImageUrl?: string | null;
@@ -141,6 +142,7 @@ const QuestionManager = () => {
             question: currentQuestion.question,
             options: currentQuestion.options,
             correctAnswer: currentQuestion.correctAnswer >= 0 ? currentQuestion.correctAnswer : 0,
+            correctAnswers: currentQuestion.correctAnswer >= 0 ? [currentQuestion.correctAnswer] : [],
             imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
           });
         } else {
@@ -149,6 +151,7 @@ const QuestionManager = () => {
             question: currentQuestion.question,
             options: [],
             correctAnswer: -1,
+            correctAnswers: [],
             imageFile: null, imagePreview: null, existingImageUrl: null,
             answerText: currentQuestion.answerText.trim() || null,
           });
@@ -207,7 +210,7 @@ const QuestionManager = () => {
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
     const optionStartRegex = /^\s*([A-Da-d])\s*[\.\)]\s+(.*)/;
 
-    let currentQuestion: { question: string; options: string[]; correctAnswer: number } | null = null;
+    let currentQuestion: { question: string; options: string[]; correctAnswer: number; correctAnswers: number[] } | null = null;
     let currentOptionText = "";
     let currentOptionIsCorrect = false;
 
@@ -217,8 +220,12 @@ const QuestionManager = () => {
         const hasMarker = /\s+1\s*$/.test(text);
         text = text.replace(/\s+1\s*$/, "").trim();
         if (text) {
+          const optIdx = currentQuestion.options.length;
           if (autoDetectCorrect && hasMarker) {
-            currentQuestion.correctAnswer = currentQuestion.options.length;
+            currentQuestion.correctAnswers.push(optIdx);
+            if (currentQuestion.correctAnswer < 0) {
+              currentQuestion.correctAnswer = optIdx;
+            }
           }
           currentQuestion.options.push(text);
         }
@@ -232,7 +239,8 @@ const QuestionManager = () => {
         questions.push({
           question: currentQuestion.question,
           options: currentQuestion.options,
-          correctAnswer: autoDetectCorrect && currentQuestion.correctAnswer >= 0 ? currentQuestion.correctAnswer : 0, // Default 0 if not detected
+          correctAnswer: currentQuestion.correctAnswers.length > 0 ? currentQuestion.correctAnswers[0] : 0,
+          correctAnswers: currentQuestion.correctAnswers.length > 0 ? currentQuestion.correctAnswers : [],
           imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
         });
       }
@@ -261,7 +269,7 @@ const QuestionManager = () => {
         // Save previous option & question
         finishOption();
         finishQuestion();
-        currentQuestion = { question: qMatch[2].trim(), options: [], correctAnswer: -1 };
+        currentQuestion = { question: qMatch[2].trim(), options: [], correctAnswer: -1, correctAnswers: [] };
       } else if (oMatch && currentQuestion) {
         // Save previous option
         finishOption();
@@ -327,6 +335,7 @@ const QuestionManager = () => {
         questions.push({
           question: questionText, options,
           correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
+          correctAnswers: correctAnswer >= 0 ? [correctAnswer] : [],
           imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
         });
       }
@@ -372,9 +381,22 @@ const QuestionManager = () => {
   };
 
   const handleCorrectAnswerChange = (questionIdx: number, answerIdx: number) => {
-    setParsedQuestions(prev => prev.map((q, i) =>
-      i === questionIdx ? { ...q, correctAnswer: answerIdx } : q
-    ));
+    setParsedQuestions(prev => prev.map((q, i) => {
+      if (i !== questionIdx) return q;
+      if (questionType === "mcq_multiple") {
+        // Toggle: add or remove from correctAnswers
+        const exists = q.correctAnswers.includes(answerIdx);
+        const newCorrectAnswers = exists
+          ? q.correctAnswers.filter(a => a !== answerIdx)
+          : [...q.correctAnswers, answerIdx].sort();
+        return {
+          ...q,
+          correctAnswers: newCorrectAnswers,
+          correctAnswer: newCorrectAnswers.length > 0 ? newCorrectAnswers[0] : 0,
+        };
+      }
+      return { ...q, correctAnswer: answerIdx, correctAnswers: [answerIdx] };
+    }));
   };
 
   const uploadQuestionImage = async (file: File, categorySlug: string, questionIdx: number): Promise<string | null> => {
@@ -426,7 +448,9 @@ const QuestionManager = () => {
         display_order: idx + 1,
         image_url: imageUrls[idx] || null,
         question_type: questionType,
-        answer_text: q.answerText || null,
+        answer_text: questionType === "mcq_multiple" && q.correctAnswers.length > 0
+          ? JSON.stringify(q.correctAnswers)
+          : q.answerText || null,
       }));
 
       const { error } = await supabase.from("dynamic_questions").insert(rows);
@@ -486,7 +510,9 @@ const QuestionManager = () => {
         display_order: idx + 1,
         image_url: imageUrls[idx] || null,
         question_type: questionType,
-        answer_text: q.answerText || null,
+        answer_text: questionType === "mcq_multiple" && q.correctAnswers.length > 0
+          ? JSON.stringify(q.correctAnswers)
+          : q.answerText || null,
       }));
 
       const { error } = await supabase.from("dynamic_questions").insert(rows);
@@ -987,20 +1013,22 @@ const UploadSection = ({
 
               {q.options.length > 0 ? (
               <div className="mt-2 space-y-1">
-                  <p className="text-xs text-muted-foreground mb-1">Click to select correct answer:</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Click to select correct answer{questionType === "mcq_multiple" ? "(s)" : ""}:
+                  </p>
                   {q.options.map((opt, oi) => (
                     <button
                       key={oi}
                       type="button"
                       onClick={() => onCorrectAnswerChange(idx, oi)}
                       className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-all ${
-                        oi === q.correctAnswer
+                        q.correctAnswers.includes(oi)
                           ? "bg-success/15 text-success font-medium border border-success/30"
                           : "text-muted-foreground hover:bg-muted border border-transparent"
                       }`}
                     >
                       {String.fromCharCode(65 + oi)}. {opt}
-                      {oi === q.correctAnswer && " ✓"}
+                      {q.correctAnswers.includes(oi) && " ✓"}
                     </button>
                   ))}
                 </div>

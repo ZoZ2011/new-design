@@ -17,6 +17,7 @@ export interface Question {
   question: string;
   options: string[];
   correctAnswer: number;
+  correctAnswers?: number[];
   image?: string;
   questionType?: string;
   answerText?: string | null;

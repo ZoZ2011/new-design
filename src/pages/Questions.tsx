@@ -29,9 +29,11 @@ const Questions = () => {
 
   // Calculate correct answers count
   const correctCount = useMemo(() => {
-    return questions.filter(
-      q => submittedAnswers[q.id] && selectedAnswers[q.id] === q.correctAnswer
-    ).length;
+    return questions.filter(q => {
+      if (!submittedAnswers[q.id]) return false;
+      const sel = selectedAnswers[q.id];
+      return q.correctAnswers ? q.correctAnswers.includes(sel) : sel === q.correctAnswer;
+    }).length;
   }, [questions, submittedAnswers, selectedAnswers]);
 
   // Screenshot protection styles
@@ -199,7 +201,9 @@ const Questions = () => {
 
     saveProgress(currentQuestion.id, selectedAnswer, true);
 
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+    const isCorrect = currentQuestion.correctAnswers 
+      ? currentQuestion.correctAnswers.includes(selectedAnswer)
+      : selectedAnswer === currentQuestion.correctAnswer;
     playSound(isCorrect);
 
     // sound feedback only
