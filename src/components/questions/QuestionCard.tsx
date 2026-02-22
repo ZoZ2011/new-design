@@ -1,7 +1,10 @@
 import { Question } from "@/data/questions";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 interface QuestionCardProps {
   question: Question;
@@ -26,16 +29,105 @@ export const QuestionCard = ({
   textAnswer = "",
   onTextAnswerChange,
 }: QuestionCardProps) => {
-  const isStructured = question.questionType === "combination" && question.options.length === 0;
+  const isKillSheet = question.questionType === "kill_sheet";
+  const isStructured = !isKillSheet && question.questionType === "combination" && question.options.length === 0;
   const isMultiple = question.questionType === "mcq_multiple";
   const requiredCount = question.correctAnswers?.length || 1;
 
+  const [killSheetAnswers, setKillSheetAnswers] = useState<string[]>(
+    isKillSheet ? new Array(question.options.length).fill("") : []
+  );
+  const [killSheetSubmitted, setKillSheetSubmitted] = useState(false);
+
+  const allKillSheetFilled = isKillSheet && killSheetAnswers.every(a => a.trim().length > 0);
+
+  const handleKillSheetSubmit = () => {
+    if (allKillSheetFilled) {
+      setKillSheetSubmitted(true);
+    }
+  };
+
   // Determine select count label
   const getSelectLabel = () => {
-    if (isStructured) return null;
+    if (isStructured || isKillSheet) return null;
     if (isMultiple) return `(Select ${requiredCount} Answer${requiredCount > 1 ? "s" : ""})`;
     return "(Select 1 Answer)";
   };
+
+  if (isKillSheet) {
+    return (
+      <div className="space-y-6">
+        <div className="text-foreground whitespace-pre-wrap">{question.question}</div>
+        
+        {question.image && (
+          <div className="mt-4">
+            <img src={question.image} alt="Question diagram" className="max-w-full h-auto rounded-lg border" />
+          </div>
+        )}
+
+        <div className="space-y-4 mt-6">
+          {question.options.map((subQ, idx) => {
+            const correctAnswer = question.killSheetAnswers?.[idx] || "";
+            const userAnswer = killSheetAnswers[idx] || "";
+            const isCorrect = killSheetSubmitted && userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+            const isWrong = killSheetSubmitted && !isCorrect;
+
+            return (
+              <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <label className="text-sm font-medium text-foreground min-w-0 sm:min-w-[320px]">
+                  {idx + 1}. {subQ}
+                </label>
+                <div className="flex-1 flex items-center gap-2">
+                  <Input
+                    value={killSheetAnswers[idx]}
+                    onChange={(e) => {
+                      const updated = [...killSheetAnswers];
+                      updated[idx] = e.target.value;
+                      setKillSheetAnswers(updated);
+                    }}
+                    disabled={killSheetSubmitted}
+                    placeholder="Enter your answer"
+                    className={cn(
+                      "h-10",
+                      killSheetSubmitted && isCorrect && "border-success bg-success/10",
+                      killSheetSubmitted && isWrong && "border-destructive bg-destructive/10"
+                    )}
+                  />
+                </div>
+                {killSheetSubmitted && isWrong && (
+                  <span className="text-sm text-destructive font-medium whitespace-nowrap">
+                    ✗ Correct: {correctAnswer}
+                  </span>
+                )}
+                {killSheetSubmitted && isCorrect && (
+                  <span className="text-sm text-success font-medium whitespace-nowrap">✓ Correct</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {!killSheetSubmitted && (
+          <Button onClick={handleKillSheetSubmit} disabled={!allKillSheetFilled} className="mt-4">
+            Submit All Answers
+          </Button>
+        )}
+
+        {killSheetSubmitted && (
+          <div className={cn(
+            "p-4 rounded-xl mt-4",
+            killSheetAnswers.every((a, i) => a.trim().toLowerCase() === (question.killSheetAnswers?.[i] || "").trim().toLowerCase())
+              ? "bg-success/10 text-success"
+              : "bg-destructive/10 text-destructive"
+          )}>
+            {killSheetAnswers.every((a, i) => a.trim().toLowerCase() === (question.killSheetAnswers?.[i] || "").trim().toLowerCase())
+              ? "✓ All answers correct!"
+              : `✗ Some answers are incorrect. Review above.`}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -76,7 +168,6 @@ export const QuestionCard = ({
             />
           </div>
           {isSubmitted && question.answerText && (() => {
-            // Extract numeric/text answer from answerText (e.g. "Answer: 130.5 bbl" -> "130.5")
             const correctRaw = question.answerText.replace(/^answer:\s*/i, "").trim().toLowerCase();
             const userRaw = textAnswer.trim().toLowerCase();
             const isCorrect = userRaw.length > 0 && (

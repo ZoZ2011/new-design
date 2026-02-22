@@ -203,10 +203,15 @@ const Questions = () => {
     if (!currentQuestion) return;
     
     const isStructured = currentQuestion.questionType === "combination" && currentQuestion.options.length === 0;
+    const isKillSheet = currentQuestion.questionType === "kill_sheet";
     const isMultiple = currentQuestion.questionType === "mcq_multiple";
     const selectedAnswer = selectedAnswers[currentQuestion.id];
     const multiSelected = multiSelectedAnswers[currentQuestion.id] || [];
     
+    if (isKillSheet) {
+      // Kill sheet handles its own submission internally
+      return;
+    }
     if (isMultiple) {
       const requiredCount = currentQuestion.correctAnswers?.length || 1;
       if (multiSelected.length !== requiredCount) return;
@@ -366,6 +371,8 @@ const Questions = () => {
                 hasSelectedAnswer={(() => {
                   const isStructured = currentQuestion.questionType === "combination" && currentQuestion.options.length === 0;
                   const isMultiple = currentQuestion.questionType === "mcq_multiple";
+                  const isKillSheet = currentQuestion.questionType === "kill_sheet";
+                  if (isKillSheet) return false; // kill sheet handles its own submit
                   if (isStructured) return true;
                   if (isMultiple) {
                     const requiredCount = currentQuestion.correctAnswers?.length || 1;
