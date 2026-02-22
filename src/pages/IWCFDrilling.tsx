@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, BookOpen, Clock, ChevronRight, Calendar, Shield, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,14 @@ import { Input } from "@/components/ui/input";
 
 const IWCFDrilling = () => {
   const navigate = useNavigate();
-  const [selectedLevel, setSelectedLevel] = useState<null | 3 | 4>(null);
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const location = useLocation();
+  const locationState = location.state as { level?: number; day?: string } | null;
+  
+  const [selectedLevel, setSelectedLevel] = useState<null | 3 | 4>(locationState?.level === 4 ? 4 : locationState?.level === 3 ? 3 : null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(locationState?.day || null);
   const [dayCategories, setDayCategories] = useState<{ name: string; slug: string }[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
-  const [authenticated, setAuthenticated] = useState(false);
+  const [authenticated, setAuthenticated] = useState(locationState?.level === 4 && !!localStorage.getItem("userId"));
   const [idNumber, setIdNumber] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [validIds, setValidIds] = useState<string[]>([]);
