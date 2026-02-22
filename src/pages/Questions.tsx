@@ -316,8 +316,7 @@ const Questions = () => {
                   // For IWCF drilling level 4 categories, navigate back to day selection
                   const dayMatch = category?.match(/^iwcf-drilling-level4-(day\d)/);
                   if (dayMatch) {
-                    const daySlug = `iwcf-drilling-level4-${dayMatch[1]}`;
-                    navigate('/exercises/iwcf/drilling', { state: { level: 4, day: daySlug } });
+                    navigate('/exercises/iwcf/drilling', { state: { level: 4 } });
                   } else {
                     navigate(-1);
                   }
