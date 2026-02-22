@@ -118,17 +118,25 @@ const QuestionManager = () => {
 
     for (const line of lines) {
       const trimmed = line.trim();
-      // Match: question text ending with ? then (Select X Answer) then inline options
+      
+      // Match: question text with (Select X Answer(s)) followed by inline options
+      // The ? before (Select...) is optional — some questions end with period or no punctuation
       const selectMatch = trimmed.match(
-        /^(.*?\?)\s*\(Select\s+\d+\s+Answers?\)\s*\.?\s*(.+)/i
+        /^(.*?[?.:]?\s*)\(Select\s+(\d+)\s+Answers?\)\s*\.?\s*(.+)/i
       );
 
-      if (selectMatch && selectMatch[2].trim().length > 10) {
+      if (selectMatch && selectMatch[3].trim().length > 10) {
         const qPart = selectMatch[1].trim();
-        result.push(qPart + " (Select 1 Answer)");
+        const selectCount = parseInt(selectMatch[2], 10);
+        const selectLabel = selectCount > 1 
+          ? `(Select ${selectCount} Answers)` 
+          : "(Select 1 Answer)";
+        result.push(qPart + " " + selectLabel);
 
-        const optionsRaw = selectMatch[2].trim();
-        // Split at sentence boundaries: ". " followed by uppercase or "1"
+        const optionsRaw = selectMatch[3].trim();
+        
+        // Split at sentence boundaries: ". " followed by uppercase letter or digit "1"
+        // Also handle ". 1 " which means "correct marker then next option"
         const segments = optionsRaw.split(/\.\s+(?=[A-Z1])/);
         const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
         let letterIdx = 0;
@@ -352,7 +360,7 @@ const QuestionManager = () => {
       if (/^Page\s+\d+/i.test(trimmed)) continue;
 
       // Skip lines like "(Select 1 Answer)" — treat as part of the question
-      if (/^\(?\s*select\s+\d+\s+answer\s*\)?$/i.test(trimmed)) {
+      if (/^\(?\s*select\s+\d+\s+answers?\s*\)?$/i.test(trimmed)) {
         if (currentQuestion && !currentOptionText) {
           currentQuestion.question += " " + trimmed;
         }
