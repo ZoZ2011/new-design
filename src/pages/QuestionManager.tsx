@@ -286,11 +286,23 @@ const QuestionManager = () => {
             const num = parseInt(inlineSelectMatch[1], 10);
             if (num > 1) currentQuestion.isMultiple = true;
             currentQuestion.question += " " + trimmed;
-          } else if (currentQuestion.question.match(/[?:]\s*$/) && !trimmed.match(/^\(/)) {
+          } else if (
+            currentQuestion.question.match(/[?]\s*$/) && 
+            !trimmed.match(/^\(/) &&
+            !trimmed.match(/[=:]/) &&
+            !trimmed.match(/\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%)/i)
+          ) {
+            // Only switch to structured answer if question ends with ? and the next line
+            // is NOT a data line (no = or : or units). This prevents well data from being
+            // treated as structured answers.
             inStructuredAnswer = true;
             currentQuestion.answerText = trimmed;
           } else {
-            currentQuestion.question += " " + trimmed;
+            // Determine separator: use paragraph break for data/section lines
+            const isDataLine = /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD)/i.test(trimmed);
+            const prevEndsWithColon = currentQuestion.question.match(/:\s*$/);
+            const separator = (isDataLine || prevEndsWithColon) ? "\n\n" : " ";
+            currentQuestion.question += separator + trimmed;
           }
         } else if (inStructuredAnswer) {
           currentQuestion.answerText += "\n" + trimmed;
@@ -386,8 +398,11 @@ const QuestionManager = () => {
           // Continuation of current option
           currentOptionText += " " + trimmed;
         } else {
-          // Continuation of question text
-          currentQuestion.question += " " + trimmed;
+          // Continuation of question text — use paragraph break for data lines
+          const isDataLine = /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD)/i.test(trimmed);
+          const prevEndsWithColon = currentQuestion.question.match(/:\s*$/);
+          const separator = (isDataLine || prevEndsWithColon) ? "\n\n" : " ";
+          currentQuestion.question += separator + trimmed;
         }
       }
     }
