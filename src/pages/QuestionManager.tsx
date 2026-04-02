@@ -398,8 +398,11 @@ const QuestionManager = () => {
           // Continuation of current option
           currentOptionText += " " + trimmed;
         } else {
-          // Continuation of question text
-          currentQuestion.question += " " + trimmed;
+          // Continuation of question text — use paragraph break for data lines
+          const isDataLine = /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD)/i.test(trimmed);
+          const prevEndsWithColon = currentQuestion.question.match(/:\s*$/);
+          const separator = (isDataLine || prevEndsWithColon) ? "\n\n" : " ";
+          currentQuestion.question += separator + trimmed;
         }
       }
     }
