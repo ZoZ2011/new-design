@@ -363,7 +363,7 @@ const QuestionManager = () => {
     text = preprocessInlineOptions(text);
     const questions: ParsedQuestion[] = [];
     const lines = text.split("\n");
-    const autoDetectCorrect = type === "mcq_multiple";
+    
 
     // Regex patterns
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
