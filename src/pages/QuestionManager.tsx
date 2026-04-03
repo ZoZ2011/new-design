@@ -111,60 +111,80 @@ const QuestionManager = () => {
     setUploading(false);
   }, [questionType]);
 
-  // Pre-process text: split inline options after "(Select X Answer)" into labeled lines
+  const LIST_BULLET_REGEX = /^[•·\-]\s+/;
+  const SECTION_HEADER_REGEX = /^(well data|kick data|capacities|annulus|annular data|drill string data|drillstring data|surface data|formation data)\s*:?\s*$/i;
+  const TECHNICAL_VALUE_REGEX = /\d[\d,.'’/"-]*\s*(psi|ppg|ft|feet|bbl(?:\/(?:stk|ft))?|bbl'?s\/ft|gal|inch(?:es)?|in\.?|lbf|tvd|md|od|id|stk)\b/i;
+
+  const stripListBullet = (line: string) => line.replace(LIST_BULLET_REGEX, "").trim();
+
+  const isSelectInstructionLine = (line: string) =>
+    /^\(?\s*select\s+\d+\s+answers?\s*\)?$/i.test(line.trim());
+
+  const isTechnicalDataLine = (line: string) => {
+    const normalized = stripListBullet(line);
+    return (
+      SECTION_HEADER_REGEX.test(normalized) ||
+      /[=:]/.test(normalized) ||
+      TECHNICAL_VALUE_REGEX.test(normalized)
+    );
+  };
+
+  const appendQuestionText = (question: string, line: string) => {
+    const cleaned = stripListBullet(line);
+    const separator = isTechnicalDataLine(cleaned) || /:\s*$/.test(question) ? "\n\n" : " ";
+    return `${question}${separator}${cleaned}`.trim();
+  };
+
+  // Pre-process text: only split inline options when explicit option markers exist
   const preprocessInlineOptions = (text: string): string => {
     const lines = text.split("\n");
     const result: string[] = [];
 
     for (const line of lines) {
       const trimmed = line.trim();
-      
-      // Match: question text with (Select X Answer(s)) followed by inline options
-      // The ? before (Select...) is optional — some questions end with period or no punctuation
       const selectMatch = trimmed.match(
         /^(.*?[?.:]?\s*)\(Select\s+(\d+)\s+Answers?\)\s*\.?\s*(.+)/i
       );
 
-      if (selectMatch && selectMatch[3].trim().length > 10) {
-        const qPart = selectMatch[1].trim();
-        const selectCount = parseInt(selectMatch[2], 10);
-        const selectLabel = selectCount > 1 
-          ? `(Select ${selectCount} Answers)` 
-          : "(Select 1 Answer)";
-        result.push(qPart + " " + selectLabel);
-
-        const optionsRaw = selectMatch[3].trim();
-        
-        // Split at sentence boundaries: ". " followed by uppercase letter or digit "1"
-        // Also handle ". 1 " which means "correct marker then next option"
-        const segments = optionsRaw.split(/\.\s+(?=[A-Z1])/);
-        const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
-        let letterIdx = 0;
-
-        for (let i = 0; i < segments.length; i++) {
-          let seg = segments[i].trim().replace(/\.$/, "").trim();
-          if (!seg) continue;
-
-          // Check if starts with "1 " — THIS option is the correct one
-          let markThis = false;
-          if (/^1\s+/.test(seg)) {
-            seg = seg.replace(/^1\s+/, "").trim();
-            markThis = true;
-          }
-
-          // If ends with " 1" — this option is also correct
-          if (/\s+1$/.test(seg)) {
-            seg = seg.replace(/\s+1$/, "").trim();
-            markThis = true;
-          }
-
-          if (seg && letterIdx < letters.length) {
-            result.push(`${letters[letterIdx]}. ${seg}${markThis ? " 1" : ""}`);
-            letterIdx++;
-          }
-        }
-      } else {
+      if (!selectMatch) {
         result.push(line);
+        continue;
+      }
+
+      const qPart = selectMatch[1].trim();
+      const selectCount = parseInt(selectMatch[2], 10);
+      const selectLabel = selectCount > 1 ? `(Select ${selectCount} Answers)` : "(Select 1 Answer)";
+      const trailingContent = selectMatch[3].trim();
+      const optionMatches = [...trailingContent.matchAll(/\b([A-Ja-j])\s*[\.\)]\s+/g)];
+
+      if (optionMatches.length < 2) {
+        result.push(line);
+        continue;
+      }
+
+      const firstOptionIndex = optionMatches[0].index ?? 0;
+      const leadingQuestionData = trailingContent.slice(0, firstOptionIndex).trim();
+      const rawOptions = trailingContent.slice(firstOptionIndex).trim();
+
+      result.push(`${qPart} ${selectLabel}`.trim());
+      if (leadingQuestionData) {
+        result.push(leadingQuestionData);
+      }
+
+      const normalizedMatches = [...rawOptions.matchAll(/\b([A-Ja-j])\s*[\.\)]\s+/g)];
+      for (let i = 0; i < normalizedMatches.length; i++) {
+        const current = normalizedMatches[i];
+        const start = (current.index ?? 0) + current[0].length;
+        const end = i + 1 < normalizedMatches.length
+          ? (normalizedMatches[i + 1].index ?? rawOptions.length)
+          : rawOptions.length;
+
+        let segment = rawOptions.slice(start, end).trim().replace(/\s+/g, " ");
+        if (!segment) continue;
+
+        const hasMarker = /\s+1\s*$/.test(segment);
+        segment = segment.replace(/\s+1\s*$/, "").trim();
+        result.push(`${current[1].toUpperCase()}. ${segment}${hasMarker ? " 1" : ""}`);
       }
     }
 
@@ -256,17 +276,8 @@ const QuestionManager = () => {
         continue;
       }
 
-      // Detect bullet-point data lines (· or • or - followed by data with units/= signs)
-      // These are part of the question text, not answer options
-      const bulletDataRegex = /^[·•\-]\s+/;
-      const isBulletDataLine = bulletDataRegex.test(trimmed) && (
-        /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD|stk)/i.test(trimmed)
-      );
-
-      if (isBulletDataLine && currentQuestion && currentQuestion.options.length === 0) {
-        // This is a data bullet point — append to question text
-        const cleanedLine = trimmed.replace(bulletDataRegex, '').trim();
-        currentQuestion.question += "\n\n" + cleanedLine;
+      if (isTechnicalDataLine(trimmed) && currentQuestion && currentQuestion.options.length === 0 && !currentOptionText) {
+        currentQuestion.question = appendQuestionText(currentQuestion.question, trimmed);
         continue;
       }
 
@@ -312,11 +323,7 @@ const QuestionManager = () => {
             inStructuredAnswer = true;
             currentQuestion.answerText = trimmed;
           } else {
-            // Determine separator: use paragraph break for data/section lines
-            const isDataLine = /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD)/i.test(trimmed);
-            const prevEndsWithColon = currentQuestion.question.match(/:\s*$/);
-            const separator = (isDataLine || prevEndsWithColon) ? "\n\n" : " ";
-            currentQuestion.question += separator + trimmed;
+            currentQuestion.question = appendQuestionText(currentQuestion.question, trimmed);
           }
         } else if (inStructuredAnswer) {
           currentQuestion.answerText += "\n" + trimmed;
@@ -386,22 +393,15 @@ const QuestionManager = () => {
       if (/^Page\s+\d+/i.test(trimmed)) continue;
 
       // Skip lines like "(Select 1 Answer)" — treat as part of the question
-      if (/^\(?\s*select\s+\d+\s+answers?\s*\)?$/i.test(trimmed)) {
+      if (isSelectInstructionLine(trimmed)) {
         if (currentQuestion && !currentOptionText) {
           currentQuestion.question += " " + trimmed;
         }
         continue;
       }
 
-      // Detect bullet-point data lines (· or • or - followed by data with units/= signs)
-      const bulletDataRegex = /^[·•\-]\s+/;
-      const isBulletDataLine = bulletDataRegex.test(trimmed) && (
-        /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD|stk)/i.test(trimmed)
-      );
-
-      if (isBulletDataLine && currentQuestion && currentQuestion.options.length === 0) {
-        const cleanedLine = trimmed.replace(bulletDataRegex, '').trim();
-        currentQuestion.question += "\n\n" + cleanedLine;
+      if (isTechnicalDataLine(trimmed) && currentQuestion && currentQuestion.options.length === 0 && !currentOptionText) {
+        currentQuestion.question = appendQuestionText(currentQuestion.question, trimmed);
         continue;
       }
 
@@ -424,11 +424,7 @@ const QuestionManager = () => {
           // Continuation of current option
           currentOptionText += " " + trimmed;
         } else {
-          // Continuation of question text — use paragraph break for data lines
-          const isDataLine = /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD)/i.test(trimmed);
-          const prevEndsWithColon = currentQuestion.question.match(/:\s*$/);
-          const separator = (isDataLine || prevEndsWithColon) ? "\n\n" : " ";
-          currentQuestion.question += separator + trimmed;
+          currentQuestion.question = appendQuestionText(currentQuestion.question, trimmed);
         }
       }
     }
@@ -455,33 +451,35 @@ const QuestionManager = () => {
       if (lines.length < 3) continue;
       if (/^Page\s+\d+/i.test(lines[0])) continue;
 
-      let qEndIdx = 0;
-      for (let j = 0; j < lines.length; j++) {
-        if (lines[j].match(/[?.:]\s*$/) || lines[j].includes("______") || lines[j].includes("___")) {
-          qEndIdx = j;
-          break;
+      const optionStartIdx = lines.findIndex(line => /^[a-jA-J]\s*[\.\)]\s+/.test(line));
+      if (optionStartIdx < 0) continue;
+
+      const questionLines = lines.slice(0, optionStartIdx).map(line => {
+        if (isSelectInstructionLine(line) || isTechnicalDataLine(line)) {
+          return stripListBullet(line);
         }
-      }
-      let questionText = lines.slice(0, qEndIdx + 1).join(" ").trim();
-      questionText = questionText.replace(/^\d+\s*[\.\)\-]\s*/, "");
-      const optionStartIdx = qEndIdx + 1;
+        return line.replace(/^\d+\s*[\.\)\-]\s*/, "").trim();
+      }).filter(Boolean);
 
-      if (!questionText || optionStartIdx >= lines.length) continue;
-
+      const optionLines = lines.slice(optionStartIdx);
       const options: string[] = [];
       let correctAnswer = -1;
-      for (let j = optionStartIdx; j < lines.length; j++) {
-        let optLine = lines[j].replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
+
+      for (const line of optionLines) {
+        let optLine = line.replace(/^[a-jA-J]\s*[\.\)]\s*/, "").trim();
         if (/\s+1\s*$/.test(optLine)) {
           correctAnswer = options.length;
           optLine = optLine.replace(/\s+1\s*$/, "").trim();
         }
-        if (optLine.trim()) options.push(optLine.trim());
+        if (optLine) options.push(optLine);
       }
 
-      if (options.length >= 2 && questionText.trim()) {
+      const questionText = questionLines.reduce((acc, line) => acc ? appendQuestionText(acc, line) : line, "").trim();
+
+      if (options.length >= 2 && questionText) {
         questions.push({
-          question: questionText, options,
+          question: questionText,
+          options,
           correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
           correctAnswers: correctAnswer >= 0 ? [correctAnswer] : [],
           imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
