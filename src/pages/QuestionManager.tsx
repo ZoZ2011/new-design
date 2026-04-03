@@ -59,6 +59,7 @@ const QuestionManager = () => {
   const [saving, setSaving] = useState(false);
   const [dynamicCategories, setDynamicCategories] = useState<CategoryInfo[]>([]);
   const [fileName, setFileName] = useState("");
+  const [pastedText, setPastedText] = useState("");
 
   useEffect(() => {
     fetchDynamicCategories();
