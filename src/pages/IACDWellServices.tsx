@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, Wrench, Cable, Anchor, Radio, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 const STATIC_CATEGORIES = [
@@ -73,7 +74,7 @@ const IACDWellServices = () => {
               return (
                 <button
                   key={cat.slug}
-                  onClick={() => cat.isOgor ? navigate("/exercises/iacd/well-services/ogor") : navigate(`/signin/${cat.slug}`)}
+                  onClick={() => cat.isOgor ? navigate("/exercises/iacd/well-services/ogor") : toast.info("No available questions for this topic yet.")}
                   className="group w-full bg-card border border-border rounded-2xl p-5 sm:p-6 flex items-center gap-4 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors duration-200">
