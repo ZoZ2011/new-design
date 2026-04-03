@@ -323,11 +323,7 @@ const QuestionManager = () => {
             inStructuredAnswer = true;
             currentQuestion.answerText = trimmed;
           } else {
-            // Determine separator: use paragraph break for data/section lines
-            const isDataLine = /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD)/i.test(trimmed);
-            const prevEndsWithColon = currentQuestion.question.match(/:\s*$/);
-            const separator = (isDataLine || prevEndsWithColon) ? "\n\n" : " ";
-            currentQuestion.question += separator + trimmed;
+            currentQuestion.question = appendQuestionText(currentQuestion.question, trimmed);
           }
         } else if (inStructuredAnswer) {
           currentQuestion.answerText += "\n" + trimmed;
