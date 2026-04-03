@@ -393,6 +393,18 @@ const QuestionManager = () => {
         continue;
       }
 
+      // Detect bullet-point data lines (· or • or - followed by data with units/= signs)
+      const bulletDataRegex = /^[·•\-]\s+/;
+      const isBulletDataLine = bulletDataRegex.test(trimmed) && (
+        /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD|stk)/i.test(trimmed)
+      );
+
+      if (isBulletDataLine && currentQuestion && currentQuestion.options.length === 0) {
+        const cleanedLine = trimmed.replace(bulletDataRegex, '').trim();
+        currentQuestion.question += "\n\n" + cleanedLine;
+        continue;
+      }
+
       // Check if this line starts a new question
       const qMatch = trimmed.match(questionStartRegex);
       // But make sure it's not actually an option (A-D)
