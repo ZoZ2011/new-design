@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Upload, Plus, Trash2, FileText, Check, AlertCircle, FolderOpen, RefreshCw, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
