@@ -393,22 +393,15 @@ const QuestionManager = () => {
       if (/^Page\s+\d+/i.test(trimmed)) continue;
 
       // Skip lines like "(Select 1 Answer)" — treat as part of the question
-      if (/^\(?\s*select\s+\d+\s+answers?\s*\)?$/i.test(trimmed)) {
+      if (isSelectInstructionLine(trimmed)) {
         if (currentQuestion && !currentOptionText) {
           currentQuestion.question += " " + trimmed;
         }
         continue;
       }
 
-      // Detect bullet-point data lines (· or • or - followed by data with units/= signs)
-      const bulletDataRegex = /^[·•\-]\s+/;
-      const isBulletDataLine = bulletDataRegex.test(trimmed) && (
-        /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD|stk)/i.test(trimmed)
-      );
-
-      if (isBulletDataLine && currentQuestion && currentQuestion.options.length === 0) {
-        const cleanedLine = trimmed.replace(bulletDataRegex, '').trim();
-        currentQuestion.question += "\n\n" + cleanedLine;
+      if (isTechnicalDataLine(trimmed) && currentQuestion && currentQuestion.options.length === 0 && !currentOptionText) {
+        currentQuestion.question = appendQuestionText(currentQuestion.question, trimmed);
         continue;
       }
 
@@ -431,11 +424,7 @@ const QuestionManager = () => {
           // Continuation of current option
           currentOptionText += " " + trimmed;
         } else {
-          // Continuation of question text — use paragraph break for data lines
-          const isDataLine = /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD)/i.test(trimmed);
-          const prevEndsWithColon = currentQuestion.question.match(/:\s*$/);
-          const separator = (isDataLine || prevEndsWithColon) ? "\n\n" : " ";
-          currentQuestion.question += separator + trimmed;
+          currentQuestion.question = appendQuestionText(currentQuestion.question, trimmed);
         }
       }
     }
