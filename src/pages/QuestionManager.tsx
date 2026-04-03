@@ -495,6 +495,27 @@ const QuestionManager = () => {
     return questions;
   };
 
+  const parseQuestionsInput = useCallback((text: string, sourceLabel: string) => {
+    const normalizedText = text.trim();
+    if (!normalizedText) {
+      toast.error("Please paste the questions first");
+      return;
+    }
+
+    const questions = questionType === "combination"
+      ? parseCombinationQuestionsFromText(normalizedText)
+      : parseQuestionsFromText(normalizedText, questionType);
+
+    if (questions.length === 0) {
+      toast.error("No questions found in the pasted text. Please check the format.");
+      return;
+    }
+
+    setParsedQuestions(questions);
+    setFileName(sourceLabel);
+    toast.success(`Parsed ${questions.length} questions`);
+  }, [questionType]);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -505,6 +526,10 @@ const QuestionManager = () => {
     }
 
     parseWordFile(file);
+  };
+
+  const handlePasteParse = () => {
+    parseQuestionsInput(pastedText, "Pasted questions");
   };
 
   const handleImageUpload = (questionIdx: number, file: File) => {
