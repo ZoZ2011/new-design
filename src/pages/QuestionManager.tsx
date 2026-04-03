@@ -957,6 +957,9 @@ const QuestionManager = () => {
               uploading={uploading}
               parsedQuestions={parsedQuestions}
               questionType={questionType}
+              pastedText={pastedText}
+              onPastedTextChange={setPastedText}
+              onPasteParse={handlePasteParse}
               onFileUpload={handleFileUpload}
               onImageUpload={handleImageUpload}
               onRemoveImage={removeImage}
