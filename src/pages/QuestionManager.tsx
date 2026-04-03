@@ -406,6 +406,12 @@ const QuestionManager = () => {
       currentQuestion = null;
     };
 
+    // Helper: check if an option-like line is actually technical data
+    const isOptionActuallyTechData = (line: string) => {
+      const stripped = line.replace(OPTION_PREFIX_REGEX, "").trim();
+      return /[=:]/.test(stripped) && TECHNICAL_VALUE_REGEX.test(stripped);
+    };
+
     for (const rawLine of lines) {
       const trimmed = rawLine.trim();
       if (!trimmed) continue;
@@ -429,6 +435,12 @@ const QuestionManager = () => {
       // But make sure it's not actually an option (A-D)
       const oMatch = trimmed.match(optionStartRegex);
 
+      // If option-like line is actually technical data (has = or : with units), treat as question text
+      if (oMatch && currentQuestion && currentQuestion.options.length === 0 && !currentOptionText && isOptionActuallyTechData(trimmed)) {
+        currentQuestion.question = appendQuestionText(currentQuestion.question, trimmed);
+        continue;
+      }
+
       if (qMatch && !oMatch) {
         // Save previous option & question
         finishOption();
@@ -445,6 +457,9 @@ const QuestionManager = () => {
         } else {
           currentQuestion.question = appendQuestionText(currentQuestion.question, trimmed);
         }
+      } else if (!currentQuestion && !qMatch) {
+        // No question started yet — auto-create from first non-empty line
+        currentQuestion = { question: trimmed, options: [], correctAnswer: -1, correctAnswers: [] };
       }
     }
 
