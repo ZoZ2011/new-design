@@ -352,7 +352,7 @@ const QuestionManager = () => {
 
     // Regex patterns
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
-    const optionStartRegex = /^\s*([A-Da-d])\s*[\.\)]\s+(.*)/;
+    const optionStartRegex = /^\s*([A-Ja-j])\s*[\.\)]\s+(.*)/;
 
     let currentQuestion: { question: string; options: string[]; correctAnswer: number; correctAnswers: number[] } | null = null;
     let currentOptionText = "";
