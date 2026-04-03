@@ -33,7 +33,8 @@ const App = () => (
           <Route path="/exercises/iacd" element={<IACD />} />
           <Route path="/exercises/iacd/drilling" element={<IACDDrilling />} />
           <Route path="/exercises/iacd/well-services" element={<IACDWellServices />} />
-          <Route path="/exercises/iacd/well-services/mock-test" element={<IACDOGORMockTests />} />
+          <Route path="/exercises/iacd/well-services/ogor" element={<IACDWellServicesOGOR />} />
+          <Route path="/exercises/iacd/well-services/ogor/mock-tests" element={<IACDOGORMockTests />} />
           <Route path="/exercises/iwcf" element={<IWCF />} />
           <Route path="/exercises/iwcf/drilling" element={<IWCFDrilling />} />
           <Route path="/exercises/iwcf/well-intervention" element={<IWCFWellIntervention />} />
