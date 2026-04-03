@@ -256,6 +256,20 @@ const QuestionManager = () => {
         continue;
       }
 
+      // Detect bullet-point data lines (· or • or - followed by data with units/= signs)
+      // These are part of the question text, not answer options
+      const bulletDataRegex = /^[·•\-]\s+/;
+      const isBulletDataLine = bulletDataRegex.test(trimmed) && (
+        /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD|stk)/i.test(trimmed)
+      );
+
+      if (isBulletDataLine && currentQuestion && currentQuestion.options.length === 0) {
+        // This is a data bullet point — append to question text
+        const cleanedLine = trimmed.replace(bulletDataRegex, '').trim();
+        currentQuestion.question += "\n\n" + cleanedLine;
+        continue;
+      }
+
       const qMatch = trimmed.match(questionStartRegex);
       const oMatch = trimmed.match(optionStartRegex);
 
@@ -376,6 +390,18 @@ const QuestionManager = () => {
         if (currentQuestion && !currentOptionText) {
           currentQuestion.question += " " + trimmed;
         }
+        continue;
+      }
+
+      // Detect bullet-point data lines (· or • or - followed by data with units/= signs)
+      const bulletDataRegex = /^[·•\-]\s+/;
+      const isBulletDataLine = bulletDataRegex.test(trimmed) && (
+        /[=:]/.test(trimmed) || /\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%|OD|ID|TVD|MD|stk)/i.test(trimmed)
+      );
+
+      if (isBulletDataLine && currentQuestion && currentQuestion.options.length === 0) {
+        const cleanedLine = trimmed.replace(bulletDataRegex, '').trim();
+        currentQuestion.question += "\n\n" + cleanedLine;
         continue;
       }
 
