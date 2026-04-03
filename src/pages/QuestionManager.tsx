@@ -363,7 +363,7 @@ const QuestionManager = () => {
     text = preprocessInlineOptions(text);
     const questions: ParsedQuestion[] = [];
     const lines = text.split("\n");
-    const autoDetectCorrect = type === "mcq_multiple";
+    
 
     // Regex patterns
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
@@ -380,7 +380,7 @@ const QuestionManager = () => {
         text = text.replace(/\s+1\s*$/, "").trim();
         if (text) {
           const optIdx = currentQuestion.options.length;
-          if (autoDetectCorrect && hasMarker) {
+          if (hasMarker) {
             currentQuestion.correctAnswers.push(optIdx);
             if (currentQuestion.correctAnswer < 0) {
               currentQuestion.correctAnswer = optIdx;
