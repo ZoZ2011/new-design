@@ -84,7 +84,8 @@ const QuestionManager = () => {
 
   const parseWordFile = useCallback(async (file: File) => {
     setUploading(true);
-    setFileName(file.name);
+    setParsedQuestions([]);
+    setFileName("");
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -102,6 +103,7 @@ const QuestionManager = () => {
       }
 
       setParsedQuestions(questions);
+      setFileName(file.name);
       toast.success(`Parsed ${questions.length} questions from the file`);
     } catch (error) {
       console.error("Error parsing Word file:", error);
@@ -111,6 +113,7 @@ const QuestionManager = () => {
     setUploading(false);
   }, [questionType]);
 
+  const OPTION_PREFIX_REGEX = /^\s*([A-Ja-j])\s*[\.\)]\s+/;
   const LIST_BULLET_REGEX = /^[•·\-]\s+/;
   const SECTION_HEADER_REGEX = /^(well data|kick data|capacities|annulus|annular data|drill string data|drillstring data|surface data|formation data)\s*:?\s*$/i;
   const TECHNICAL_VALUE_REGEX = /\d[\d,.'’/"-]*\s*(psi|ppg|ft|feet|bbl(?:\/(?:stk|ft))?|bbl'?s\/ft|gal|inch(?:es)?|in\.?|lbf|tvd|md|od|id|stk)\b/i;
@@ -122,6 +125,7 @@ const QuestionManager = () => {
 
   const isTechnicalDataLine = (line: string) => {
     const normalized = stripListBullet(line);
+    if (OPTION_PREFIX_REGEX.test(normalized)) return false;
     return (
       SECTION_HEADER_REGEX.test(normalized) ||
       /[=:]/.test(normalized) ||
@@ -197,7 +201,7 @@ const QuestionManager = () => {
     const lines = text.split("\n");
 
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
-    const optionStartRegex = /^\s*([A-Ha-h])\s*[\.\)\-]\s+(.*)/;
+    const optionStartRegex = /^\s*([A-Ja-j])\s*[\.\)\-]\s+(.*)/;
 
     let currentQuestion: { question: string; options: string[]; correctAnswer: number; correctAnswers: number[]; answerText: string; isMultiple: boolean } | null = null;
     let currentOptionText = "";
@@ -348,7 +352,7 @@ const QuestionManager = () => {
 
     // Regex patterns
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
-    const optionStartRegex = /^\s*([A-Da-d])\s*[\.\)]\s+(.*)/;
+    const optionStartRegex = /^\s*([A-Ja-j])\s*[\.\)]\s+(.*)/;
 
     let currentQuestion: { question: string; options: string[]; correctAnswer: number; correctAnswers: number[] } | null = null;
     let currentOptionText = "";
