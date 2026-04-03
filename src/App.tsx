@@ -8,6 +8,7 @@ import IACD from "./pages/IACD";
 import IACDDrilling from "./pages/IACDDrilling";
 import IACDWellServices from "./pages/IACDWellServices";
 import IACDOGORMockTests from "./pages/IACDOGORMockTests";
+import IACDWellServicesOGOR from "./pages/IACDWellServicesOGOR";
 import IWCF from "./pages/IWCF";
 import IWCFDrilling from "./pages/IWCFDrilling";
 import IWCFWellIntervention from "./pages/IWCFWellIntervention";
