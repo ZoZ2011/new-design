@@ -201,7 +201,7 @@ const QuestionManager = () => {
     const lines = text.split("\n");
 
     const questionStartRegex = /^\s*(\d+)\s*[\.\)\-]\s+(.*)/;
-    const optionStartRegex = /^\s*([A-Ha-h])\s*[\.\)\-]\s+(.*)/;
+    const optionStartRegex = /^\s*([A-Ja-j])\s*[\.\)\-]\s+(.*)/;
 
     let currentQuestion: { question: string; options: string[]; correctAnswer: number; correctAnswers: number[]; answerText: string; isMultiple: boolean } | null = null;
     let currentOptionText = "";
