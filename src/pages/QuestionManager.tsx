@@ -264,6 +264,12 @@ const QuestionManager = () => {
       inStructuredAnswer = false;
     };
 
+    // Helper: check if an option-like line is actually technical data
+    const isOptionActuallyTechData = (line: string) => {
+      const stripped = line.replace(OPTION_PREFIX_REGEX, "").trim();
+      return /[=:]/.test(stripped) && TECHNICAL_VALUE_REGEX.test(stripped);
+    };
+
     for (const rawLine of lines) {
       const trimmed = rawLine.trim();
       if (!trimmed) continue;
@@ -289,6 +295,12 @@ const QuestionManager = () => {
 
       const qMatch = trimmed.match(questionStartRegex);
       const oMatch = trimmed.match(optionStartRegex);
+
+      // If option-like line is actually technical data (has = or : with units), treat as question text
+      if (oMatch && currentQuestion && currentQuestion.options.length === 0 && !currentOptionText && isOptionActuallyTechData(trimmed)) {
+        currentQuestion.question = appendQuestionText(currentQuestion.question, trimmed);
+        continue;
+      }
 
       if (qMatch && !oMatch) {
         finishOption();
@@ -323,9 +335,6 @@ const QuestionManager = () => {
             !trimmed.match(/[=:]/) &&
             !trimmed.match(/\d+\s*(psi|ppg|ft|bbl|inch|lbf|gal|%)/i)
           ) {
-            // Only switch to structured answer if question ends with ? and the next line
-            // is NOT a data line (no = or : or units). This prevents well data from being
-            // treated as structured answers.
             inStructuredAnswer = true;
             currentQuestion.answerText = trimmed;
           } else {
@@ -336,6 +345,10 @@ const QuestionManager = () => {
         } else {
           currentQuestion.answerText += "\n" + trimmed;
         }
+      } else if (!currentQuestion && !qMatch) {
+        // No question started yet and no numbered prefix — auto-create question from first non-empty line
+        currentQuestion = { question: trimmed, options: [], correctAnswer: -1, correctAnswers: [], answerText: "", isMultiple: false };
+        inStructuredAnswer = false;
       }
     }
 
