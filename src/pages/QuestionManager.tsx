@@ -451,33 +451,35 @@ const QuestionManager = () => {
       if (lines.length < 3) continue;
       if (/^Page\s+\d+/i.test(lines[0])) continue;
 
-      let qEndIdx = 0;
-      for (let j = 0; j < lines.length; j++) {
-        if (lines[j].match(/[?.:]\s*$/) || lines[j].includes("______") || lines[j].includes("___")) {
-          qEndIdx = j;
-          break;
+      const optionStartIdx = lines.findIndex(line => /^[a-jA-J]\s*[\.\)]\s+/.test(line));
+      if (optionStartIdx < 0) continue;
+
+      const questionLines = lines.slice(0, optionStartIdx).map(line => {
+        if (isSelectInstructionLine(line) || isTechnicalDataLine(line)) {
+          return stripListBullet(line);
         }
-      }
-      let questionText = lines.slice(0, qEndIdx + 1).join(" ").trim();
-      questionText = questionText.replace(/^\d+\s*[\.\)\-]\s*/, "");
-      const optionStartIdx = qEndIdx + 1;
+        return line.replace(/^\d+\s*[\.\)\-]\s*/, "").trim();
+      }).filter(Boolean);
 
-      if (!questionText || optionStartIdx >= lines.length) continue;
-
+      const optionLines = lines.slice(optionStartIdx);
       const options: string[] = [];
       let correctAnswer = -1;
-      for (let j = optionStartIdx; j < lines.length; j++) {
-        let optLine = lines[j].replace(/^[a-dA-D]\s*[\.\)]\s*/, "");
+
+      for (const line of optionLines) {
+        let optLine = line.replace(/^[a-jA-J]\s*[\.\)]\s*/, "").trim();
         if (/\s+1\s*$/.test(optLine)) {
           correctAnswer = options.length;
           optLine = optLine.replace(/\s+1\s*$/, "").trim();
         }
-        if (optLine.trim()) options.push(optLine.trim());
+        if (optLine) options.push(optLine);
       }
 
-      if (options.length >= 2 && questionText.trim()) {
+      const questionText = questionLines.reduce((acc, line) => acc ? appendQuestionText(acc, line) : line, "").trim();
+
+      if (options.length >= 2 && questionText) {
         questions.push({
-          question: questionText, options,
+          question: questionText,
+          options,
           correctAnswer: correctAnswer >= 0 ? correctAnswer : 0,
           correctAnswers: correctAnswer >= 0 ? [correctAnswer] : [],
           imageFile: null, imagePreview: null, existingImageUrl: null, answerText: null,
