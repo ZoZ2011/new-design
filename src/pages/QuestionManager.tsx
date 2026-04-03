@@ -113,6 +113,32 @@ const QuestionManager = () => {
     setUploading(false);
   }, [questionType]);
 
+  const OPTION_PREFIX_REGEX = /^\s*([A-Ja-j])\s*[\.\)]\s+/;
+  const LIST_BULLET_REGEX = /^[•·\-]\s+/;
+  const SECTION_HEADER_REGEX = /^(well data|kick data|capacities|annulus|annular data|drill string data|drillstring data|surface data|formation data)\s*:?\s*$/i;
+  const TECHNICAL_VALUE_REGEX = /\d[\d,.'’/"-]*\s*(psi|ppg|ft|feet|bbl(?:\/(?:stk|ft))?|bbl'?s\/ft|gal|inch(?:es)?|in\.?|lbf|tvd|md|od|id|stk)\b/i;
+
+  const stripListBullet = (line: string) => line.replace(LIST_BULLET_REGEX, "").trim();
+
+  const isSelectInstructionLine = (line: string) =>
+    /^\(?\s*select\s+\d+\s+answers?\s*\)?$/i.test(line.trim());
+
+  const isTechnicalDataLine = (line: string) => {
+    const normalized = stripListBullet(line);
+    if (OPTION_PREFIX_REGEX.test(normalized)) return false;
+    return (
+      SECTION_HEADER_REGEX.test(normalized) ||
+      /[=:]/.test(normalized) ||
+      TECHNICAL_VALUE_REGEX.test(normalized)
+    );
+  };
+
+  const appendQuestionText = (question: string, line: string) => {
+    const cleaned = stripListBullet(line);
+    const separator = isTechnicalDataLine(cleaned) || /:\s*$/.test(question) ? "\n\n" : " ";
+    return `${question}${separator}${cleaned}`.trim();
+  };
+
   // Pre-process text: only split inline options when explicit option markers exist
   const preprocessInlineOptions = (text: string): string => {
     const lines = text.split("\n");
