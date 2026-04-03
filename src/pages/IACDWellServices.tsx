@@ -1,14 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, Wrench, Cable, Anchor, Radio, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, ChevronRight, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-const STATIC_CATEGORIES = [
-  { slug: "coiled-tubing", name: "Coiled Tubing", description: "Coiled tubing operations and well intervention techniques", icon: Cable },
-  { slug: "workover", name: "Workover", description: "Workover operations and completion procedures", icon: Wrench },
-  { slug: "snubbing", name: "Snubbing", description: "Snubbing operations under pressure conditions", icon: Anchor },
-  { slug: "wireline", name: "Wireline", description: "Wireline logging and perforation operations", icon: Radio },
-];
 
 const IACDWellServices = () => {
   const navigate = useNavigate();
@@ -28,11 +21,11 @@ const IACDWellServices = () => {
     fetchDynamic();
   }, []);
 
-  const extraCategories = dynamicCategories.filter(d => !STATIC_CATEGORIES.some(s => s.slug === d.slug));
+  // Filter out categories that are handled as static entries
+  const extraCategories = dynamicCategories.filter(d => d.slug !== "ogor");
 
   return (
     <div className="min-h-screen bg-background font-jakarta flex flex-col">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <button
@@ -52,7 +45,6 @@ const IACDWellServices = () => {
       </header>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex-1 animate-fade-in w-full">
-        {/* Badge + Title */}
         <div className="mb-8 space-y-3">
           <span className="inline-block text-sm font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5">
             IADC — Well Services
@@ -69,26 +61,22 @@ const IACDWellServices = () => {
           <div className="text-center py-16 text-muted-foreground text-sm">Loading...</div>
         ) : (
           <div className="space-y-4">
-            {STATIC_CATEGORIES.map(cat => {
-              const Icon = cat.icon;
-              return (
-                <button
-                  key={cat.slug}
-                  onClick={() => navigate(`/signin/${cat.slug}`)}
-                  className="group w-full bg-card border border-border rounded-2xl p-5 sm:p-6 flex items-center gap-4 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors duration-200">
-                    <Icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground text-base sm:text-lg">{cat.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">{cat.description}</p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-primary shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
-                </button>
-              );
-            })}
+            {/* OGOR - First option */}
+            <button
+              onClick={() => navigate("/exercises/iacd/well-services/ogor")}
+              className="group w-full bg-card border border-border rounded-2xl p-5 sm:p-6 flex items-center gap-4 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors duration-200">
+                <FileText className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-foreground text-base sm:text-lg">OGOR</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">IADC OGOR certification practice questions</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-primary shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
+            </button>
 
+            {/* Dynamic extra categories */}
             {extraCategories.map(cat => (
               <button
                 key={cat.slug}
@@ -96,7 +84,7 @@ const IACDWellServices = () => {
                 className="group w-full bg-card border border-border rounded-2xl p-5 sm:p-6 flex items-center gap-4 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
                 <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors duration-200">
-                  <Wrench className="w-6 h-6 text-primary" />
+                  <FileText className="w-6 h-6 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-foreground text-base sm:text-lg">{cat.name}</h3>
@@ -105,21 +93,6 @@ const IACDWellServices = () => {
                 <ChevronRight className="w-5 h-5 text-primary shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
               </button>
             ))}
-
-            {/* Mock Tests */}
-            <button
-              onClick={() => navigate("/exercises/iacd/well-services/mock-test")}
-              className="group w-full bg-card border border-border rounded-2xl p-5 sm:p-6 flex items-center gap-4 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors duration-200">
-                <ClipboardCheck className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-foreground text-base sm:text-lg">Mock Tests</h3>
-                <p className="text-sm text-muted-foreground mt-0.5">Practice with full-length mock exams</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-primary shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
-            </button>
           </div>
         )}
       </div>
