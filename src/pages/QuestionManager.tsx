@@ -30,13 +30,13 @@ interface CategoryInfo {
 type QuestionType = "mcq_single" | "mcq_multiple" | "combination";
 
 const EXISTING_CATEGORIES: CategoryInfo[] = [
-  { name: "Coiled Tubing", slug: "coiled-tubing", parentPath: "/exercises/iacd/well-services" },
-  { name: "Workover", slug: "workover", parentPath: "/exercises/iacd/well-services" },
-  { name: "Snubbing", slug: "snubbing", parentPath: "/exercises/iacd/well-services" },
-  { name: "Wireline", slug: "wireline", parentPath: "/exercises/iacd/well-services" },
-  { name: "IADC OGOR Mock Test 1", slug: "iadc-ogor-mock-test-1", parentPath: "/exercises/iacd/well-services/mock-test" },
-  { name: "IADC OGOR Mock Test 2", slug: "iadc-ogor-mock-test-2", parentPath: "/exercises/iacd/well-services/mock-test" },
-  { name: "IADC OGOR Mock Test 3", slug: "iadc-ogor-mock-test-3", parentPath: "/exercises/iacd/well-services/mock-test" },
+  { name: "Coiled Tubing", slug: "coiled-tubing", parentPath: "/exercises/iacd/well-services/ogor" },
+  { name: "Workover", slug: "workover", parentPath: "/exercises/iacd/well-services/ogor" },
+  { name: "Snubbing", slug: "snubbing", parentPath: "/exercises/iacd/well-services/ogor" },
+  { name: "Wireline", slug: "wireline", parentPath: "/exercises/iacd/well-services/ogor" },
+  { name: "IADC OGOR Mock Test 1", slug: "iadc-ogor-mock-test-1", parentPath: "/exercises/iacd/well-services/ogor/mock-tests" },
+  { name: "IADC OGOR Mock Test 2", slug: "iadc-ogor-mock-test-2", parentPath: "/exercises/iacd/well-services/ogor/mock-tests" },
+  { name: "IADC OGOR Mock Test 3", slug: "iadc-ogor-mock-test-3", parentPath: "/exercises/iacd/well-services/ogor/mock-tests" },
 ];
 
 const QUESTION_TYPE_OPTIONS = [

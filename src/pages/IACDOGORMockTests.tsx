@@ -19,7 +19,7 @@ const IACDOGORMockTests = () => {
       const { data } = await supabase
         .from("question_categories")
         .select("name, slug")
-        .eq("parent_path", "/exercises/iacd/well-services/mock-test")
+        .eq("parent_path", "/exercises/iacd/well-services/ogor/mock-tests")
         .order("display_order");
       if (data) setDynamicCategories(data);
       setLoading(false);
@@ -32,7 +32,6 @@ const IACDOGORMockTests = () => {
     ...dynamicCategories.filter(d => !STATIC_MOCK_TESTS.some(s => s.slug === d.slug)),
   ];
 
-  // Group into rows of 3
   const rows: { slug: string; name: string }[][] = [];
   for (let i = 0; i < allTests.length; i += 3) {
     rows.push(allTests.slice(i, i + 3));
@@ -40,18 +39,15 @@ const IACDOGORMockTests = () => {
 
   return (
     <div className="min-h-screen bg-background font-jakarta flex flex-col">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3 flex-wrap">
           <button
-            onClick={() => navigate("/exercises/iacd/well-services")}
+            onClick={() => navigate("/exercises/iacd/well-services/ogor")}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
-          <span className="text-border">›</span>
-          <span className="text-sm text-muted-foreground">Exercises</span>
           <span className="text-border">›</span>
           <span className="text-sm text-muted-foreground">IADC</span>
           <span className="text-border">›</span>
@@ -62,15 +58,21 @@ const IACDOGORMockTests = () => {
             Well Services
           </button>
           <span className="text-border">›</span>
-          <span className="text-sm font-semibold text-foreground">IADC OGOR</span>
+          <button
+            onClick={() => navigate("/exercises/iacd/well-services/ogor")}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+          >
+            OGOR
+          </button>
+          <span className="text-border">›</span>
+          <span className="text-sm font-semibold text-foreground">Mock Tests</span>
         </div>
       </header>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex-1 animate-fade-in w-full">
-        {/* Title */}
         <div className="text-center mb-10 space-y-2">
           <h1 className="text-3xl sm:text-5xl font-extrabold text-primary tracking-tight">
-            IADC OGOR
+            IADC OGOR Mock Tests
           </h1>
           <p className="text-muted-foreground text-base">Select a mock test to begin</p>
         </div>
