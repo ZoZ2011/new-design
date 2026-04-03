@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Upload, Plus, Trash2, FileText, Check, AlertCircle, FolderOpen, RefreshCw, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ const QuestionManager = () => {
   const [saving, setSaving] = useState(false);
   const [dynamicCategories, setDynamicCategories] = useState<CategoryInfo[]>([]);
   const [fileName, setFileName] = useState("");
+  const [pastedText, setPastedText] = useState("");
 
   useEffect(() => {
     fetchDynamicCategories();
@@ -493,6 +495,27 @@ const QuestionManager = () => {
     return questions;
   };
 
+  const parseQuestionsInput = useCallback((text: string, sourceLabel: string) => {
+    const normalizedText = text.trim();
+    if (!normalizedText) {
+      toast.error("Please paste the questions first");
+      return;
+    }
+
+    const questions = questionType === "combination"
+      ? parseCombinationQuestionsFromText(normalizedText)
+      : parseQuestionsFromText(normalizedText, questionType);
+
+    if (questions.length === 0) {
+      toast.error("No questions found in the pasted text. Please check the format.");
+      return;
+    }
+
+    setParsedQuestions(questions);
+    setFileName(sourceLabel);
+    toast.success(`Parsed ${questions.length} questions`);
+  }, [questionType]);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -503,6 +526,10 @@ const QuestionManager = () => {
     }
 
     parseWordFile(file);
+  };
+
+  const handlePasteParse = () => {
+    parseQuestionsInput(pastedText, "Pasted questions");
   };
 
   const handleImageUpload = (questionIdx: number, file: File) => {
@@ -849,6 +876,9 @@ const QuestionManager = () => {
               uploading={uploading}
               parsedQuestions={parsedQuestions}
               questionType={questionType}
+              pastedText={pastedText}
+              onPastedTextChange={setPastedText}
+              onPasteParse={handlePasteParse}
               onFileUpload={handleFileUpload}
               onImageUpload={handleImageUpload}
               onRemoveImage={removeImage}
@@ -927,6 +957,9 @@ const QuestionManager = () => {
               uploading={uploading}
               parsedQuestions={parsedQuestions}
               questionType={questionType}
+              pastedText={pastedText}
+              onPastedTextChange={setPastedText}
+              onPasteParse={handlePasteParse}
               onFileUpload={handleFileUpload}
               onImageUpload={handleImageUpload}
               onRemoveImage={removeImage}
@@ -1111,6 +1144,9 @@ const UploadSection = ({
   uploading,
   parsedQuestions,
   questionType,
+  pastedText,
+  onPastedTextChange,
+  onPasteParse,
   onFileUpload,
   onImageUpload,
   onRemoveImage,
@@ -1120,6 +1156,9 @@ const UploadSection = ({
   uploading: boolean;
   parsedQuestions: ParsedQuestion[];
   questionType: QuestionType;
+  pastedText: string;
+  onPastedTextChange: (value: string) => void;
+  onPasteParse: () => void;
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUpload: (idx: number, file: File) => void;
   onRemoveImage: (idx: number) => void;
@@ -1127,7 +1166,26 @@ const UploadSection = ({
 }) => (
   <div className="space-y-4">
     <div className="space-y-2">
-      <label className="text-sm font-semibold text-foreground">Upload Word File (.docx)</label>
+      <label className="text-sm font-semibold text-foreground">Paste Questions</label>
+      <Textarea
+        value={pastedText}
+        onChange={(e) => onPastedTextChange(e.target.value)}
+        placeholder="Paste your questions here..."
+        className="min-h-[240px] resize-y"
+      />
+      <Button
+        type="button"
+        onClick={onPasteParse}
+        disabled={!pastedText.trim() || uploading}
+        className="w-full h-11 font-semibold gap-2"
+      >
+        <Check className="h-4 w-4" />
+        Parse Pasted Questions
+      </Button>
+    </div>
+
+    <div className="space-y-2">
+      <label className="text-sm font-semibold text-foreground">Or Upload Word File (.docx)</label>
       <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
         <input
           type="file"
@@ -1174,9 +1232,9 @@ const UploadSection = ({
                 </p>
                 {questionType === "combination" && q.detectedType && (
                   <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    q.detectedType === "mcq_multiple" 
-                      ? "bg-blue-500/10 text-blue-600" 
-                      : q.detectedType === "combination" 
+                    q.detectedType === "mcq_multiple"
+                      ? "bg-blue-500/10 text-blue-600"
+                      : q.detectedType === "combination"
                         ? "bg-amber-500/10 text-amber-600"
                         : "bg-emerald-500/10 text-emerald-600"
                   }`}>
@@ -1184,7 +1242,7 @@ const UploadSection = ({
                   </span>
                 )}
               </div>
-              
+
               <QuestionImageUploader
                 questionIdx={idx}
                 question={q}
@@ -1193,7 +1251,7 @@ const UploadSection = ({
               />
 
               {q.options.length > 0 ? (
-              <div className="mt-2 space-y-1">
+                <div className="mt-2 space-y-1">
                   <p className="text-xs text-muted-foreground mb-1">
                     Click to select correct answer{(questionType === "mcq_multiple" || q.detectedType === "mcq_multiple") ? "(s)" : ""}:
                   </p>
