@@ -2405,7 +2405,7 @@ export const iadcOgorMockTest3Questions: Question[] = [
   { id: 65, question: "After a snubbing operation in an H2S well with pressure, it is best practice to change all sealing elements, even if not used.", options: ["False", "True"], correctAnswer: 1 },
   { id: 66, question: "What is an indicator of a failed negative/inflow pressure test?", options: ["Decreasing formation pressure", "Decreasing surface pressure", "Gain of fluid", "All the above"], correctAnswer: 2 },
   { id: 67, question: "Calculate the total volume in barrels of a 12'L x 8'W x 6'H tank.", options: ["102.6 bbls", "104.8 bbls", "97.5 bbls", "132.4 bbls"], correctAnswer: 0 },
-  { id: 68, question: "What contributes to downward forces in a snubbing operation?", options: ["Burst pressure of the tubing", "Tubing weight", "Height of fluid inside tubing"], correctAnswer: 2 },
+  { id: 68, question: "What contributes to downward forces in a snubbing operation?", options: ["Burst pressure of the tubing", "Tubing weight", "Height of fluid inside tubing", "Both B and C"], correctAnswer: 3 },
   { id: 69, question: "When deciding on sealing elements potential fluids encountered in the wellbore should not be considered.", options: ["True", "False"], correctAnswer: 1 },
   { id: 70, question: "Which factor is MAOP based upon?", options: ["MAASP", "Test pressure of the equipment", "MASP", "All the above"], correctAnswer: 1 },
   { id: 71, question: "Highest calculated pressure that a given equipment will be subjected to during the execution of the prescribed service and/or during a contingency operation is defined as ……………", options: ["Maximum Anticipated Surface Pressure (MASP)", "Maximum Allowable Operating Pressure (MAOP)"], correctAnswer: 1 },
