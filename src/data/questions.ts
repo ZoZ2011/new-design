@@ -2413,8 +2413,7 @@ export const iadcOgorMockTest3Questions: Question[] = [
   { id: 73, question: "Which of the following can be used as a pressure control device in snubbing operations?", options: ["Fluid pump", "Annular BOP", "Trip tank", "Mud gas separator"], correctAnswer: 1 },
   { id: 74, question: "While near surface, there is a slight leak in the coiled tubing between the tubing guide arch and the reel. Which of the following actions can be taken?", options: ["Continue out of the hole", "Run coiled tubing leak in below stripper and pipe rams and assess the situation"], correctAnswer: 1 },
   { id: 75, question: "What condition causes collapse of coiled tubing string?", options: ["High internal pressure", "High external differential pressure"], correctAnswer: 1 },
-  { id: 76, question: "Which of the following is most true concerning ovality of coiled tubing?", options: ["Ovallty issues are very rare with coiled tubing because there are no connections in the string", "Can significantly decrease collapse pressure rating"], correctAnswer: 1 },
-  { id: 77, question: "When on or off bottom, what is the best action to be taken when there is buckled coiled tubing between injector and stripper assembly?", options: ["Pump down coiled tubing", "Check for flow and leaks", "None of the above"], correctAnswer: 0 }
+  { id: 76, question: "Which of the following is most true concerning ovality of coiled tubing?", options: ["Ovallty issues are very rare with coiled tubing because there are no connections in the string", "Can significantly decrease collapse pressure rating"], correctAnswer: 1 }
 ];
 
 export function getQuestionsByCategory(category: string): Question[] {
