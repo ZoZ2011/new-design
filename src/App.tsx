@@ -20,6 +20,7 @@ import Settings from "./pages/Settings";
 import QuestionManager from "./pages/QuestionManager";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
+import AnswerEditor from "./pages/AnswerEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
