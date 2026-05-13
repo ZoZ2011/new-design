@@ -62,7 +62,7 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {panels.map(({ title, description, icon: Icon, action }) => (
             <button
               key={title}
