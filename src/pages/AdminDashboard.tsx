@@ -18,6 +18,12 @@ const AdminDashboard = () => {
       action: () => navigate("/control-center/questions?mode=add"),
     },
     {
+      title: "Edit Answers",
+      description: "Change the correct answer for any question across all categories",
+      icon: Edit3,
+      action: () => navigate("/control-center/answers"),
+    },
+    {
       title: "Control ID Numbers",
       description: "Add, remove, and manage user IDs and access permissions",
       icon: Users,
