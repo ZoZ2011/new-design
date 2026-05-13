@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Shield, ArrowLeft, Users, FileText, RefreshCw } from "lucide-react";
+import { Shield, ArrowLeft, Users, FileText, RefreshCw, Edit3 } from "lucide-react";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
