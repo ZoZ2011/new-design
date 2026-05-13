@@ -20,6 +20,7 @@ import Settings from "./pages/Settings";
 import QuestionManager from "./pages/QuestionManager";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
+import AnswerEditor from "./pages/AnswerEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/control-center" element={<AdminDashboard />} />
           <Route path="/control-center/users" element={<AdminUsers />} />
           <Route path="/control-center/questions" element={<QuestionManager />} />
+          <Route path="/control-center/answers" element={<AnswerEditor />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

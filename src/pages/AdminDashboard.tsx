@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Shield, ArrowLeft, Users, FileText, RefreshCw } from "lucide-react";
+import { Shield, ArrowLeft, Users, FileText, RefreshCw, Edit3 } from "lucide-react";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -16,6 +16,12 @@ const AdminDashboard = () => {
       description: "Create a new question category with uploaded questions",
       icon: FileText,
       action: () => navigate("/control-center/questions?mode=add"),
+    },
+    {
+      title: "Edit Answers",
+      description: "Change the correct answer for any question across all categories",
+      icon: Edit3,
+      action: () => navigate("/control-center/answers"),
     },
     {
       title: "Control ID Numbers",
@@ -56,7 +62,7 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {panels.map(({ title, description, icon: Icon, action }) => (
             <button
               key={title}
