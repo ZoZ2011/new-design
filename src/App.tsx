@@ -50,6 +50,7 @@ const App = () => (
           <Route path="/control-center" element={<AdminDashboard />} />
           <Route path="/control-center/users" element={<AdminUsers />} />
           <Route path="/control-center/questions" element={<QuestionManager />} />
+          <Route path="/control-center/answers" element={<AnswerEditor />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
