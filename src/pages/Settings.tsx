@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Moon, Sun, Settings2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { userData } from "@/lib/backendApi";
 
 interface UserSettings {
   theme: "light" | "dark";
@@ -37,17 +37,8 @@ const Settings = () => {
 
     const loadSettings = async () => {
       try {
-        const { data, error } = await supabase
-          .from("user_settings")
-          .select("*")
-          .eq("user_id", userId)
-          .single();
-
-        if (error && error.code !== "PGRST116") {
-          console.error("Error loading settings:", error);
-          return;
-        }
-
+        const res = await userData<{ data: any }>("get_settings", userId);
+        const data = res?.data;
         if (data) {
           const loadedSettings: UserSettings = {
             theme: (data.theme as "light" | "dark") || "light",
@@ -58,16 +49,12 @@ const Settings = () => {
           setSettings(loadedSettings);
           applySettings(loadedSettings);
         } else {
-          // Create default settings for new user
-          await supabase
-            .from("user_settings")
-            .insert({
-              user_id: userId,
-              theme: defaultSettings.theme,
-              font_size: defaultSettings.fontSize,
-              sound_effects: defaultSettings.soundEffects,
-              auto_submit: defaultSettings.autoSubmit,
-            });
+          await userData("save_settings", userId, {
+            theme: defaultSettings.theme,
+            font_size: defaultSettings.fontSize,
+            sound_effects: defaultSettings.soundEffects,
+            auto_submit: defaultSettings.autoSubmit,
+          });
         }
       } catch (error) {
         console.error("Error in loadSettings:", error);
@@ -80,14 +67,12 @@ const Settings = () => {
   }, [userId, category, navigate]);
 
   const applySettings = (newSettings: UserSettings) => {
-    // Apply theme
     if (newSettings.theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
 
-    // Apply font size
     const root = document.documentElement;
     if (newSettings.fontSize === "small") {
       root.style.fontSize = "14px";
@@ -105,17 +90,12 @@ const Settings = () => {
     
     if (userId) {
       try {
-        await supabase
-          .from("user_settings")
-          .upsert({
-            user_id: userId,
-            theme: newSettings.theme,
-            font_size: newSettings.fontSize,
-            sound_effects: newSettings.soundEffects,
-            auto_submit: newSettings.autoSubmit,
-          }, {
-            onConflict: "user_id"
-          });
+        await userData("save_settings", userId, {
+          theme: newSettings.theme,
+          font_size: newSettings.fontSize,
+          sound_effects: newSettings.soundEffects,
+          auto_submit: newSettings.autoSubmit,
+        });
         toast.success("Settings saved");
       } catch (error) {
         console.error("Error saving settings:", error);
@@ -128,17 +108,12 @@ const Settings = () => {
     if (!userId) return;
 
     try {
-      await supabase
-        .from("user_settings")
-        .upsert({
-          user_id: userId,
-          theme: defaultSettings.theme,
-          font_size: defaultSettings.fontSize,
-          sound_effects: defaultSettings.soundEffects,
-          auto_submit: defaultSettings.autoSubmit,
-        }, {
-          onConflict: "user_id"
-        });
+      await userData("save_settings", userId, {
+        theme: defaultSettings.theme,
+        font_size: defaultSettings.fontSize,
+        sound_effects: defaultSettings.soundEffects,
+        auto_submit: defaultSettings.autoSubmit,
+      });
       
       setSettings(defaultSettings);
       applySettings(defaultSettings);
@@ -155,7 +130,6 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-background font-jakarta">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <button

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Upload, Plus, Trash2, FileText, Check, AlertCircle, FolderOpen, RefreshCw, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { adminOp } from "@/lib/backendApi";
 import mammoth from "mammoth";
 
 interface ParsedQuestion {
@@ -611,21 +612,28 @@ const QuestionManager = () => {
   const uploadQuestionImage = async (file: File, categorySlug: string, questionIdx: number): Promise<string | null> => {
     const ext = file.name.split(".").pop() || "png";
     const path = `${categorySlug}/q${questionIdx + 1}-${Date.now()}.${ext}`;
-    
-    const { error } = await supabase.storage
-      .from("question-images")
-      .upload(path, file, { upsert: true });
 
-    if (error) {
-      console.error("Image upload error:", error);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1] || "");
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+
+      const res = await adminOp<{ url: string }>("upload_question_image", {
+        path,
+        base64,
+        content_type: file.type || "image/png",
+      });
+      return res.url || null;
+    } catch (e) {
+      console.error("Image upload error:", e);
       return null;
     }
-
-    const { data: urlData } = supabase.storage
-      .from("question-images")
-      .getPublicUrl(path);
-
-    return urlData.publicUrl;
   };
 
   const handleSaveUpdate = async () => {
@@ -643,11 +651,6 @@ const QuestionManager = () => {
           imageUrls.push(q.existingImageUrl || null);
         }
       }
-
-      await supabase
-        .from("dynamic_questions")
-        .delete()
-        .eq("category_slug", selectedCategory);
 
       const rows = parsedQuestions.map((q, idx) => {
         const effectiveType = questionType === "combination" 
@@ -668,8 +671,7 @@ const QuestionManager = () => {
         };
       });
 
-      const { error } = await supabase.from("dynamic_questions").insert(rows);
-      if (error) throw error;
+      await adminOp("replace_category_questions", { category_slug: selectedCategory, rows });
 
       toast.success(`Updated ${parsedQuestions.length} questions`);
       setParsedQuestions([]);
@@ -698,13 +700,14 @@ const QuestionManager = () => {
 
     setSaving(true);
     try {
-      const { error: catError } = await supabase.from("question_categories").insert({
-        name: newCategoryName.trim(),
-        slug,
-        parent_path: actualParent,
-        display_order: allCategories.length + 1,
+      await adminOp("insert_category", {
+        row: {
+          name: newCategoryName.trim(),
+          slug,
+          parent_path: actualParent,
+          display_order: allCategories.length + 1,
+        },
       });
-      if (catError) throw catError;
 
       const imageUrls: (string | null)[] = [];
       for (let i = 0; i < parsedQuestions.length; i++) {
@@ -736,8 +739,7 @@ const QuestionManager = () => {
         };
       });
 
-      const { error } = await supabase.from("dynamic_questions").insert(rows);
-      if (error) throw error;
+      await adminOp("insert_questions", { rows });
 
       toast.success(`Created "${newCategoryName}" with ${parsedQuestions.length} questions`);
       setParsedQuestions([]);
@@ -757,8 +759,7 @@ const QuestionManager = () => {
     if (!window.confirm("Are you sure you want to delete this category and all its questions?")) return;
 
     try {
-      await supabase.from("dynamic_questions").delete().eq("category_slug", slug);
-      await supabase.from("question_categories").delete().eq("slug", slug);
+      await adminOp("delete_category", { slug });
       toast.success("Category deleted");
       fetchDynamicCategories();
     } catch (error) {

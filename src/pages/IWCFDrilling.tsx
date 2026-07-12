@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, BookOpen, Clock, ChevronRight, Calendar, Shield, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { signinCheck } from "@/lib/backendApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -9,7 +10,7 @@ const IWCFDrilling = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = location.state as { level?: number; day?: string } | null;
-  
+
   const [selectedLevel, setSelectedLevel] = useState<null | 3 | 4>(locationState?.level === 4 ? 4 : locationState?.level === 3 ? 3 : null);
   const [selectedDay, setSelectedDay] = useState<string | null>(locationState?.day || null);
   const [dayCategories, setDayCategories] = useState<{ name: string; slug: string }[]>([]);
@@ -17,42 +18,21 @@ const IWCFDrilling = () => {
   const [authenticated, setAuthenticated] = useState(locationState?.level === 4 && !!localStorage.getItem("userId"));
   const [idNumber, setIdNumber] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const [validIds, setValidIds] = useState<string[]>([]);
   const [loadingIds, setLoadingIds] = useState(false);
-
-  const fetchValidIds = async () => {
-    setLoadingIds(true);
-    const { data, error } = await supabase.from("valid_users").select("user_id");
-    if (!error && data) setValidIds(data.map(u => u.user_id));
-    setLoadingIds(false);
-  };
 
   const handleLevel4SignIn = async () => {
     const trimmedId = idNumber.trim();
-    if (!validIds.includes(trimmedId)) {
-      setErrorMsg("Invalid ID Number");
+    if (!trimmedId) {
+      setErrorMsg("Please enter your ID");
       return;
     }
-
-    const { data: userData } = await supabase
-      .from("valid_users")
-      .select("access_restricted")
-      .eq("user_id", trimmedId)
-      .single();
-
-    if (userData?.access_restricted) {
-      const { data: accessData } = await supabase
-        .from("user_category_access")
-        .select("category_slug")
-        .eq("user_id", trimmedId);
-      const allowed = accessData?.map(r => r.category_slug) ?? [];
-      const hasAnyLevel4 = allowed.some(s => s.startsWith("iwcf-drilling-level4"));
-      if (!hasAnyLevel4) {
-        setErrorMsg("Access Denied");
-        return;
-      }
+    setLoadingIds(true);
+    const res = await signinCheck({ userId: trimmedId, level4: true });
+    setLoadingIds(false);
+    if (!res.ok) {
+      setErrorMsg(res.error || "Invalid ID Number");
+      return;
     }
-
     localStorage.setItem("userId", trimmedId);
     setAuthenticated(true);
     setErrorMsg("");
@@ -274,7 +254,7 @@ const IWCFDrilling = () => {
           ].map(item => (
             <button
               key={item.level}
-              onClick={() => { setSelectedLevel(item.level); if (item.level === 4) fetchValidIds(); }}
+              onClick={() => { setSelectedLevel(item.level);  }}
               className="group relative bg-card border border-border rounded-2xl p-6 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               <div className="flex items-center justify-between">
