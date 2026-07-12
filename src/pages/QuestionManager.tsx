@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Upload, Plus, Trash2, FileText, Check, AlertCircle, FolderOpen, RefreshCw, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { adminOp } from "@/lib/backendApi";
 import mammoth from "mammoth";
 
 interface ParsedQuestion {
@@ -611,21 +612,28 @@ const QuestionManager = () => {
   const uploadQuestionImage = async (file: File, categorySlug: string, questionIdx: number): Promise<string | null> => {
     const ext = file.name.split(".").pop() || "png";
     const path = `${categorySlug}/q${questionIdx + 1}-${Date.now()}.${ext}`;
-    
-    const { error } = await supabase.storage
-      .from("question-images")
-      .upload(path, file, { upsert: true });
 
-    if (error) {
-      console.error("Image upload error:", error);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1] || "");
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+
+      const res = await adminOp<{ url: string }>("upload_question_image", {
+        path,
+        base64,
+        content_type: file.type || "image/png",
+      });
+      return res.url || null;
+    } catch (e) {
+      console.error("Image upload error:", e);
       return null;
     }
-
-    const { data: urlData } = supabase.storage
-      .from("question-images")
-      .getPublicUrl(path);
-
-    return urlData.publicUrl;
   };
 
   const handleSaveUpdate = async () => {
