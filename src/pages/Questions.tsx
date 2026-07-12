@@ -5,7 +5,7 @@ import { ArrowLeft, Trash2, Menu } from "lucide-react";
 import { Question } from "@/data/questions";
 import { useDynamicQuestions } from "@/hooks/useDynamicQuestions";
 import AIChat from "@/components/AIChat";
-import { supabase } from "@/integrations/supabase/client";
+import { userData } from "@/lib/backendApi";
 import { ScreenshotBlocker } from "@/components/ScreenshotBlocker";
 import { QuestionCard } from "@/components/questions/QuestionCard";
 import { QuestionSidebar } from "@/components/questions/QuestionSidebar";
