@@ -254,7 +254,7 @@ const IWCFDrilling = () => {
           ].map(item => (
             <button
               key={item.level}
-              onClick={() => { setSelectedLevel(item.level); if (item.level === 4) fetchValidIds(); }}
+              onClick={() => { setSelectedLevel(item.level);  }}
               className="group relative bg-card border border-border rounded-2xl p-6 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               <div className="flex items-center justify-between">
