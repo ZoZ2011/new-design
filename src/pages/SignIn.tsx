@@ -1,36 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Shield, LogIn } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { signinCheck } from "@/lib/backendApi";
 
 
 const ADMIN_CODE = "ADMIN DASH";
 
 const SignIn = () => {
   const [idNumber, setIdNumber] = useState("");
-  const [validIds, setValidIds] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { category } = useParams();
-
-  useEffect(() => {
-    fetchValidIds();
-  }, []);
-
-  const fetchValidIds = async () => {
-    const { data, error } = await supabase.from("valid_users").select("user_id");
-
-    if (error) {
-      console.error("Failed to fetch valid IDs:", error);
-      setValidIds(["400315"]);
-    } else {
-      setValidIds(data?.map(u => u.user_id) || ["400315"]);
-    }
-    setLoading(false);
-  };
 
   const handleSignIn = async () => {
     // Check for admin code
@@ -40,35 +23,18 @@ const SignIn = () => {
     }
 
     const trimmedId = idNumber.trim();
-
-    if (!validIds.includes(trimmedId)) {
-      setErrorMsg("Invalid ID Number");
+    if (!trimmedId) {
+      setErrorMsg("Please enter your ID");
       return;
     }
 
-    // Check category access — uses access_restricted flag on the user
-    // If access_restricted=true, user can only access slugs in user_category_access table
-    if (category) {
-      const { data: userData } = await supabase
-        .from("valid_users")
-        .select("access_restricted")
-        .eq("user_id", trimmedId)
-        .single();
+    setLoading(true);
+    const res = await signinCheck({ userId: trimmedId, category });
+    setLoading(false);
 
-      if (userData?.access_restricted) {
-        const { data: accessData, error: accessError } = await supabase
-          .from("user_category_access")
-          .select("category_slug")
-          .eq("user_id", trimmedId);
-
-        if (!accessError) {
-          const allowedSlugs = accessData?.map(r => r.category_slug) ?? [];
-          if (!allowedSlugs.includes(category)) {
-              setErrorMsg("Access Denied");
-              return;
-            }
-        }
-      }
+    if (!res.ok) {
+      setErrorMsg(res.error || "Invalid ID Number");
+      return;
     }
 
     localStorage.setItem("userId", trimmedId);
@@ -147,7 +113,7 @@ const SignIn = () => {
               disabled={loading}
             >
               <LogIn className="w-4 h-4" />
-              {loading ? "Loading..." : "Sign In"}
+              {loading ? "Checking..." : "Sign In"}
             </Button>
           </div>
         </div>
