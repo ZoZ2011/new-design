@@ -70,11 +70,8 @@ const Questions = () => {
 
     const loadData = async () => {
       try {
-        const { data: progressData } = await supabase
-          .from("user_progress")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("category", category);
+        const progressRes = await userData<{ data: any[] }>("get_progress", userId, { category });
+        const progressData = progressRes?.data;
 
         if (progressData) {
           const answers: { [key: number]: number } = {};
@@ -92,11 +89,8 @@ const Questions = () => {
           setSubmittedAnswers(submitted);
         }
 
-        const { data: settingsData } = await supabase
-          .from("user_settings")
-          .select("*")
-          .eq("user_id", userId)
-          .single();
+        const settingsRes = await userData<{ data: any }>("get_settings", userId);
+        const settingsData = settingsRes?.data;
 
         if (settingsData) {
           if (settingsData.theme === "dark") {
@@ -129,17 +123,12 @@ const Questions = () => {
     if (!userId || !category) return;
 
     try {
-      await supabase
-        .from("user_progress")
-        .upsert({
-          user_id: userId,
-          category: category,
-          question_id: questionId.toString(),
-          selected_answer: answer,
-          is_submitted: isSubmitted,
-        }, {
-          onConflict: "user_id,category,question_id"
-        });
+      await userData("save_progress", userId, {
+        category,
+        question_id: questionId,
+        selected_answer: answer,
+        is_submitted: isSubmitted,
+      });
     } catch (error) {
       console.error("Error saving progress:", error);
     }
@@ -245,11 +234,7 @@ const Questions = () => {
     
     if (window.confirm("Are you sure you want to clear all progress? This cannot be undone.")) {
       try {
-        await supabase
-          .from("user_progress")
-          .delete()
-          .eq("user_id", userId)
-          .eq("category", category);
+        await userData("clear_progress", userId, { category });
 
         setSelectedAnswers({});
         setSubmittedAnswers({});
