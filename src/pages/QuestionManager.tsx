@@ -652,11 +652,6 @@ const QuestionManager = () => {
         }
       }
 
-      await supabase
-        .from("dynamic_questions")
-        .delete()
-        .eq("category_slug", selectedCategory);
-
       const rows = parsedQuestions.map((q, idx) => {
         const effectiveType = questionType === "combination" 
           ? (q.detectedType || "mcq_single") 
@@ -676,8 +671,7 @@ const QuestionManager = () => {
         };
       });
 
-      const { error } = await supabase.from("dynamic_questions").insert(rows);
-      if (error) throw error;
+      await adminOp("replace_category_questions", { category_slug: selectedCategory, rows });
 
       toast.success(`Updated ${parsedQuestions.length} questions`);
       setParsedQuestions([]);
@@ -706,13 +700,14 @@ const QuestionManager = () => {
 
     setSaving(true);
     try {
-      const { error: catError } = await supabase.from("question_categories").insert({
-        name: newCategoryName.trim(),
-        slug,
-        parent_path: actualParent,
-        display_order: allCategories.length + 1,
+      await adminOp("insert_category", {
+        row: {
+          name: newCategoryName.trim(),
+          slug,
+          parent_path: actualParent,
+          display_order: allCategories.length + 1,
+        },
       });
-      if (catError) throw catError;
 
       const imageUrls: (string | null)[] = [];
       for (let i = 0; i < parsedQuestions.length; i++) {
@@ -743,6 +738,8 @@ const QuestionManager = () => {
             : q.answerText || null,
         };
       });
+
+      await adminOp("insert_questions", { rows });
 
       const { error } = await supabase.from("dynamic_questions").insert(rows);
       if (error) throw error;
