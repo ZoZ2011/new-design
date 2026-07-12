@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, Save, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { adminOp } from "@/lib/backendApi";
 import { getQuestionsByCategory, Question } from "@/data/questions";
 import { Input } from "@/components/ui/input";
 import {
@@ -181,11 +182,7 @@ const AnswerEditor = () => {
     setSavingKey(q.key);
     try {
       if (q.source === "db" && q.dbId) {
-        const { error } = await supabase
-          .from("dynamic_questions")
-          .update({ correct_answer: newAnswer })
-          .eq("id", q.dbId);
-        if (error) throw error;
+        await adminOp("update_question_answer", { id: q.dbId, correct_answer: newAnswer });
         setQuestions((prev) =>
           prev.map((x) =>
             x.key === q.key ? { ...x, correctAnswer: newAnswer } : x
@@ -206,10 +203,7 @@ const AnswerEditor = () => {
           answer_text: sq.answerText ?? null,
           image_url: sq.image ?? null,
         }));
-        const { error } = await supabase
-          .from("dynamic_questions")
-          .insert(rows);
-        if (error) throw error;
+        await adminOp("replace_category_questions", { category_slug: q.category, rows });
         toast.success("Answer updated");
         // Reload from DB
         const { data: dbRows } = await supabase
