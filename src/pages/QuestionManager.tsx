@@ -741,9 +741,6 @@ const QuestionManager = () => {
 
       await adminOp("insert_questions", { rows });
 
-      const { error } = await supabase.from("dynamic_questions").insert(rows);
-      if (error) throw error;
-
       toast.success(`Created "${newCategoryName}" with ${parsedQuestions.length} questions`);
       setParsedQuestions([]);
       setFileName("");
@@ -762,8 +759,7 @@ const QuestionManager = () => {
     if (!window.confirm("Are you sure you want to delete this category and all its questions?")) return;
 
     try {
-      await supabase.from("dynamic_questions").delete().eq("category_slug", slug);
-      await supabase.from("question_categories").delete().eq("slug", slug);
+      await adminOp("delete_category", { slug });
       toast.success("Category deleted");
       fetchDynamicCategories();
     } catch (error) {
