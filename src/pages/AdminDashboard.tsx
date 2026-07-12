@@ -1,8 +1,117 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, ArrowLeft, Users, FileText, RefreshCw, Edit3 } from "lucide-react";
+import { Shield, ArrowLeft, Users, FileText, RefreshCw, Edit3, LogIn } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { verifyAdminPin, setAdminPin, getAdminPin, clearAdminPin } from "@/lib/backendApi";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [pin, setPin] = useState("");
+  const [authed, setAuthed] = useState(!!getAdminPin());
+  const [verifying, setVerifying] = useState(false);
+  const [error, setError] = useState("");
+
+  // Verify existing pin on mount
+  useEffect(() => {
+    const existing = getAdminPin();
+    if (!existing) return;
+    (async () => {
+      const ok = await verifyAdminPin(existing);
+      if (!ok) {
+        clearAdminPin();
+        setAuthed(false);
+      }
+    })();
+  }, []);
+
+  const handleLogin = async () => {
+    if (!pin.trim()) return;
+    setVerifying(true);
+    setError("");
+    const ok = await verifyAdminPin(pin.trim());
+    setVerifying(false);
+    if (!ok) {
+      setError("Invalid admin PIN");
+      return;
+    }
+    setAdminPin(pin.trim());
+    setAuthed(true);
+    toast.success("Admin session started");
+  };
+
+  const handleLogout = () => {
+    clearAdminPin();
+    setAuthed(false);
+    setPin("");
+    toast.success("Signed out of admin");
+  };
+
+  if (!authed) {
+    return (
+      <div className="min-h-screen bg-background font-jakarta flex flex-col">
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Home
+            </button>
+            <span className="text-border">›</span>
+            <span className="text-sm font-semibold text-foreground">Control Center</span>
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-sm space-y-8 animate-fade-in">
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
+                <Shield className="w-7 h-7 text-primary" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                Admin Sign-In
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Enter the admin PIN to manage the platform
+              </p>
+            </div>
+            <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">
+                  Admin PIN
+                </label>
+                <Input
+                  type="password"
+                  value={pin}
+                  onChange={(e) => {
+                    setPin(e.target.value);
+                    setError("");
+                  }}
+                  onKeyPress={(e) => e.key === "Enter" && handleLogin()}
+                  placeholder="Enter admin PIN"
+                  disabled={verifying}
+                  className="h-11 text-base"
+                />
+                {error && (
+                  <p className="text-destructive text-xs mt-1">{error}</p>
+                )}
+              </div>
+              <Button
+                onClick={handleLogin}
+                className="w-full h-11 font-semibold text-base gap-2"
+                disabled={verifying}
+              >
+                <LogIn className="w-4 h-4" />
+                {verifying ? "Verifying..." : "Unlock"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const panels = [
     {
@@ -44,6 +153,12 @@ const AdminDashboard = () => {
           </button>
           <span className="text-border">›</span>
           <span className="text-sm font-semibold text-foreground">Control Center</span>
+          <button
+            onClick={handleLogout}
+            className="ml-auto text-xs text-muted-foreground hover:text-destructive"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
