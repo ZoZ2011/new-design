@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { adminOp } from "@/lib/backendApi";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, User, Activity, Clock, BarChart3, Lock, Unlock, ShieldCheck } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -112,15 +113,11 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
 
   const fetchValidUsers = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("valid_users")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast.error("Failed to fetch users");
-    } else {
-      setValidUsers(data || []);
+    try {
+      const res = await adminOp<{ data: ValidUser[] }>("list_valid_users");
+      setValidUsers(res.data || []);
+    } catch (e: any) {
+      toast.error("Failed to fetch users: " + (e.message || e));
     }
     setLoading(false);
   };
@@ -131,21 +128,19 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
       return;
     }
 
-    const { error } = await supabase
-      .from("valid_users")
-      .insert({ user_id: newUserId.trim(), name: newUserName.trim() || null });
-
-    if (error) {
-      if (error.code === "23505") {
-        toast.error("This ID already exists");
-      } else {
-        toast.error("Failed to add user");
-      }
-    } else {
+    try {
+      await adminOp("add_valid_user", { user_id: newUserId.trim(), name: newUserName.trim() || null });
       toast.success("User added successfully");
       setNewUserId("");
       setNewUserName("");
       fetchValidUsers();
+    } catch (e: any) {
+      const msg = e?.message || "";
+      if (msg.includes("23505") || msg.toLowerCase().includes("duplicate")) {
+        toast.error("This ID already exists");
+      } else {
+        toast.error("Failed to add user");
+      }
     }
   };
 
@@ -155,11 +150,8 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
       return;
     }
 
-    const { error } = await supabase.from("valid_users").delete().eq("id", id);
-
-    if (error) {
-      toast.error("Failed to delete user");
-    } else {
+    try {
+      await adminOp("delete_valid_user", { id });
       toast.success("User deleted successfully");
       fetchValidUsers();
       if (selectedUser?.id === id) {
@@ -168,6 +160,8 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
         setUserAccess([]);
         setIsRestricted(false);
       }
+    } catch {
+      toast.error("Failed to delete user");
     }
   };
 
@@ -175,18 +169,16 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
     setSelectedUser(user);
     setLoadingStats(true);
 
-    const { data: progressData, error } = await supabase
-      .from("user_progress")
-      .select("*")
-      .eq("user_id", user.user_id);
-
-    if (error) {
+    let progress: any[] = [];
+    try {
+      const res = await adminOp<{ data: any[] }>("get_user_progress", { user_id: user.user_id });
+      progress = res.data || [];
+    } catch {
       toast.error("Failed to fetch user statistics");
       setLoadingStats(false);
       return;
     }
 
-    const progress = progressData || [];
     const totalQuestions = progress.length;
     const answeredQuestions = progress.filter(p => p.selected_answer !== null).length;
     const submittedQuestions = progress.filter(p => p.is_submitted).length;
@@ -222,12 +214,14 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
 
   const fetchUserAccess = async (userId: string) => {
     setLoadingAccess(true);
-    const [accessRes, userRes] = await Promise.all([
-      supabase.from("user_category_access").select("category_slug").eq("user_id", userId),
-      supabase.from("valid_users").select("access_restricted").eq("user_id", userId).single(),
-    ]);
-    setUserAccess(accessRes.data?.map(d => d.category_slug) ?? []);
-    setIsRestricted((userRes.data as any)?.access_restricted ?? false);
+    try {
+      const res = await adminOp<{ access: string[]; access_restricted: boolean }>("get_user_access", { user_id: userId });
+      setUserAccess(res.access);
+      setIsRestricted(res.access_restricted);
+    } catch {
+      setUserAccess([]);
+      setIsRestricted(false);
+    }
     setLoadingAccess(false);
   };
 
@@ -240,34 +234,16 @@ const AdminPanel = ({ onClose }: AdminPanelProps) => {
   const saveAccess = async () => {
     if (!selectedUser) return;
     setSavingAccess(true);
-
-    // Delete existing access rows
-    await supabase
-      .from("user_category_access")
-      .delete()
-      .eq("user_id", selectedUser.user_id);
-
-    // Set access_restricted flag on valid_users
-    await supabase
-      .from("valid_users")
-      .update({ access_restricted: isRestricted } as any)
-      .eq("user_id", selectedUser.user_id);
-
-    // Insert allowed slugs only if restricted
-    if (isRestricted && userAccess.length > 0) {
-      const rows = userAccess.map(slug => ({
+    try {
+      await adminOp("set_user_access", {
         user_id: selectedUser.user_id,
-        category_slug: slug,
-      }));
-      const { error } = await supabase.from("user_category_access").insert(rows);
-      if (error) {
-        toast.error("Failed to save access settings");
-        setSavingAccess(false);
-        return;
-      }
+        slugs: userAccess,
+        access_restricted: isRestricted,
+      });
+      toast.success("Access settings saved");
+    } catch {
+      toast.error("Failed to save access settings");
     }
-
-    toast.success("Access settings saved");
     setSavingAccess(false);
   };
 
