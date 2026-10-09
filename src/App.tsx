@@ -3,6 +3,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ScrollToTop from "@/components/ScrollToTop";
+import ChatWidget from "@/components/ChatWidget";
+import IdGate from "@/components/IdGate";
 import Index from "./pages/Index";
 import Exercises from "./pages/Exercises";
 import IACD from "./pages/IACD";
@@ -31,6 +33,8 @@ const App = () => (
       <Toaster />
       <BrowserRouter>
         <ScrollToTop />
+        <ChatWidget />
+        <IdGate>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/exercises" element={<Exercises />} />
@@ -53,6 +57,7 @@ const App = () => (
           <Route path="/control-center/answers" element={<AnswerEditor />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </IdGate>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
