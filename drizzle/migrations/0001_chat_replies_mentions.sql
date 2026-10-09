@@ -1,0 +1,1 @@
+ALTER TABLE public.chat_messages ADD COLUMN reply_to uuid, ADD COLUMN mentions text[] NOT NULL DEFAULT '{}';

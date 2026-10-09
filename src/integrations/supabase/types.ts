@@ -22,7 +22,9 @@ export type Database = {
           created_at: string
           id: string
           is_admin: boolean
+          mentions: string[]
           message: string
+          reply_to: string | null
           sender_id: string
           sender_name: string | null
         }
@@ -33,7 +35,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_admin?: boolean
+          mentions?: string[]
           message?: string
+          reply_to?: string | null
           sender_id: string
           sender_name?: string | null
         }
@@ -44,7 +48,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_admin?: boolean
+          mentions?: string[]
           message?: string
+          reply_to?: string | null
           sender_id?: string
           sender_name?: string | null
         }
