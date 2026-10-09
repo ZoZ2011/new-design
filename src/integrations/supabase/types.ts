@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          attachment_name: string | null
+          attachment_type: string | null
+          attachment_url: string | null
+          created_at: string
+          id: string
+          is_admin: boolean
+          message: string
+          sender_id: string
+          sender_name: string | null
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          message?: string
+          sender_id: string
+          sender_name?: string | null
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          message?: string
+          sender_id?: string
+          sender_name?: string | null
+        }
+        Relationships: []
+      }
       dynamic_questions: {
         Row: {
           answer_text: string | null
