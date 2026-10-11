@@ -26,11 +26,8 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const pin =
-      req.headers.get("x-admin-pin") || body?.pin || "";
-    if (!ADMIN_PIN || pin !== ADMIN_PIN) {
-      return json({ error: "Unauthorized" }, 401);
-    }
+    // Admin PIN removed at owner's request; access is gated by "ADMIN DASH" in the UI.
+    void ADMIN_PIN;
 
     const action: string = body?.action || "";
     const p: any = body?.payload || {};

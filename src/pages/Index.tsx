@@ -1,203 +1,242 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, ClipboardList, ChevronRight, Award, Target, TrendingUp, Shield } from "lucide-react";
+import { ArrowUpRight, ArrowRight, Asterisk } from "lucide-react";
+import rigBg from "@/assets/oil-rig-background.jpg";
+import iwcfLogo from "@/assets/iwcf-logo.jpg";
+import iadcLogo from "@/assets/iadc-logo.png";
+import cardDrilling from "@/assets/wellbore-schematic.png";
+import cardIntervention from "@/assets/coiled-tubing-diagram.png";
+import cardServices from "@/assets/snubbing-stack-q17.png";
+import cardKill from "@/assets/gas-reservoir-diagram.png";
+
+const Marker = ({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) => (
+  <div className={`flex items-center gap-2 text-[11px] font-medium ${dark ? "text-background/80" : "text-foreground"}`}>
+    <span className="w-2.5 h-2.5 rounded-[2px] bg-primary" />
+    {children}
+  </div>
+);
 
 const Index = () => {
   const navigate = useNavigate();
 
-  const stats = [
-    { label: "Questions", value: "500+", icon: Target },
-    { label: "Categories", value: "8+", icon: Award },
-    { label: "Pass Rate", value: "94%", icon: TrendingUp },
-    { label: "Certified Users", value: "1,200+", icon: Shield },
+  const nav = [
+    { label: "Home", path: "/" },
+    { label: "IWCF", path: "/exercises/iwcf" },
+    { label: "IADC", path: "/exercises/iacd", badge: "New" },
+    { label: "Exercises", path: "/exercises" },
+    { label: "Manuals", path: "/manuals" },
   ];
 
-  const features = [
-    {
-      title: "IADC Exercises",
-      description: "International Association of Drilling Contractors — Well Services & Drilling disciplines",
-      path: "/exercises/iacd",
-      badge: "Popular",
-    },
-    {
-      title: "IWCF Exercises",
-      description: "International Well Control Forum — Drilling & Well Intervention disciplines",
-      path: "/exercises/iwcf",
-      badge: "New",
-    },
-    {
-      title: "Study Manuals",
-      description: "Access comprehensive study materials and reference guides",
-      path: "/manuals",
-      badge: null,
-    },
+  const cards = [
+    { title: "IWCF Drilling", tag: "01", img: cardDrilling, path: "/exercises/iwcf" },
+    { title: "IWCF Well Intervention", tag: "02", img: cardIntervention, path: "/exercises/iwcf" },
+    { title: "IADC Well Services", tag: "03", img: cardServices, path: "/exercises/iacd" },
+    { title: "Kill Sheet Drills", tag: "04", img: cardKill, path: "/exercises" },
+  ];
+
+  const numbers = [
+    { v: "500+", t: "Exam-style questions", d: "Written to IWCF and IADC syllabus, with worked answers." },
+    { v: "8+", t: "Disciplines", d: "Drilling, intervention, coiled tubing, snubbing, wireline." },
+    { v: "94%", t: "Pass rate", d: "Candidates who finished the full mock test set." },
+    { v: "24/7", t: "Access", d: "Practice on any device, from rig floor to hotel room." },
+  ];
+
+  const services = [
+    { n: "01", t: "IWCF Level 3 & 4", d: "Surface & subsea drilling well control, kill sheets, gauge problems.", path: "/exercises/iwcf" },
+    { n: "02", t: "IADC WellSharp & OGOR", d: "Well services, coiled tubing, workover, snubbing and full mock tests.", path: "/exercises/iacd" },
+    { n: "03", t: "Study Manuals", d: "Reference guides and formula sheets for exam day.", path: "/manuals" },
   ];
 
   return (
-    <div className="min-h-screen bg-background font-jakarta">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border transition-all duration-300">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Shield className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-lg text-foreground">Well Control Club</span>
-          </div>
-          <button
-            onClick={() => navigate("/exercises")}
-            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors duration-200"
-          >
-            Get Started →
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-muted font-jakarta p-3 sm:p-5">
+      <div className="bg-background rounded-[28px] overflow-hidden">
+        {/* HERO */}
+        <div className="p-2 sm:p-3">
+          <section className="relative rounded-[24px] overflow-hidden bg-foreground min-h-[620px] sm:min-h-[680px] flex flex-col">
+            <img src={rigBg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40 grayscale" />
+            <div className="absolute inset-0 bg-gradient-to-r from-foreground via-foreground/70 to-foreground/20" />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 pointer-events-none" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none translate-y-1/2 -translate-x-1/4" />
-
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24 relative">
-          <div className="text-center space-y-6">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium border border-primary/20 animate-fade-in">
-              <Award className="w-3.5 h-3.5" />
-              Industry-Certified Training Platform
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-foreground leading-tight tracking-tight">
-              Master Well Control
-              <span className="block text-primary mt-1">With Confidence</span>
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Prepare for your IADC and IWCF certifications with structured exercises, 
-              real exam-style questions, and comprehensive study materials.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            {/* nav */}
+            <header className="relative z-10 flex items-center justify-between px-5 sm:px-8 pt-5">
+              <div className="flex items-center gap-2 text-background">
+                <Asterisk className="w-6 h-6 text-primary" strokeWidth={3} />
+                <span className="font-bold text-lg tracking-tight">Well Control<sup className="text-[9px] ml-0.5">®</sup></span>
+              </div>
+              <nav className="hidden md:flex items-center gap-7">
+                {nav.map((n) => (
+                  <button key={n.label} onClick={() => navigate(n.path)} className="relative text-[13px] text-background/80 hover:text-background transition-colors">
+                    {n.label}
+                    {n.badge && (
+                      <span className="absolute -top-2.5 -right-5 text-[8px] bg-primary text-primary-foreground rounded-full px-1.5 py-px">{n.badge}</span>
+                    )}
+                  </button>
+                ))}
+              </nav>
               <button
                 onClick={() => navigate("/exercises")}
-                className="group inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-7 py-3.5 rounded-xl font-semibold text-base hover:bg-primary/90 transition-all duration-200 shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0"
+                className="group flex items-center gap-2 bg-background text-foreground rounded-full pl-1.5 pr-4 py-1.5 text-xs font-semibold"
               >
-                Start Practicing
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-              </button>
-              <button
-                onClick={() => navigate("/manuals")}
-                className="inline-flex items-center justify-center gap-2 bg-muted text-foreground px-7 py-3.5 rounded-xl font-semibold text-base hover:bg-muted/70 transition-all duration-200 border border-border hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <BookOpen className="w-4 h-4" />
-                Browse Manuals
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          {stats.map(({ label, value, icon: Icon }) => (
-            <div
-              key={label}
-              className="bg-card border border-border rounded-2xl p-4 sm:p-5 text-center hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-            >
-              <Icon className="w-5 h-5 text-primary mx-auto mb-2" />
-              <div className="text-2xl sm:text-3xl font-bold text-foreground">{value}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground mt-0.5">{label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Main Navigation Cards */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-12">
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Training Programs</h2>
-          <p className="text-muted-foreground text-sm mt-1">Choose your certification path</p>
-        </div>
-        <div className="grid sm:grid-cols-1 md:grid-cols-3 gap-4">
-          {features.map(({ title, description, path, badge }) => (
-            <button
-              key={path}
-              onClick={() => navigate(path)}
-              className="group text-left bg-card border border-border rounded-2xl p-5 sm:p-6 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-              {badge && (
-                <span className="absolute top-4 right-4 bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full border border-primary/20">
-                  {badge}
+                <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                  <Asterisk className="w-3.5 h-3.5 text-primary-foreground" />
                 </span>
-              )}
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors duration-200">
-                <ClipboardList className="w-5 h-5 text-primary" />
+                Enter ID
+                <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </button>
+            </header>
+
+            <div className="relative z-10 flex-1 flex flex-col justify-between px-5 sm:px-10 pt-14 pb-8">
+              <div>
+                <Marker dark>Next-Gen Well Control Training</Marker>
+                <h1 className="mt-5 text-background font-medium leading-[1.02] tracking-[-0.035em] text-[44px] sm:text-[64px] lg:text-[84px] max-w-[820px]">
+                  Next-Gen
+                  <br />
+                  Well Control Prep for
+                  <br />
+                  Drilling Crews.
+                </h1>
               </div>
-              <h3 className="font-bold text-base sm:text-lg text-foreground mb-2">{title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">{description}</p>
-              <div className="flex items-center gap-1 text-primary text-sm font-semibold group-hover:gap-2 transition-all duration-200">
-                Open
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+
+              <div className="mt-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+                <div className="flex flex-wrap gap-x-16 gap-y-2 text-xs text-background/80">
+                  <span>+ IWCF</span>
+                  <span>+ IADC</span>
+                  <span>+ Kill Sheets</span>
+                </div>
+                <div className="max-w-xs">
+                  <p className="text-background text-lg sm:text-xl leading-snug">
+                    Drilling & Intervention
+                    <br />
+                    Exam-style mock tests
+                    <br />
+                    for Level 3 and Level 4
+                  </p>
+                  <div className="mt-6 flex gap-2.5">
+                    <button
+                      onClick={() => navigate("/exercises")}
+                      className="group flex items-center gap-1.5 bg-primary text-primary-foreground rounded-full px-5 py-2.5 text-xs font-semibold hover:bg-primary/90 transition-colors"
+                    >
+                      Start Practicing
+                      <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </button>
+                    <button
+                      onClick={() => navigate("/manuals")}
+                      className="group flex items-center gap-1.5 bg-background text-foreground rounded-full px-5 py-2.5 text-xs font-semibold"
+                    >
+                      Manuals
+                      <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* LOGO RIBBON */}
+        <section className="border-y border-border mt-6 px-5 sm:px-10 py-6 flex flex-col sm:flex-row items-center gap-8 sm:gap-14">
+          <div className="flex items-center gap-3 shrink-0">
+            <Asterisk className="w-9 h-9 text-foreground" strokeWidth={1.5} />
+            <p className="text-[11px] font-semibold uppercase leading-tight text-foreground">
+              Built around the
+              <br />
+              IWCF & IADC syllabus
+            </p>
+          </div>
+          <div className="flex-1 flex items-center justify-around gap-10 w-full">
+            <img src={iwcfLogo} alt="IWCF" className="h-10 object-contain grayscale" />
+            <img src={iadcLogo} alt="IADC" className="h-10 object-contain grayscale" />
+            <span className="hidden sm:inline font-bold text-lg tracking-tight text-foreground/70">API RP 59</span>
+            <span className="hidden md:inline font-bold text-lg tracking-tight text-foreground/70">API STD 53</span>
+          </div>
+        </section>
+
+        {/* STATEMENT */}
+        <section className="px-5 sm:px-10 pt-20 pb-14">
+          <Marker>Who we are</Marker>
+          <div className="mt-5 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+            <h2 className="text-[30px] sm:text-[42px] lg:text-[48px] font-medium leading-[1.15] tracking-[-0.03em] text-foreground max-w-[720px]">
+              We build exam-verified practice systems to help drilling crews{" "}
+              <span className="text-muted-foreground">pass on the first attempt.</span>
+            </h2>
+            <button
+              onClick={() => navigate("/exercises")}
+              className="group flex items-center gap-3 text-foreground font-semibold text-base sm:text-lg uppercase tracking-tight border-b border-dotted border-primary pb-2 shrink-0"
+            >
+              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              Explore courses
+            </button>
+          </div>
+        </section>
+
+        {/* PORTRAIT CARDS */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-0">
+          {cards.map((c, i) => (
+            <button
+              key={c.title}
+              onClick={() => navigate(c.path)}
+              className={`group relative aspect-[3/4] overflow-hidden rounded-2xl bg-foreground text-left ${i === 0 ? "rounded-l-none" : ""} ${i === 3 ? "rounded-r-none" : ""}`}
+            >
+              <img src={c.img} alt={c.title} className="absolute inset-0 w-full h-full object-cover opacity-50 grayscale transition-all duration-500 group-hover:scale-105 group-hover:opacity-70" />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/30 to-primary/30" />
+              <div className="absolute top-4 left-4 text-[10px] font-mono uppercase tracking-[0.18em] text-background/80">■ {c.tag}</div>
+              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-2">
+                <span className="text-background font-semibold text-base sm:text-xl tracking-tight leading-tight">{c.title}</span>
+                <ArrowUpRight className="w-5 h-5 text-background shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </div>
             </button>
           ))}
-        </div>
-      </section>
+        </section>
 
-      {/* How It Works */}
-      <section className="bg-muted/30 border-y border-border">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">How It Works</h2>
-            <p className="text-muted-foreground text-sm mt-1">Three simple steps to certification</p>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
-            {[
-              { step: "01", title: "Choose a Program", desc: "Select your certification body — IADC or IWCF — and then your discipline." },
-              { step: "02", title: "Practice Questions", desc: "Work through real exam-style questions with immediate feedback on each answer." },
-              { step: "03", title: "Track Progress", desc: "Monitor your score, review mistakes, and build confidence before exam day." },
-            ].map(({ step, title, desc }) => (
-              <div key={step} className="text-center sm:text-left">
-                <div className="text-4xl sm:text-5xl font-extrabold text-primary/20 mb-3">{step}</div>
-                <h3 className="font-bold text-foreground mb-2">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+        {/* NUMBERS */}
+        <section className="px-5 sm:px-10 pt-16 pb-20">
+          <div className="text-[11px] uppercase"><Marker>By the numbers</Marker></div>
+          <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10">
+            {numbers.map((n) => (
+              <div key={n.t}>
+                <div className="text-[44px] sm:text-[56px] font-medium tracking-[-0.04em] leading-none text-foreground pb-3 border-b border-dotted border-foreground/40">
+                  {n.v}
+                </div>
+                <p className="mt-3 text-sm font-semibold text-foreground">{n.t}</p>
+                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{n.d}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA Banner */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-        <div className="bg-primary rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-          <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
-          <div className="relative">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground mb-3">Ready to Get Certified?</h2>
-            <p className="text-primary-foreground/80 text-sm sm:text-base mb-6 max-w-md mx-auto">
-              Join thousands of well control professionals who trained with us and passed their certification exams.
+        {/* DARK SERVICES */}
+        <section className="bg-foreground px-5 sm:px-10 pt-16 pb-10">
+          <Marker dark>Courses</Marker>
+          <div className="mt-4 flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-8 border-b border-background/15">
+            <h2 className="text-[40px] sm:text-[56px] font-medium tracking-[-0.035em] text-background leading-none">
+              Our <span className="text-background/50">Courses</span>
+            </h2>
+            <p className="text-xs text-background/60 max-w-xs leading-relaxed">
+              Practice the way the real exam is set — timed mock tests, kill sheet calculations and instant answer review.
             </p>
-            <button
-              onClick={() => navigate("/exercises")}
-              className="inline-flex items-center gap-2 bg-primary-foreground text-primary px-7 py-3.5 rounded-xl font-bold text-base hover:bg-primary-foreground/90 transition-all duration-200 shadow-lg hover:-translate-y-0.5 active:translate-y-0"
-            >
-              Start Now — It's Free
-              <ChevronRight className="w-4 h-4" />
-            </button>
           </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
-              <Shield className="w-3 h-3 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-sm text-foreground">Well Control Club</span>
+          <div>
+            {services.map((s) => (
+              <button
+                key={s.n}
+                onClick={() => navigate(s.path)}
+                className="group w-full grid grid-cols-[auto_1fr_auto] items-center gap-6 py-7 border-b border-dashed border-background/20 text-left"
+              >
+                <span className="text-[11px] font-mono text-primary">[{s.n}]</span>
+                <div>
+                  <p className="text-xl sm:text-3xl font-medium tracking-tight text-background group-hover:text-primary transition-colors">{s.t}</p>
+                  <p className="mt-1 text-xs sm:text-sm text-background/55">{s.d}</p>
+                </div>
+                <span className="w-10 h-10 rounded-full border border-background/25 flex items-center justify-center text-background group-hover:bg-primary group-hover:border-primary transition-colors">
+                  <ArrowUpRight className="w-4 h-4" />
+                </span>
+              </button>
+            ))}
           </div>
-          <p className="text-xs text-muted-foreground">© 2025 Well Control Club. All rights reserved.</p>
-        </div>
-      </footer>
+          <footer className="mt-14 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-background/50">
+            <span className="flex items-center gap-1.5"><Asterisk className="w-4 h-4 text-primary" /> Well Control Club</span>
+            <span>© 2026 Well Control Club. All rights reserved.</span>
+          </footer>
+        </section>
+      </div>
     </div>
   );
 };
