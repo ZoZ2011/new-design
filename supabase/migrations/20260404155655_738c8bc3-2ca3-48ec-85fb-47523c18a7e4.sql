@@ -1,1 +1,0 @@
-DELETE FROM dynamic_questions WHERE id = '515416f1-ab23-46f9-bf64-24bbdbcacceb';
