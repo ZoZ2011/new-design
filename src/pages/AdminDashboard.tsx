@@ -34,9 +34,8 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     clearAdminPin();
-    setAuthed(false);
-    setPin("");
     toast.success("Signed out of admin");
+    navigate("/");
   };
 
   if (!authed) {
