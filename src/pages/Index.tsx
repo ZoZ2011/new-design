@@ -86,7 +86,10 @@ const Index = () => {
             <div className="relative z-10 flex-1 flex flex-col justify-between px-5 sm:px-10 pt-14 pb-8">
               <div>
                 <Marker dark>Next-Gen Well Control Training</Marker>
-                <h1 className="mt-5 text-background font-medium leading-[1.02] tracking-[-0.035em] text-[44px] sm:text-[64px] lg:text-[84px] max-w-[820px]">
+                <div className="mt-4 text-[56px] sm:text-[84px] lg:text-[110px] font-black tracking-tight text-white leading-none">
+                  ZIAD
+                </div>
+                <h1 className="mt-4 text-background font-medium leading-[1.02] tracking-[-0.035em] text-[40px] sm:text-[56px] lg:text-[72px] max-w-[820px]">
                   Next-Gen
                   <br />
                   Well Control Prep for
