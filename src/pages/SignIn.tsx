@@ -60,15 +60,12 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#141518] flex items-center justify-center p-3 sm:p-6 font-jakarta">
-      {/* Main Container Card */}
-      <div className="w-full max-w-[1020px] bg-white rounded-[32px] sm:rounded-[40px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[580px] sm:min-h-[620px] border border-white/5">
-        
-        {/* Left Column (Vibrant Blue Hero Panel) */}
-        <div className="lg:col-span-7 bg-gradient-to-br from-[#3b82f6] via-[#2563eb] to-[#1d4ed8] p-7 sm:p-10 flex flex-col justify-between text-white relative overflow-hidden">
-          {/* Subtle glow / light blur in background */}
-          <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-[#1e40af]/30 blur-3xl pointer-events-none" />
+    <div className="min-h-screen w-full bg-white grid grid-cols-1 lg:grid-cols-12 font-jakarta">
+      {/* Left Column (Vibrant Blue Hero Panel) */}
+      <div className="lg:col-span-7 bg-gradient-to-br from-[#3b82f6] via-[#2563eb] to-[#1d4ed8] p-8 sm:p-12 lg:p-16 flex flex-col justify-between text-white relative overflow-hidden min-h-[540px] lg:min-h-screen">
+        {/* Subtle glow / light blur in background */}
+        <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-[#1e40af]/30 blur-3xl pointer-events-none" />
 
           {/* Top Logo */}
           <div className="relative z-10 flex items-center gap-2.5">
@@ -211,10 +208,8 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
             </div>
           </div>
         </div>
-
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default SignIn;
