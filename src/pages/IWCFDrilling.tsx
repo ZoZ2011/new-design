@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, BookOpen, Clock, ChevronRight, Calendar } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCategoryAccess } from "@/hooks/useCategoryAccess";
 import { checkCategoryAccess } from "@/lib/accessControl";
+import SelectionCard from "@/components/SelectionCard";
 
 const IWCFDrilling = () => {
   const navigate = useNavigate();
@@ -50,28 +51,34 @@ const IWCFDrilling = () => {
 
   if (selectedLevel === 3) {
     return (
-      <div className="min-h-screen bg-background font-jakarta flex flex-col">
-        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-            <button onClick={() => setSelectedLevel(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+      <div className="min-h-screen bg-[#fafafc] font-jakarta flex flex-col">
+        <header className="sticky top-0 z-50 bg-[#fafafc]/90 backdrop-blur-md border-b border-slate-200/60">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+            <button
+              onClick={() => setSelectedLevel(null)}
+              className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+            >
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
-            <span className="text-border">›</span>
-            <span className="text-sm font-semibold text-foreground">Level 3</span>
+            <span className="text-slate-300">›</span>
+            <span className="text-xs sm:text-sm font-semibold text-slate-900">Level 3</span>
           </div>
         </header>
         <div className="flex-1 flex flex-col items-center justify-center px-4 py-20 space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
-            <Clock className="w-8 h-8 text-muted-foreground" />
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
+            <Clock className="w-8 h-8 text-slate-400" />
           </div>
           <div className="text-center space-y-2 max-w-sm">
-            <h2 className="text-xl font-bold text-foreground">Under Development</h2>
-            <p className="text-muted-foreground text-sm leading-relaxed">
+            <h2 className="text-xl font-bold text-slate-900">Under Development</h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
               Level 3 content is currently being prepared. Check back soon.
             </p>
           </div>
-          <button onClick={() => setSelectedLevel(null)} className="text-sm font-semibold text-primary hover:underline">
-            Back to Drilling
+          <button
+            onClick={() => setSelectedLevel(null)}
+            className="text-sm font-semibold text-primary hover:underline cursor-pointer"
+          >
+            Back to Drilling Levels
           </button>
         </div>
       </div>
@@ -80,50 +87,97 @@ const IWCFDrilling = () => {
 
   if (selectedLevel === 4) {
     const days = [
-      { title: "Day #1", subtitle: "P&P Part 1", slug: "iwcf-drilling-level4-day1" },
-      { title: "Day #2", subtitle: "P&P Part 2", slug: "iwcf-drilling-level4-day2" },
-      { title: "Day #3", subtitle: "Equipment", slug: "iwcf-drilling-level4-day3" },
+      {
+        title: "Day #1",
+        badge: "PART 1",
+        subtitle: "Principles & Procedures (Part 1)",
+        slug: "iwcf-drilling-level4-day1",
+        features: [
+          "Hydrostatic & Formation Pressure",
+          "Kick Causes & Warning Signs",
+          "Shut-in Methods & Verification",
+          "Gas Behavior & Migration",
+        ],
+      },
+      {
+        title: "Day #2",
+        badge: "PART 2",
+        subtitle: "Principles & Procedures (Part 2) & Calculations",
+        slug: "iwcf-drilling-level4-day2",
+        isFeatured: true,
+        features: [
+          "Wait & Weight Method Drills",
+          "Driller's Method Calculation Steps",
+          "Kill Mud & Influx Calculation",
+          "Volumetric & Stripping Operations",
+        ],
+      },
+      {
+        title: "Day #3",
+        badge: "EQUIPMENT",
+        subtitle: "Well Control Equipment & Barrier Verification",
+        slug: "iwcf-drilling-level4-day3",
+        features: [
+          "BOP Stack & Annular Preventers",
+          "Choke & Kill Manifolds",
+          "Accumulator & Closing Units",
+          "Testing & Industry Standards",
+        ],
+      },
     ];
 
-    const selectedDayInfo = selectedDay ? days.find(d => d.slug === selectedDay) : null;
+    const selectedDayInfo = selectedDay ? days.find((d) => d.slug === selectedDay) : null;
 
     if (selectedDay && selectedDayInfo) {
       return (
-        <div className="min-h-screen bg-background font-jakarta flex flex-col">
-          <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-              <button onClick={() => { setSelectedDay(null); setDayCategories([]); }} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+        <div className="min-h-screen bg-[#fafafc] font-jakarta flex flex-col">
+          <header className="sticky top-0 z-50 bg-[#fafafc]/90 backdrop-blur-md border-b border-slate-200/60">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setSelectedDay(null);
+                  setDayCategories([]);
+                }}
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+              >
                 <ArrowLeft className="w-4 h-4" /> Back
               </button>
-              <span className="text-border">›</span>
-              <span className="text-sm text-muted-foreground">Level 4</span>
-              <span className="text-border">›</span>
-              <span className="text-sm font-semibold text-foreground">{selectedDayInfo.title}</span>
+              <span className="text-slate-300">›</span>
+              <span className="text-xs sm:text-sm text-slate-500">Level 4</span>
+              <span className="text-slate-300">›</span>
+              <span className="text-xs sm:text-sm font-semibold text-slate-900">{selectedDayInfo.title}</span>
             </div>
           </header>
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 animate-fade-in w-full">
-            <div className="mb-8">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight mb-1">{selectedDayInfo.title}</h1>
-              <p className="text-muted-foreground text-sm">{selectedDayInfo.subtitle}</p>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 flex-1 animate-fade-in w-full">
+            <div className="text-center space-y-2 mb-12">
+              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                {selectedDayInfo.title} — Topics
+              </h1>
+              <p className="text-slate-500 text-sm max-w-md mx-auto">{selectedDayInfo.subtitle}</p>
             </div>
             {loadingCategories ? (
-              <p className="text-muted-foreground text-sm">Loading...</p>
+              <p className="text-center text-slate-400 text-sm py-16">Loading topics...</p>
             ) : dayCategories.length === 0 ? (
-              <div className="text-center py-12 space-y-2">
-                <p className="text-muted-foreground text-sm">No questions added yet.</p>
+              <div className="text-center py-16 space-y-2">
+                <p className="text-slate-500 text-sm">No topics added under this day yet.</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {dayCategories.map((cat, idx) => (
-                  <button
+                  <SelectionCard
                     key={cat.slug}
+                    badge={`TOPIC #${idx + 1}`}
+                    title={cat.name}
+                    subtitle="Practice questions & mock review"
+                    features={[
+                      "Curated syllabus questions",
+                      "Instant solution & grading",
+                      "Real exam difficulty",
+                    ]}
+                    buttonText="Start Practicing"
+                    isFeatured={idx === 0}
                     onClick={() => openCategory(cat.slug)}
-                    className="w-full text-left p-4 rounded-xl bg-card border border-border hover:border-primary/40 hover:shadow-md transition-all duration-200 flex items-center gap-3"
-                  >
-                    <span className="text-primary font-bold text-lg min-w-[2rem]">{idx + 1}.</span>
-                    <span className="font-semibold text-foreground">{cat.name}</span>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
-                  </button>
+                  />
                 ))}
               </div>
             )}
@@ -134,40 +188,42 @@ const IWCFDrilling = () => {
     }
 
     return (
-      <div className="min-h-screen bg-background font-jakarta flex flex-col">
-        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-            <button onClick={() => setSelectedLevel(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+      <div className="min-h-screen bg-[#fafafc] font-jakarta flex flex-col">
+        <header className="sticky top-0 z-50 bg-[#fafafc]/90 backdrop-blur-md border-b border-slate-200/60">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+            <button
+              onClick={() => setSelectedLevel(null)}
+              className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+            >
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
-            <span className="text-border">›</span>
-            <span className="text-sm text-muted-foreground">Drilling</span>
-            <span className="text-border">›</span>
-            <span className="text-sm font-semibold text-foreground">Level 4</span>
+            <span className="text-slate-300">›</span>
+            <span className="text-xs sm:text-sm text-slate-500">IWCF Drilling</span>
+            <span className="text-slate-300">›</span>
+            <span className="text-xs sm:text-sm font-semibold text-slate-900">Level 4</span>
           </div>
         </header>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 animate-fade-in w-full">
-          <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight mb-1">Level 4</h1>
-            <p className="text-muted-foreground text-sm">Select a day to begin practicing</p>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 flex-1 animate-fade-in w-full">
+          <div className="text-center space-y-2.5 mb-12 sm:mb-16">
+            <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
+              IWCF Level 4 Days
+            </h1>
+            <p className="text-slate-500 text-sm sm:text-base font-normal max-w-md mx-auto">
+              Select a training day to begin exam practice drills.
+            </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {days.map(day => (
-              <button
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-7 items-stretch">
+            {days.map((day) => (
+              <SelectionCard
                 key={day.slug}
+                badge={day.badge}
+                title={day.title}
+                subtitle={day.subtitle}
+                features={day.features}
+                buttonText="Start Day"
+                isFeatured={day.isFeatured}
                 onClick={() => setSelectedDay(day.slug)}
-                className="group relative bg-card border border-border rounded-2xl p-6 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <div className="flex flex-col items-center text-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors duration-200">
-                    <Calendar className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-foreground text-lg mb-0.5">{day.title}</h3>
-                    <p className="text-xs text-muted-foreground">{day.subtitle}</p>
-                  </div>
-                </div>
-              </button>
+              />
             ))}
           </div>
         </div>
@@ -178,46 +234,62 @@ const IWCFDrilling = () => {
 
   // Main: Level 3 / Level 4 selection
   return (
-    <div className="min-h-screen bg-background font-jakarta flex flex-col">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-          <button onClick={() => navigate("/exercises/iwcf")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+    <div className="min-h-screen bg-[#fafafc] font-jakarta flex flex-col">
+      <header className="sticky top-0 z-50 bg-[#fafafc]/90 backdrop-blur-md border-b border-slate-200/60">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+          <button
+            onClick={() => navigate("/exercises/iwcf")}
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+          >
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
-          <span className="text-border">›</span>
-          <span className="text-sm text-muted-foreground">IWCF</span>
-          <span className="text-border">›</span>
-          <span className="text-sm font-semibold text-foreground">Drilling</span>
+          <span className="text-slate-300">›</span>
+          <span className="text-xs sm:text-sm text-slate-500">IWCF</span>
+          <span className="text-slate-300">›</span>
+          <span className="text-xs sm:text-sm font-semibold text-slate-900">Drilling</span>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 animate-fade-in w-full">
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight mb-1">IWCF Drilling</h1>
-          <p className="text-muted-foreground text-sm">Select a level to continue</p>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 flex-1 animate-fade-in w-full">
+        <div className="text-center space-y-2.5 mb-12 sm:mb-16">
+          <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
+            IWCF Drilling Certification
+          </h1>
+          <p className="text-slate-500 text-sm sm:text-base font-normal max-w-md mx-auto">
+            Select candidate Level 3 or supervisor Level 4 to start practicing.
+          </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { level: 3 as const, label: "Level 3" },
-            { level: 4 as const, label: "Level 4" },
-          ].map(item => (
-            <button
-              key={item.level}
-              disabled={levelChecking}
-              onClick={() => handleSelectLevel(item.level)}
-              className="group relative bg-card border border-border rounded-2xl p-6 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors duration-200">
-                    <BookOpen className="w-5 h-5 text-primary" />
-                  </div>
-                  <h3 className="font-bold text-foreground text-base">{item.label}</h3>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-            </button>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 max-w-3xl mx-auto items-stretch">
+          <SelectionCard
+            badge="CANDIDATE TRACK"
+            title="Level 3"
+            subtitle="Driller candidate well control certification preparation"
+            buttonText="Select Level 3"
+            isFeatured={false}
+            features={[
+              "Basic well control calculations",
+              "Kick detection & shut-in procedures",
+              "Driller's method fundamentals",
+              "Surface equipment overview",
+            ]}
+            loading={levelChecking}
+            onClick={() => handleSelectLevel(3)}
+          />
+          <SelectionCard
+            badge="SUPERVISOR TRACK"
+            title="Level 4"
+            subtitle="Supervisor & toolpusher well control certification prep"
+            buttonText="Start Level 4"
+            isFeatured={true}
+            features={[
+              "Advanced supervisor calculations",
+              "Wait & Weight & Volumetric methods",
+              "Subsea & high pressure scenarios",
+              "Days #1, #2 and #3 full course drills",
+            ]}
+            loading={levelChecking}
+            onClick={() => handleSelectLevel(4)}
+          />
         </div>
       </div>
       <AccessModal />
