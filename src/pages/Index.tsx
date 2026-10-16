@@ -1,8 +1,13 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, ArrowRight, Asterisk } from "lucide-react";
+import { ArrowUpRight, ArrowRight, ArrowLeft, Asterisk } from "lucide-react";
 import rigBg from "@/assets/oil-rig-background.jpg";
 import iwcfLogo from "@/assets/iwcf-logo.jpg";
 import iadcLogo from "@/assets/iadc-logo.png";
+import cardDrilling from "@/assets/wellbore-schematic.png";
+import cardIntervention from "@/assets/coiled-tubing-diagram.png";
+import cardServices from "@/assets/snubbing-stack-q17.png";
+import cardKill from "@/assets/gas-reservoir-diagram.png";
 
 const Marker = ({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) => (
   <div className={`flex items-center gap-2 text-[11px] font-medium ${dark ? "text-background/80" : "text-foreground"}`}>
@@ -58,10 +63,23 @@ const Index = () => {
     { v: "24/7", t: "Access", d: "Practice on any device, from rig floor to hotel room." },
   ];
 
-  const services = [
-    { n: "01", t: "IWCF Level 3 & 4", d: "Surface & subsea drilling well control, kill sheets, gauge problems.", path: "/exercises/iwcf" },
-    { n: "02", t: "IADC WellSharp & OGOR", d: "Well services, coiled tubing, workover, snubbing and full mock tests.", path: "/exercises/iacd" },
-    { n: "03", t: "Study Manuals", d: "Reference guides and formula sheets for exam day.", path: "/manuals" },
+  const trackRef = useRef<HTMLDivElement>(null);
+  const scrollCourses = (dir: number) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>("[data-card]");
+    el.scrollBy({ left: dir * ((card?.offsetWidth ?? 300) + 16), behavior: "smooth" });
+  };
+
+  const courses = [
+    { t: "IWCF\nLevel 3", tags: ["Drilling", "Surface"], d: "Core well control principles, shut-in and kill methods.", img: cardDrilling, path: "/exercises/iwcf/drilling" },
+    { t: "IWCF\nLevel 4", tags: ["Supervisor", "Day 1–3"], d: "Advanced supervisor topics grouped by training day.", img: rigBg, path: "/exercises/iwcf/drilling" },
+    { t: "Well\nIntervention", tags: ["IWCF", "Completion"], d: "Wireline, coiled tubing and snubbing barrier control.", img: cardIntervention, path: "/exercises/iwcf/well-intervention" },
+    { t: "IADC\nOGOR", tags: ["Well Services", "New"], d: "OGOR topic drills plus three full mock tests.", img: cardServices, path: "/exercises/iacd/well-services/ogor" },
+    { t: "Coiled\nTubing", tags: ["IADC", "CT"], d: "CT stack, pressure control and running procedures.", img: cardIntervention, path: "/exercises/iacd/well-services" },
+    { t: "Snubbing\n& Workover", tags: ["IADC", "Live well"], d: "Pipe-light, pipe-heavy and workover kill operations.", img: cardServices, path: "/exercises/iacd/well-services" },
+    { t: "Kill Sheet\nDrills", tags: ["Calculations", "9 steps"], d: "Fill the full kill sheet and get graded at the end.", img: cardKill, path: "/exercises" },
+    { t: "Study\nManuals", tags: ["Reference", "Formulas"], d: "Formula sheets and guides for exam day.", img: rigBg, path: "/manuals" },
   ];
 
   return (
@@ -256,40 +274,95 @@ const Index = () => {
           </div>
         </section>
 
-        {/* DARK SERVICES */}
-        <section className="bg-foreground px-5 sm:px-10 pt-16 pb-10">
-          <Marker dark>Courses</Marker>
-          <div className="mt-4 flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-8 border-b border-background/15">
-            <h2 className="text-[40px] sm:text-[56px] font-medium tracking-[-0.035em] text-background leading-none">
-              Our <span className="text-background/50">Courses</span>
+        {/* COURSES CAROUSEL (NEW DESIGN WITH SLIDER & READ MORE) */}
+        <section className="px-5 sm:px-10 pt-16 pb-14 bg-[#fafafc] border-t border-slate-200/60">
+          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-semibold">Elevate your exam</p>
+          <div className="mt-3 flex items-end justify-between gap-6">
+            <h2 className="text-[34px] sm:text-[52px] font-bold tracking-[-0.035em] text-foreground leading-[1.02] max-w-[640px]">
+              Our Courses for Every Well Control Crew
             </h2>
-            <p className="text-xs text-background/60 max-w-xs leading-relaxed">
-              Practice the way the real exam is set — timed mock tests, kill sheet calculations and instant answer review.
-            </p>
-          </div>
-          <div>
-            {services.map((s) => (
+            <div className="flex gap-2 shrink-0">
               <button
-                key={s.n}
-                onClick={() => navigate(s.path)}
-                className="group w-full grid grid-cols-[auto_1fr_auto] items-center gap-6 py-7 border-b border-dashed border-background/20 text-left cursor-pointer"
+                aria-label="Previous"
+                onClick={() => scrollCourses(-1)}
+                className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer shadow-sm"
               >
-                <span className="text-[11px] font-mono text-primary font-bold">[{s.n}]</span>
-                <div>
-                  <p className="text-xl sm:text-3xl font-medium tracking-tight text-background group-hover:text-primary transition-colors">{s.t}</p>
-                  <p className="mt-1 text-xs sm:text-sm text-background/55">{s.d}</p>
-                </div>
-                <span className="w-10 h-10 rounded-full border border-background/25 flex items-center justify-center text-background group-hover:bg-primary group-hover:border-primary transition-colors">
-                  <ArrowUpRight className="w-4 h-4" />
-                </span>
+                <ArrowLeft className="w-4 h-4" />
               </button>
+              <button
+                aria-label="Next"
+                onClick={() => scrollCourses(1)}
+                className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer shadow-sm"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div
+            ref={trackRef}
+            className="mt-8 flex gap-5 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {courses.map((c, i) => (
+              <div
+                key={c.t}
+                data-card
+                className={`snap-start shrink-0 w-[270px] sm:w-[310px] rounded-[26px] p-2.5 flex flex-col shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:shadow-lg ${
+                  i === 0 ? "bg-primary text-primary-foreground" : "bg-white text-foreground"
+                }`}
+              >
+                <div className="px-4 pt-4 pb-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-1.5 flex-wrap">
+                      {c.tags.map((tg) => (
+                        <span
+                          key={tg}
+                          className="text-[10px] font-bold bg-background text-foreground rounded-full px-2.5 py-1 shadow-2xs"
+                        >
+                          {tg}
+                        </span>
+                      ))}
+                    </div>
+                    <span
+                      className={`w-7 h-7 rounded-full flex items-center justify-center ${
+                        i === 0 ? "bg-foreground" : "bg-slate-100"
+                      }`}
+                    >
+                      <Asterisk className={`w-4 h-4 ${i === 0 ? "text-primary" : "text-foreground/70"}`} />
+                    </span>
+                  </div>
+                  <h3 className="mt-5 text-[28px] sm:text-[32px] font-extrabold tracking-[-0.03em] leading-[1.05] whitespace-pre-line">
+                    {c.t}
+                  </h3>
+                  <p
+                    className={`mt-2.5 text-xs leading-relaxed ${
+                      i === 0 ? "text-primary-foreground/90 font-medium" : "text-muted-foreground"
+                    }`}
+                  >
+                    {c.d}
+                  </p>
+                </div>
+                <div className="relative mt-auto aspect-[4/5] rounded-[20px] overflow-hidden">
+                  <img src={c.img} alt={c.t} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <button
+                    onClick={() => navigate(c.path)}
+                    className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/20 backdrop-blur-md text-white border border-white/20 rounded-full pl-4 pr-1.5 py-1.5 text-xs font-semibold hover:bg-white/35 transition-all cursor-pointer shadow-md"
+                  >
+                    Read More
+                    <span className="w-6 h-6 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-xs">
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
-          <footer className="mt-14 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-background/50">
-            <span className="flex items-center gap-1.5"><Asterisk className="w-4 h-4 text-primary" /> Well Control Club</span>
-            <span>© 2026 Well Control Club. All rights reserved.</span>
-          </footer>
         </section>
+
+        <footer className="bg-foreground px-5 sm:px-10 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-background/50">
+          <span className="flex items-center gap-1.5"><Asterisk className="w-4 h-4 text-primary" /> Well Control Club</span>
+          <span>© 2026 Well Control Club. All rights reserved.</span>
+        </footer>
       </div>
     </div>
   );
