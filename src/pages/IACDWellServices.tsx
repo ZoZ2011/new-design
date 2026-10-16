@@ -1,16 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, Wrench, Cable, Anchor, Radio, FileText } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCategoryAccess } from "@/hooks/useCategoryAccess";
+import SelectionCard from "@/components/SelectionCard";
 
 const STATIC_CATEGORIES = [
-  { slug: "ogor", name: "OGOR", description: "IADC OGOR certification practice questions", icon: FileText, isOgor: true },
-  { slug: "coiled-tubing", name: "Coiled Tubing", description: "Coiled tubing operations and well intervention techniques", icon: Cable },
-  { slug: "workover", name: "Workover", description: "Workover operations and completion procedures", icon: Wrench },
-  { slug: "snubbing", name: "Snubbing", description: "Snubbing operations under pressure conditions", icon: Anchor },
-  { slug: "wireline", name: "Wireline", description: "Wireline logging and perforation operations", icon: Radio },
+  { slug: "ogor", badge: "OGOR", name: "OGOR", description: "IADC OGOR certification practice questions", isOgor: true,
+    features: ["Coiled Tubing, Snubbing, Workover, Wireline", "Full OGOR Mock Tests", "Instant answer review"] },
+  { slug: "coiled-tubing", badge: "COURSE", name: "Coiled Tubing", description: "Coiled tubing operations and well intervention techniques",
+    features: ["CT equipment & stack", "Pressure control", "Operations procedures"] },
+  { slug: "workover", badge: "COURSE", name: "Workover", description: "Workover operations and completion procedures",
+    features: ["Completion equipment", "Well killing", "Workover procedures"] },
+  { slug: "snubbing", badge: "COURSE", name: "Snubbing", description: "Snubbing operations under pressure conditions",
+    features: ["Snubbing stack", "Pipe-light / heavy", "Barrier management"] },
+  { slug: "wireline", badge: "COURSE", name: "Wireline", description: "Wireline logging and perforation operations",
+    features: ["Lubricator & BOP", "Slickline & e-line", "Pressure testing"] },
 ];
 
 const IACDWellServices = () => {
@@ -35,77 +41,54 @@ const IACDWellServices = () => {
   const extraCategories = dynamicCategories.filter(d => !STATIC_CATEGORIES.some(s => s.slug === d.slug));
 
   return (
-    <div className="min-h-screen bg-background font-jakarta flex flex-col">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+    <div className="min-h-screen bg-[#fafafc] font-jakarta">
+      <header className="sticky top-0 z-50 bg-[#fafafc]/90 backdrop-blur-md border-b border-slate-200/60">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <button
             onClick={() => navigate("/exercises/iacd")}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
-          <span className="text-border">›</span>
-          <span className="text-sm text-muted-foreground">Exercises</span>
-          <span className="text-border">›</span>
-          <span className="text-sm text-muted-foreground">IADC</span>
-          <span className="text-border">›</span>
-          <span className="text-sm font-semibold text-foreground">Well Services</span>
+          <span className="text-slate-300">›</span>
+          <button onClick={() => navigate("/exercises/iacd")} className="text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900">IADC</button>
+          <span className="text-slate-300">›</span>
+          <span className="text-xs sm:text-sm font-semibold text-slate-900">Well Services</span>
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex-1 animate-fade-in w-full">
-        <div className="mb-8 space-y-3">
-          <span className="inline-block text-sm font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5">
-            IADC — Well Services
-          </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-            Select Topic
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Choose the certification topic you want to practice
-          </p>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <div className="text-center space-y-2.5 mb-12 sm:mb-16">
+          <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">Well Services</h1>
+          <p className="text-slate-500 text-sm sm:text-base max-w-md mx-auto">Choose the topic you want to practice.</p>
         </div>
 
         {loading ? (
-          <div className="text-center py-16 text-muted-foreground text-sm">Loading...</div>
+          <div className="text-center py-16 text-slate-500 text-sm">Loading...</div>
         ) : (
-          <div className="space-y-4">
-            {STATIC_CATEGORIES.map(cat => {
-              const Icon = cat.icon;
-              return (
-                <button
-                  key={cat.slug}
-                  onClick={() => cat.isOgor ? navigate("/exercises/iacd/well-services/ogor") : toast.info("No available questions for this topic yet.")}
-                  className="group w-full bg-card border border-border rounded-2xl p-5 sm:p-6 flex items-center gap-4 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors duration-200">
-                    <Icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground text-base sm:text-lg">{cat.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">{cat.description}</p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-primary shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
-                </button>
-              );
-            })}
-
-            {extraCategories.map(cat => (
-              <button
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7 items-stretch">
+            {STATIC_CATEGORIES.map(cat => (
+              <SelectionCard
                 key={cat.slug}
+                badge={cat.badge}
+                title={cat.name}
+                subtitle={cat.description}
+                buttonText={cat.isOgor ? "Open OGOR" : "Start Practicing"}
+                isFeatured={!!cat.isOgor}
+                features={cat.features}
+                onClick={() => cat.isOgor ? navigate("/exercises/iacd/well-services/ogor") : toast.info("No available questions for this topic yet.")}
+              />
+            ))}
+            {extraCategories.map(cat => (
+              <SelectionCard
+                key={cat.slug}
+                badge="TOPIC"
+                title={cat.name}
+                subtitle="Click to start practicing"
+                features={["Exam-style questions", "Instant answer review"]}
                 onClick={() => openCategory(cat.slug)}
-                className="group w-full bg-card border border-border rounded-2xl p-5 sm:p-6 flex items-center gap-4 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors duration-200">
-                  <Wrench className="w-6 h-6 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-foreground text-base sm:text-lg">{cat.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-0.5">Click to start practicing</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-primary shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
-              </button>
+              />
             ))}
           </div>
         )}
