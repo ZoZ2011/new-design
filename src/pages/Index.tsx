@@ -3,10 +3,10 @@ import { ArrowUpRight, ArrowRight, Asterisk } from "lucide-react";
 import rigBg from "@/assets/oil-rig-background.jpg";
 import iwcfLogo from "@/assets/iwcf-logo.jpg";
 import iadcLogo from "@/assets/iadc-logo.png";
-import cardDrilling from "@/assets/wellbore-schematic.png";
-import cardIntervention from "@/assets/coiled-tubing-diagram.png";
-import cardServices from "@/assets/snubbing-stack-q17.png";
-import cardKill from "@/assets/gas-reservoir-diagram.png";
+import cardDrilling from "@/assets/home-card-drilling.jpg";
+import cardIntervention from "@/assets/home-card-intervention.jpg";
+import cardServices from "@/assets/home-card-services.jpg";
+import cardKill from "@/assets/home-card-killsheet.jpg";
 
 const Marker = ({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) => (
   <div className={`flex items-center gap-2 text-[11px] font-medium ${dark ? "text-background/80" : "text-foreground"}`}>
@@ -182,10 +182,12 @@ const Index = () => {
             </h2>
             <button
               onClick={() => navigate("/exercises")}
-              className="group flex items-center gap-3 text-foreground font-semibold text-base sm:text-lg uppercase tracking-tight border-b border-dotted border-primary pb-2 shrink-0"
+              className="group flex items-center gap-3 bg-primary text-primary-foreground rounded-full pl-6 pr-2 py-2 text-sm font-semibold shadow-lg shadow-primary/25 hover:bg-primary/90 hover:-translate-y-0.5 transition-all shrink-0"
             >
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               Explore courses
+              <span className="w-9 h-9 rounded-full bg-background text-foreground flex items-center justify-center">
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </span>
             </button>
           </div>
         </section>
@@ -198,8 +200,8 @@ const Index = () => {
               onClick={() => navigate(c.path)}
               className={`group relative aspect-[3/4] overflow-hidden rounded-2xl bg-foreground text-left ${i === 0 ? "rounded-l-none" : ""} ${i === 3 ? "rounded-r-none" : ""}`}
             >
-              <img src={c.img} alt={c.title} className="absolute inset-0 w-full h-full object-cover opacity-50 grayscale transition-all duration-500 group-hover:scale-105 group-hover:opacity-70" />
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/30 to-primary/30" />
+              <img src={c.img} alt={c.title} loading="lazy" width={768} height={1024} className="absolute inset-0 w-full h-full object-cover opacity-80 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100" />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/20 to-transparent" />
               <div className="absolute top-4 left-4 text-[10px] font-mono uppercase tracking-[0.18em] text-background/80">■ {c.tag}</div>
               <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-2">
                 <span className="text-background font-semibold text-base sm:text-xl tracking-tight leading-tight">{c.title}</span>
@@ -224,6 +226,12 @@ const Index = () => {
             ))}
           </div>
         </section>
+
+        {/* GRADIENT TRANSITION */}
+        <div aria-hidden className="relative h-40 sm:h-56 overflow-hidden bg-gradient-to-b from-background via-primary/15 to-primary/40">
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,hsl(var(--background)/0.5),transparent)] bg-[length:50%_100%] bg-no-repeat animate-[shimmer_6s_ease-in-out_infinite]" />
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-transparent to-foreground" />
+        </div>
 
         {/* DARK SERVICES */}
         <section className="bg-foreground px-5 sm:px-10 pt-16 pb-10">
