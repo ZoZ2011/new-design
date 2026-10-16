@@ -1,25 +1,16 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
-  Trash2,
   Menu,
   Timer,
   Play,
   Pause,
-  RotateCcw,
-  BookOpen,
-  Calculator,
   Lock,
-  Sparkles,
-  Search,
   HelpCircle,
-  X,
   Volume2,
   VolumeX,
-  Maximize2,
-  Minimize2,
 } from "lucide-react";
 import { Question } from "@/data/questions";
 import { useDynamicQuestions } from "@/hooks/useDynamicQuestions";
@@ -33,19 +24,6 @@ import { QuestionNavigation } from "@/components/questions/QuestionNavigation";
 import { checkCategoryAccess, ACCESS_DENIED_MESSAGE } from "@/lib/accessControl";
 import { toast } from "sonner";
 
-// Common formulas for reference modal
-const FORMULAS = [
-  { name: "Hydrostatic Pressure (psi)", formula: "0.052 × Mud Weight (ppg) × TVD (ft)" },
-  { name: "Pressure Gradient (psi/ft)", formula: "Mud Weight (ppg) × 0.052" },
-  { name: "Formation Pressure (psi)", formula: "Hydrostatic Pressure + SIDPP" },
-  { name: "Kill Mud Weight (ppg)", formula: "Original MW + (SIDPP / (0.052 × TVD))" },
-  { name: "Initial Circulating Pressure (psi)", formula: "SIDPP + SCR (Slow Circulating Rate Pressure)" },
-  { name: "Final Circulating Pressure (psi)", formula: "SCR × (Kill Mud Weight / Original Mud Weight)" },
-  { name: "MAASP (psi)", formula: "(Fracture Gradient - Current Mud Weight) × 0.052 × Casing Shoe TVD" },
-  { name: "Gas Law (Boyle's)", formula: "P1 × V1 = P2 × V2" },
-  { name: "Annular Velocity (ft/min)", formula: "Pump Output (bbl/min) / Annular Capacity (bbl/ft)" },
-];
-
 const Questions = () => {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
   const [submittedAnswers, setSubmittedAnswers] = useState<{ [key: number]: boolean }>({});
@@ -58,23 +36,14 @@ const Questions = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
 
-  // 5 New Innovative & Helpful Features
-  // 1. Bookmarks / Review Later Flagging
+  // Bookmarks / Review Later Flagging
   const [flaggedIds, setFlaggedIds] = useState<Set<number>>(new Set());
 
-  // 2. Exam Stopwatch / Practice Timer
+  // Exam Stopwatch / Practice Timer
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(true);
 
-  // 3. Built-in Formula Sheet Modal
-  const [showFormulas, setShowFormulas] = useState(false);
-
-  // 4. Scratchpad Calculator
-  const [showCalculator, setShowCalculator] = useState(false);
-  const [calcInput, setCalcInput] = useState("");
-  const [calcResult, setCalcResult] = useState<string | null>(null);
-
-  // 5. Verified Answer Syllabus Explanation Toggle
+  // Verified Answer Syllabus Explanation Toggle
   const [showExplanations, setShowExplanations] = useState<{ [key: number]: boolean }>({});
 
   const navigate = useNavigate();
@@ -116,19 +85,6 @@ const Questions = () => {
       }
       return next;
     });
-  };
-
-  // Calculator evaluation
-  const handleCalcEval = () => {
-    try {
-      // Safe math evaluation with sanitization
-      const sanitized = calcInput.replace(/[^0-9+\-*/(). ]/g, "");
-      // eslint-disable-next-line no-eval
-      const result = Function(`'use strict'; return (${sanitized})`)();
-      setCalcResult(String(Number(result.toFixed(4))));
-    } catch {
-      setCalcResult("Error");
-    }
   };
 
   // Calculate correct answers count
@@ -438,7 +394,7 @@ const Questions = () => {
             </span>
           </div>
 
-          {/* Quick Utility Tools (Timer, Formulas, Calculator, Menu) */}
+          {/* Quick Utility Tools (Timer, Sound, Menu) */}
           <div className="flex items-center gap-2">
             {/* Timer Pill */}
             <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 px-3 py-1.5 rounded-full text-xs font-mono font-semibold text-slate-700 dark:text-slate-200">
@@ -452,26 +408,6 @@ const Questions = () => {
                 {timerRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 text-emerald-600" />}
               </button>
             </div>
-
-            {/* Formulas Sheet Button */}
-            <button
-              onClick={() => setShowFormulas(true)}
-              title="Formula Sheet"
-              className="hidden sm:flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-              <span>Formulas</span>
-            </button>
-
-            {/* Quick Calculator Button */}
-            <button
-              onClick={() => setShowCalculator(!showCalculator)}
-              title="Drilling Calculator"
-              className="hidden sm:flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
-            >
-              <Calculator className="w-3.5 h-3.5 text-purple-600" />
-              <span>Calc</span>
-            </button>
 
             {/* Sound Toggle */}
             <button
@@ -571,94 +507,6 @@ const Questions = () => {
           />
         </div>
       </div>
-
-      {/* ================= MODAL: FORMULA SHEET REFERENCE ================= */}
-      {showFormulas && (
-        <div className="fixed inset-0 z-[70] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-blue-600" />
-                <h3 className="font-extrabold text-slate-900 dark:text-white text-base">
-                  IWCF / IADC Key Formulas Reference
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowFormulas(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
-              {FORMULAS.map((f, i) => (
-                <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800">
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{f.name}</p>
-                  <p className="text-xs font-mono text-blue-600 dark:text-blue-400 mt-1">{f.formula}</p>
-                </div>
-              ))}
-            </div>
-
-            <Button
-              onClick={() => setShowFormulas(false)}
-              className="w-full rounded-full font-semibold h-10 bg-slate-900 text-white"
-            >
-              Close Formulas
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* ================= FLOATING DRILLING SCRATCHPAD CALCULATOR ================= */}
-      {showCalculator && (
-        <div className="fixed bottom-20 left-6 z-[65] w-72 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 p-4 space-y-3 animate-in slide-in-from-bottom-5">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-              <Calculator className="w-3.5 h-3.5 text-purple-600" /> Quick Scratchpad
-            </span>
-            <button
-              onClick={() => setShowCalculator(false)}
-              className="text-slate-400 hover:text-slate-600 text-xs"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            <input
-              type="text"
-              value={calcInput}
-              onChange={(e) => setCalcInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCalcEval()}
-              placeholder="e.g. 0.052 * 10 * 8500"
-              className="w-full text-xs font-mono bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2 outline-none border border-slate-200 focus:border-purple-400 text-slate-800 dark:text-slate-200"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleCalcEval}
-                className="flex-1 bg-slate-900 text-white py-1.5 rounded-xl text-xs font-semibold hover:bg-black transition-colors"
-              >
-                Calculate
-              </button>
-              <button
-                onClick={() => {
-                  setCalcInput("");
-                  setCalcResult(null);
-                }}
-                className="px-3 bg-slate-100 text-slate-600 py-1.5 rounded-xl text-xs font-semibold hover:bg-slate-200"
-              >
-                C
-              </button>
-            </div>
-            {calcResult !== null && (
-              <div className="p-2 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-200 text-xs font-mono font-bold text-purple-900 dark:text-purple-300 text-center">
-                = {calcResult}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* AI Tutor Chat */}
       {showAIChat && currentQuestion && (
