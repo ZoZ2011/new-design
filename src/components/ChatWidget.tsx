@@ -100,33 +100,33 @@ const ChatWidget = () => {
     lastRef.current = undefined;
   }, [isAdmin, userId]);
 
-  // Polling
+  // Polling & Real-time sync across all devices
   useEffect(() => {
     if (!enabled) return;
     let stop = false;
     const poll = async () => {
       try {
-        const res = await callChat({ action: "list", since: lastRef.current });
+        const res = await callChat({ action: "list" });
         if (stop) return;
         setMe(res.me);
         const rows: Msg[] = res.data || [];
-        if (rows.length) {
-          lastRef.current = rows[rows.length - 1].created_at;
-          setMsgs((prev) => {
-            const ids = new Set(prev.map((m) => m.id));
-            const fresh = rows.filter((r) => !ids.has(r.id));
-            if (!openRef.current && prev.length) {
+        setMsgs((prev) => {
+          // If first load or list updated
+          if (!openRef.current && prev.length > 0) {
+            const prevIds = new Set(prev.map((m) => m.id));
+            const fresh = rows.filter((r) => !prevIds.has(r.id));
+            if (fresh.length > 0) {
               setUnread((u) => u + fresh.filter((f) => f.sender_id !== res.me).length);
             }
-            return [...prev, ...fresh];
-          });
-        }
+          }
+          return rows;
+        });
       } catch {
         /* ignore transient */
       }
     };
     poll();
-    const t = setInterval(poll, 3000);
+    const t = setInterval(poll, 2500);
     return () => {
       stop = true;
       clearInterval(t);
@@ -233,14 +233,12 @@ const ChatWidget = () => {
 
   const remove = async (id: string) => {
     try {
-      // Allow admin or sender to remove
+      // Call backend to permanently delete message from database
       await callChat({ action: "delete", id });
       setMsgs((p) => p.filter((m) => m.id !== id));
-      toast.success("Message deleted");
+      toast.success("Message deleted everywhere");
     } catch (e: any) {
-      // optimistic delete for user
-      setMsgs((p) => p.filter((m) => m.id !== id));
-      toast.info("Message removed");
+      toast.error(e?.message || "Could not delete message");
     }
   };
 

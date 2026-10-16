@@ -50,10 +50,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "list") {
-      const since: string | undefined = body?.since;
-      let q = supabase.from("chat_messages").select("*").order("created_at", { ascending: true });
-      if (since) q = q.gt("created_at", since);
-      else q = q.limit(500);
+      const q = supabase.from("chat_messages").select("*").order("created_at", { ascending: true }).limit(500);
       const { data, error } = await q;
       if (error) throw error;
       return json({ data: await signRows(data || []), me: senderId });
@@ -91,8 +88,17 @@ Deno.serve(async (req) => {
       return json({ data: (await signRows([data]))[0] });
     }
 
-    if (action === "delete" && isAdmin) {
-      const { error } = await supabase.from("chat_messages").delete().eq("id", body?.id);
+    if (action === "delete") {
+      const messageId = body?.id;
+      if (!messageId) return json({ error: "Missing message ID" }, 400);
+
+      // Admin can delete any message. User can delete their own message.
+      let delQuery = supabase.from("chat_messages").delete().eq("id", messageId);
+      if (!isAdmin) {
+        delQuery = delQuery.eq("sender_id", senderId);
+      }
+
+      const { error } = await delQuery;
       if (error) throw error;
       return json({ ok: true });
     }
