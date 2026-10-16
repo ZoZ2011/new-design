@@ -17,6 +17,8 @@ const Marker = ({ children, dark = false }: { children: React.ReactNode; dark?: 
 
 const Index = () => {
   const navigate = useNavigate();
+  const userId = localStorage.getItem("userId");
+  const userName = localStorage.getItem("userName");
 
   const nav = [
     { label: "Home", path: "/" },
@@ -71,25 +73,43 @@ const Index = () => {
                   </button>
                 ))}
               </nav>
-              <button
-                onClick={() => navigate("/exercises")}
-                className="group flex items-center gap-2 bg-background text-foreground rounded-full pl-1.5 pr-4 py-1.5 text-xs font-semibold"
-              >
-                <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                  <Asterisk className="w-3.5 h-3.5 text-primary-foreground" />
-                </span>
-                Enter ID
-                <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </button>
+              {userId ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 bg-background text-foreground rounded-full pl-3 pr-3.5 py-1.5 text-xs font-semibold shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span>ID: {userId}</span>
+                    {userName && <span className="text-muted-foreground hidden sm:inline">({userName})</span>}
+                  </div>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem("userId");
+                      localStorage.removeItem("userName");
+                      window.location.reload();
+                    }}
+                    title="Sign Out"
+                    className="bg-background/20 hover:bg-background/40 text-background rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate("/exercises")}
+                  className="group flex items-center gap-2 bg-background text-foreground rounded-full pl-1.5 pr-4 py-1.5 text-xs font-semibold"
+                >
+                  <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                    <Asterisk className="w-3.5 h-3.5 text-primary-foreground" />
+                  </span>
+                  Enter ID
+                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </button>
+              )}
             </header>
 
             <div className="relative z-10 flex-1 flex flex-col justify-between px-5 sm:px-10 pt-14 pb-8">
               <div>
                 <Marker dark>Next-Gen Well Control Training</Marker>
-                <div className="mt-4 text-[56px] sm:text-[84px] lg:text-[110px] font-black tracking-tight text-white leading-none">
-                  ZIAD
-                </div>
-                <h1 className="mt-4 text-background font-medium leading-[1.02] tracking-[-0.035em] text-[40px] sm:text-[56px] lg:text-[72px] max-w-[820px]">
+                <h1 className="mt-5 text-background font-medium leading-[1.02] tracking-[-0.035em] text-[44px] sm:text-[64px] lg:text-[84px] max-w-[820px]">
                   Next-Gen
                   <br />
                   Well Control Prep for

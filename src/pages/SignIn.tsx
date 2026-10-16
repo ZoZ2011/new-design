@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ArrowLeft, Shield, LogIn } from "lucide-react";
 import { signinCheck } from "@/lib/backendApi";
+import { ArrowRight, Loader2 } from "lucide-react";
 
+interface SignInProps {
+  onSuccess?: () => void;
+}
 
 const ADMIN_CODE = "ADMIN DASH";
 
-const SignIn = () => {
+export const SignIn = ({ onSuccess }: SignInProps) => {
   const [idNumber, setIdNumber] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,107 +17,201 @@ const SignIn = () => {
   const { category } = useParams();
 
   const handleSignIn = async () => {
-    // Check for admin code
-    if (idNumber.trim().toUpperCase() === ADMIN_CODE) {
+    const trimmedId = idNumber.trim();
+    if (!trimmedId) {
+      setErrorMsg("Please enter your ID number");
+      return;
+    }
+
+    // Admin redirect
+    if (trimmedId.toUpperCase() === ADMIN_CODE) {
       navigate("/control-center");
       return;
     }
 
-    const trimmedId = idNumber.trim();
-    if (!trimmedId) {
-      setErrorMsg("Please enter your ID");
-      return;
-    }
-
     setLoading(true);
-    const res = await signinCheck({ userId: trimmedId, category });
-    setLoading(false);
+    setErrorMsg("");
 
-    if (!res.ok) {
-      setErrorMsg(res.error || "Invalid ID Number");
-      return;
+    try {
+      const res = await signinCheck({ userId: trimmedId, category });
+      setLoading(false);
+
+      if (!res.ok) {
+        setErrorMsg(res.error === "Access Denied" ? "لا، لا يمكن فتحه، هذا غير متاح حاليًا من الـ admin" : (res.error || "Invalid ID Number"));
+        return;
+      }
+
+      localStorage.setItem("userId", trimmedId);
+      if (res.name) {
+        localStorage.setItem("userName", res.name);
+      }
+
+      if (onSuccess) {
+        onSuccess();
+      } else if (category) {
+        navigate(`/questions/${category}`);
+      } else {
+        navigate("/");
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setErrorMsg("Failed to verify ID. Please try again.");
     }
-
-    localStorage.setItem("userId", trimmedId);
-    navigate(`/questions/${category}`);
   };
-
-  const getCategoryTitle = () => {
-    if (!category) return "";
-
-    if (category.includes("iadc-ogor-mock-test")) {
-      const testNumber = category.split("-").pop();
-      return `IADC OGOR Mock Test #${testNumber}`;
-    }
-
-    return category
-      .split("-")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
-
 
   return (
-    <div className="min-h-screen bg-background font-jakarta flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-          <span className="text-border">›</span>
-          <span className="text-sm font-semibold text-foreground truncate">
-            {getCategoryTitle()}
-          </span>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#141518] flex items-center justify-center p-3 sm:p-6 font-jakarta">
+      {/* Main Container Card */}
+      <div className="w-full max-w-[1020px] bg-white rounded-[32px] sm:rounded-[40px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[580px] sm:min-h-[620px] border border-white/5">
+        
+        {/* Left Column (Vibrant Blue Hero Panel) */}
+        <div className="lg:col-span-7 bg-gradient-to-br from-[#3b82f6] via-[#2563eb] to-[#1d4ed8] p-7 sm:p-10 flex flex-col justify-between text-white relative overflow-hidden">
+          {/* Subtle glow / light blur in background */}
+          <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-[#1e40af]/30 blur-3xl pointer-events-none" />
 
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm space-y-8 animate-fade-in">
-          {/* Icon + Title */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
-              <Shield className="w-7 h-7 text-primary" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-              {getCategoryTitle()}
-            </h1>
-            <p className="text-muted-foreground text-sm">Enter your ID number to access exercises</p>
-          </div>
-
-          {/* Form Card */}
-          <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
-            <div className="space-y-2">
-              <label htmlFor="idNumber" className="text-sm font-semibold text-foreground">
-                ID Number
-              </label>
-              <Input
-                id="idNumber"
-                type="text"
-                value={idNumber}
-                onChange={e => { setIdNumber(e.target.value); setErrorMsg(""); }}
-                placeholder="Enter your ID number"
-                onKeyPress={e => e.key === "Enter" && handleSignIn()}
-                disabled={loading}
-                className="h-11 text-base"
-              />
-              {errorMsg && <p className="text-destructive text-xs mt-1">{errorMsg}</p>}
-            </div>
-
-            <Button
-              onClick={handleSignIn}
-              className="w-full h-11 font-semibold text-base gap-2 hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-primary/20"
-              disabled={loading}
+          {/* Top Logo */}
+          <div className="relative z-10 flex items-center gap-2.5">
+            <svg
+              className="w-5 h-5 text-white"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <LogIn className="w-4 h-4" />
-              {loading ? "Checking..." : "Sign In"}
-            </Button>
+              <circle cx="12" cy="12" r="9" strokeOpacity="0.4" />
+              <circle cx="12" cy="5" r="2" fill="currentColor" />
+              <circle cx="6" cy="16" r="2" fill="currentColor" />
+              <circle cx="18" cy="16" r="2" fill="currentColor" />
+            </svg>
+            <span className="font-bold text-lg tracking-tight text-white select-none">
+              Hany Metwally
+            </span>
+          </div>
+
+          {/* Middle Headline */}
+          <div className="relative z-10 my-8 sm:my-12">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-medium w-fit mb-4 shadow-sm border border-white/10">
+              <span>Join Us to Learn</span>
+              <span className="text-sm">🤩</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-[1.12]">
+              Start your Course
+            </h1>
+
+            <p className="text-white/80 text-xs sm:text-sm mt-3 max-w-sm font-normal leading-relaxed">
+              Follow these simple steps to access your well control exams and practice materials.
+            </p>
+          </div>
+
+          {/* Bottom 3 Step Cards */}
+          <div className="relative z-10 grid grid-cols-3 gap-2.5 sm:gap-3">
+            {/* Box 1 (Active) */}
+            <div className="bg-white text-slate-900 rounded-2xl p-3.5 sm:p-4 shadow-lg flex flex-col justify-between h-[115px] sm:h-[125px] transition-transform hover:-translate-y-0.5">
+              <span className="w-6 h-6 rounded-full bg-[#2563eb] text-white text-xs font-bold flex items-center justify-center shadow-sm">
+                1
+              </span>
+              <p className="text-[11px] sm:text-xs font-bold text-slate-900 leading-snug">
+                Enter your ID
+              </p>
+            </div>
+
+            {/* Box 2 (Step 2) */}
+            <div className="bg-white/15 backdrop-blur-md border border-white/25 text-white rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between h-[115px] sm:h-[125px] transition-transform hover:-translate-y-0.5">
+              <span className="w-6 h-6 rounded-full bg-white/25 text-white text-xs font-semibold flex items-center justify-center">
+                2
+              </span>
+              <p className="text-[11px] sm:text-xs font-medium text-white/95 leading-snug">
+                Practice & Solve Questions
+              </p>
+            </div>
+
+            {/* Box 3 (Step 3) */}
+            <div className="bg-white/15 backdrop-blur-md border border-white/25 text-white rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between h-[115px] sm:h-[125px] transition-transform hover:-translate-y-0.5">
+              <span className="w-6 h-6 rounded-full bg-white/25 text-white text-xs font-semibold flex items-center justify-center">
+                3
+              </span>
+              <p className="text-[11px] sm:text-xs font-medium text-white/95 leading-snug">
+                Achieve High Scores
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Right Column (Sign In Form) */}
+        <div className="lg:col-span-5 bg-white p-7 sm:p-10 lg:p-12 flex flex-col justify-center">
+          <div className="w-full max-w-sm mx-auto space-y-7">
+            {/* Form Title */}
+            <div className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Join Us
+              </h2>
+              <p className="text-slate-500 text-xs sm:text-sm mt-1.5 font-medium">
+                Enter your registered ID to continue
+              </p>
+            </div>
+
+            {/* Form */}
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="candidateId"
+                  className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2"
+                >
+                  Candidate ID
+                </label>
+                <input
+                  id="candidateId"
+                  type="text"
+                  value={idNumber}
+                  onChange={(e) => {
+                    setIdNumber(e.target.value);
+                    setErrorMsg("");
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSignIn()}
+                  placeholder="e.g. 1024"
+                  disabled={loading}
+                  autoFocus
+                  className="w-full h-12 px-4 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-900 placeholder:text-slate-400 font-medium text-base focus:bg-white focus:border-[#2563eb] focus:ring-4 focus:ring-blue-100/70 transition-all outline-none"
+                />
+                {errorMsg && (
+                  <p className="text-destructive text-xs font-semibold mt-2 animate-fade-in" dir={errorMsg.includes("admin") ? "rtl" : "ltr"}>
+                    {errorMsg}
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={handleSignIn}
+                disabled={loading}
+                className="w-full h-12 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold text-base rounded-xl shadow-md shadow-blue-500/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verifying...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Continue</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Footer note */}
+            <div className="pt-4 border-t border-slate-100 text-center">
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Need access or facing issues? Contact your course administrator or enter your instructor PIN.
+              </p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, Wrench, Cable, Anchor, Radio, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useCategoryAccess } from "@/hooks/useCategoryAccess";
 
 const STATIC_CATEGORIES = [
   { slug: "ogor", name: "OGOR", description: "IADC OGOR certification practice questions", icon: FileText, isOgor: true },
@@ -14,6 +15,7 @@ const STATIC_CATEGORIES = [
 
 const IACDWellServices = () => {
   const navigate = useNavigate();
+  const { openCategory, AccessModal } = useCategoryAccess();
   const [dynamicCategories, setDynamicCategories] = useState<{ name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -92,7 +94,7 @@ const IACDWellServices = () => {
             {extraCategories.map(cat => (
               <button
                 key={cat.slug}
-                onClick={() => navigate(`/signin/${cat.slug}`)}
+                onClick={() => openCategory(cat.slug)}
                 className="group w-full bg-card border border-border rounded-2xl p-5 sm:p-6 flex items-center gap-4 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
                 <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors duration-200">
@@ -108,6 +110,7 @@ const IACDWellServices = () => {
           </div>
         )}
       </div>
+      <AccessModal />
     </div>
   );
 };

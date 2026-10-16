@@ -12,6 +12,9 @@ import { QuestionSidebar } from "@/components/questions/QuestionSidebar";
 import { QuestionProgress } from "@/components/questions/QuestionProgress";
 import { QuestionNavigation } from "@/components/questions/QuestionNavigation";
 
+import { checkCategoryAccess, ACCESS_DENIED_MESSAGE } from "@/lib/accessControl";
+import { Lock } from "lucide-react";
+
 const Questions = () => {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
   const [submittedAnswers, setSubmittedAnswers] = useState<{ [key: number]: boolean }>({});
@@ -22,6 +25,7 @@ const Questions = () => {
   const [autoSubmit, setAutoSubmit] = useState(false);
   const [soundEffects, setSoundEffects] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   const navigate = useNavigate();
   const { category } = useParams();
   const userId = localStorage.getItem("userId");
@@ -61,14 +65,21 @@ const Questions = () => {
     };
   }, []);
 
-  // Load progress and settings from backend
+  // Check category access and load progress and settings from backend
   useEffect(() => {
     if (!userId) {
-      navigate(`/signin/${category}`);
+      navigate("/");
       return;
     }
 
-    const loadData = async () => {
+    const verifyAccessAndLoadData = async () => {
+      if (category) {
+        const { allowed } = await checkCategoryAccess(category);
+        if (!allowed) {
+          setAccessDenied(true);
+          return;
+        }
+      }
       try {
         const progressRes = await userData<{ data: any[] }>("get_progress", userId, { category });
         const progressData = progressRes?.data;
@@ -116,7 +127,7 @@ const Questions = () => {
       }
     };
 
-    loadData();
+    verifyAccessAndLoadData();
   }, [userId, category, navigate]);
 
   const saveProgress = async (questionId: number, answer: number | null, isSubmitted: boolean) => {
@@ -268,6 +279,37 @@ const Questions = () => {
 
   if (!userId) {
     return null;
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-background font-jakarta flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-2xl text-center space-y-6">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-extrabold text-foreground tracking-tight">
+              تم تقييد الوصول
+            </h2>
+            <p className="text-destructive font-bold text-lg leading-relaxed" dir="rtl">
+              {ACCESS_DENIED_MESSAGE}
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            يرجى التواصل مع مسؤول النظام أو المحاضر لتفعيل هذا القسم لحسابك.
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate("/exercises")} className="flex-1 h-11 font-semibold rounded-xl">
+              العودة للتمارين
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/")} className="flex-1 h-11 font-semibold rounded-xl">
+              الرئيسية
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (questionsLoading) {

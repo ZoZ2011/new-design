@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCategoryAccess } from "@/hooks/useCategoryAccess";
 
 const IWCFWellIntervention = () => {
   const navigate = useNavigate();
+  const { openCategory, AccessModal } = useCategoryAccess();
   const [dynamicCategories, setDynamicCategories] = useState<{ name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +64,7 @@ const IWCFWellIntervention = () => {
             {dynamicCategories.map(cat => (
               <button
                 key={cat.slug}
-                onClick={() => navigate(`/signin/${cat.slug}`)}
+                onClick={() => openCategory(cat.slug)}
                 className="group relative bg-card border border-border rounded-2xl p-6 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
                 <div className="flex items-start gap-4">
@@ -106,6 +108,7 @@ const IWCFWellIntervention = () => {
           </div>
         )}
       </div>
+      <AccessModal />
     </div>
   );
 };

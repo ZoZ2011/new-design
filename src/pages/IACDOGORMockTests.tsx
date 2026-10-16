@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCategoryAccess } from "@/hooks/useCategoryAccess";
 
 const STATIC_MOCK_TESTS = [
   { slug: "iadc-ogor-mock-test-1", name: "Mock Test #1" },
@@ -11,6 +12,7 @@ const STATIC_MOCK_TESTS = [
 
 const IACDOGORMockTests = () => {
   const navigate = useNavigate();
+  const { openCategory, AccessModal } = useCategoryAccess();
   const [dynamicCategories, setDynamicCategories] = useState<{ name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -91,7 +93,7 @@ const IACDOGORMockTests = () => {
                 {row.map(cat => (
                   <button
                     key={cat.slug}
-                    onClick={() => navigate(`/signin/${cat.slug}`)}
+                    onClick={() => openCategory(cat.slug)}
                     className="group bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl p-8 sm:p-10 text-center font-bold text-lg sm:text-xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     {cat.name}
@@ -102,6 +104,7 @@ const IACDOGORMockTests = () => {
           </div>
         )}
       </div>
+      <AccessModal />
     </div>
   );
 };
