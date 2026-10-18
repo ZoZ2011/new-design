@@ -150,7 +150,6 @@ const Index = () => {
                   <br />
                   Drilling Crews.
                 </h1>
-                <p className="mt-6 text-background text-2xl font-semibold">ziad</p>
               </div>
 
               <div className="mt-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
