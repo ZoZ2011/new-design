@@ -33,13 +33,15 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({
       <div
         className={`rounded-[26px] p-6 sm:p-7 flex flex-col justify-between min-h-[235px] transition-colors ${
           isFeatured
-            ? "bg-[#dce6f8] group-hover:bg-[#d4e1f6]"
-            : "bg-[#eff0f3] group-hover:bg-[#e9ebef]"
+            ? "bg-[#e0efff] group-hover:bg-[#d4e7fc]"
+            : "bg-[#f1f5f9] group-hover:bg-[#e8eef5]"
         }`}
       >
         <div>
           {/* Badge */}
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-white/90 text-slate-800 shadow-xs">
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-xs ${
+            isFeatured ? "bg-white text-blue-700" : "bg-white/90 text-slate-800"
+          }`}>
             {badge}
           </span>
 
@@ -58,7 +60,11 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({
         <button
           type="button"
           disabled={loading}
-          className="w-full mt-6 py-3 px-5 rounded-full bg-gradient-to-b from-[#262626] to-[#121212] hover:from-[#1a1a1a] hover:to-[#000000] text-white text-xs sm:text-sm font-semibold shadow-md shadow-black/15 transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02] cursor-pointer"
+          className={`w-full mt-6 py-3 px-5 rounded-full text-white text-xs sm:text-sm font-semibold shadow-md transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02] cursor-pointer ${
+            isFeatured
+              ? "bg-[#1d68f2] hover:bg-blue-600 shadow-blue-500/20"
+              : "bg-[#111827] hover:bg-black shadow-black/10"
+          }`}
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
