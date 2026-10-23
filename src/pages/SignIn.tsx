@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { signinCheck } from "@/lib/backendApi";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, ShieldCheck, User } from "lucide-react";
 
 interface SignInProps {
   onSuccess?: () => void;
@@ -13,19 +13,25 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
   const [idNumber, setIdNumber] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [authView, setAuthView] = useState<"candidate" | "instructor">("candidate");
   const navigate = useNavigate();
   const { category } = useParams();
 
   const handleSignIn = async () => {
     const trimmedId = idNumber.trim();
     if (!trimmedId) {
-      setErrorMsg("Please enter your ID number");
+      setErrorMsg(authView === "instructor" ? "Please enter your admin ID" : "Please enter your ID number");
       return;
     }
 
     // Admin redirect
     if (trimmedId.toUpperCase() === ADMIN_CODE) {
       navigate("/control-center");
+      return;
+    }
+
+    if (authView === "instructor") {
+      setErrorMsg("Invalid Admin ID. Expected 'ADMIN DASH'");
       return;
     }
 
@@ -74,25 +80,25 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
           <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-[#1e40af]/30 blur-3xl pointer-events-none" />
 
-          {/* Top: Hany Metwally (Without any logo icon next to it) */}
+          {/* Top: Well Control Training Portal */}
           <div className="relative z-10 flex items-center">
             <span className="font-extrabold text-2xl sm:text-3xl tracking-tight text-white select-none">
-              Hany Metwally
+              Well Control Training Portal
             </span>
           </div>
 
-          {/* Middle Headline (Without "Join us to learn" badge) */}
+          {/* Middle Headline */}
           <div className="relative z-10 my-8 sm:my-10">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.12]">
-              Start your Course
+              Train with confidence.
             </h1>
 
             <p className="text-white/85 text-xs sm:text-sm mt-3 max-w-md font-normal leading-relaxed">
-              Follow these simple steps to access your well control exams and practice materials.
+              Practice realistic well control scenarios, strengthen your technical knowledge, and track your exam readiness.
             </p>
           </div>
 
-          {/* Bottom 3 Step Cards with ~7-8 descriptive words each */}
+          {/* Bottom 3 Step Cards */}
           <div className="relative z-10 grid grid-cols-3 gap-2.5 sm:gap-3.5">
             {/* Box 1 (Active) */}
             <div className="bg-white text-slate-900 rounded-[16px] p-3.5 sm:p-4 shadow-md flex flex-col justify-between min-h-[145px] sm:min-h-[155px] transition-transform hover:-translate-y-0.5">
@@ -132,10 +138,12 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
             {/* Form Title */}
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Join Us
+                {authView === "candidate" ? "Candidate Login" : "Instructor Access"}
               </h2>
               <p className="text-slate-500 text-xs sm:text-sm mt-1.5 font-medium">
-                Enter your registered ID to continue
+                {authView === "candidate"
+                  ? "Enter your registered ID to continue"
+                  : "Enter your admin ID (ADMIN DASH)"}
               </p>
             </div>
 
@@ -146,7 +154,7 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
                   htmlFor="candidateId"
                   className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2"
                 >
-                  Candidate ID
+                  {authView === "candidate" ? "Candidate ID" : "Admin ID"}
                 </label>
                 <input
                   id="candidateId"
@@ -157,7 +165,7 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
                     setErrorMsg("");
                   }}
                   onKeyDown={(e) => e.key === "Enter" && handleSignIn()}
-                  placeholder="e.g. 1024"
+                  placeholder={authView === "candidate" ? "e.g. 1024" : "ADMIN DASH"}
                   disabled={loading}
                   autoFocus
                   className="w-full h-12 px-4 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-900 placeholder:text-slate-400 font-medium text-base focus:bg-white focus:border-[#2563eb] focus:ring-4 focus:ring-blue-100/70 transition-all outline-none"
@@ -184,11 +192,40 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
                   </>
                 ) : (
                   <>
-                    <span>Continue</span>
+                    <span>{authView === "candidate" ? "Continue" : "Access Dashboard"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
+
+              {/* Toggle between Candidate Login and Instructor Access */}
+              <div className="pt-2 text-center">
+                {authView === "candidate" ? (
+                  <button
+                    onClick={() => {
+                      setAuthView("instructor");
+                      setIdNumber("");
+                      setErrorMsg("");
+                    }}
+                    className="text-xs font-semibold text-[#2563eb] hover:text-[#1d4ed8] hover:underline transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Instructor Access</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setAuthView("candidate");
+                      setIdNumber("");
+                      setErrorMsg("");
+                    }}
+                    className="text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>Back to Candidate Login</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Footer note */}
