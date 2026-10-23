@@ -24,9 +24,7 @@ const Index = () => {
   const nav = [
     { label: "Home", path: "/" },
     { label: "IWCF", path: "/exercises/iwcf" },
-    { label: "IADC", path: "/exercises/iacd", badge: "New" },
-    { label: "Exercises", path: "/exercises" },
-    { label: "Manuals", path: "/manuals" },
+    { label: "IADC", path: "/exercises/iacd" },
   ];
 
   const cards = [
@@ -99,11 +97,8 @@ const Index = () => {
               </div>
               <nav className="hidden md:flex items-center gap-7">
                 {nav.map((n) => (
-                  <button key={n.label} onClick={() => navigate(n.path)} className="relative text-[13px] text-background/80 hover:text-background transition-colors">
+                  <button key={n.label} onClick={() => navigate(n.path)} className="relative text-[13px] text-background/80 hover:text-background transition-colors cursor-pointer">
                     {n.label}
-                    {n.badge && (
-                      <span className="absolute -top-2.5 -right-5 text-[8px] bg-primary text-primary-foreground rounded-full px-1.5 py-px">{n.badge}</span>
-                    )}
                   </button>
                 ))}
               </nav>
@@ -121,7 +116,7 @@ const Index = () => {
                       window.location.reload();
                     }}
                     title="Sign Out"
-                    className="bg-background/20 hover:bg-background/40 text-background rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+                    className="bg-background/20 hover:bg-background/40 text-background rounded-full px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
                   >
                     Logout
                   </button>
@@ -129,7 +124,7 @@ const Index = () => {
               ) : (
                 <button
                   onClick={() => navigate("/exercises")}
-                  className="group flex items-center gap-2 bg-background text-foreground rounded-full pl-1.5 pr-4 py-1.5 text-xs font-semibold"
+                  className="group flex items-center gap-2 bg-background text-foreground rounded-full pl-1.5 pr-4 py-1.5 text-xs font-semibold cursor-pointer"
                 >
                   <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
                     <Asterisk className="w-3.5 h-3.5 text-primary-foreground" />
@@ -144,19 +139,20 @@ const Index = () => {
               <div>
                 <Marker dark>Next-Gen Well Control Training</Marker>
                 <h1 className="mt-5 text-background font-medium leading-[1.02] tracking-[-0.035em] text-[44px] sm:text-[64px] lg:text-[84px] max-w-[820px]">
-                  Next-Gen
+                  Master Well Control.
                   <br />
-                  Well Control Prep for
-                  <br />
-                  Drilling Crews.
+                  Build a Safer Tomorrow.
                 </h1>
+                <p className="mt-4 text-background/80 text-sm sm:text-base lg:text-lg max-w-[640px] font-normal leading-relaxed">
+                  Interactive training, realistic scenarios and comprehensive assessments to develop your well control skills and confidence.
+                </p>
               </div>
 
               <div className="mt-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
                 <div className="flex flex-wrap gap-x-16 gap-y-2 text-xs text-background/80">
                   <span>+ IWCF</span>
                   <span>+ IADC</span>
-                  <span>+ Kill Sheets</span>
+                  <span>+ Realistic Scenarios</span>
                 </div>
                 <div className="max-w-xs">
                   <p className="text-background text-lg sm:text-xl leading-snug">
@@ -167,13 +163,6 @@ const Index = () => {
                     for Level 3 and Level 4
                   </p>
                   <div className="mt-6 flex gap-2.5">
-                    <button
-                      onClick={() => navigate("/exercises")}
-                      className="group flex items-center gap-1.5 bg-primary text-primary-foreground rounded-full px-5 py-2.5 text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
-                    >
-                      Start Practicing
-                      <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                    </button>
                     <button
                       onClick={() => navigate("/manuals")}
                       className="group flex items-center gap-1.5 bg-background text-foreground rounded-full px-5 py-2.5 text-xs font-semibold cursor-pointer"

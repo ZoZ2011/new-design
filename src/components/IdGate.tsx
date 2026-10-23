@@ -12,9 +12,10 @@ const IdGate = ({ children }: { children: ReactNode }) => {
 
   const p = location.pathname;
   const isControlCenter = p.startsWith("/control-center");
+  const isInstructorAccess = p.startsWith("/instructor-access");
   const isAuthenticated = !!localStorage.getItem("userId");
 
-  if (isControlCenter || isAuthenticated) {
+  if (isControlCenter || isInstructorAccess || isAuthenticated) {
     return <>{children}</>;
   }
 

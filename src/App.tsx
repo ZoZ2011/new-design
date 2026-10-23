@@ -47,7 +47,9 @@ const App = () => (
           <Route path="/exercises/iwcf/drilling" element={<IWCFDrilling />} />
           <Route path="/exercises/iwcf/well-intervention" element={<IWCFWellIntervention />} />
           <Route path="/manuals" element={<Manuals />} />
+          <Route path="/signin" element={<SignIn />} />
           <Route path="/signin/:category" element={<SignIn />} />
+          <Route path="/instructor-access" element={<SignIn initialMode="instructor" />} />
           <Route path="/questions/:category" element={<Questions />} />
           <Route path="/settings/:category" element={<Settings />} />
           <Route path="/question-manager" element={<QuestionManager />} />
