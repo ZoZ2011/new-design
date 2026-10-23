@@ -3,11 +3,9 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Award,
-  BookOpen,
   BriefcaseBusiness,
   Check,
   ChevronDown,
-  Flame,
   GraduationCap,
   Layers3,
   LogOut,
@@ -16,7 +14,6 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
-  Trophy,
   Waves,
   Zap,
 } from "lucide-react";
