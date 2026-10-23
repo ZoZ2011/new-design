@@ -70,7 +70,7 @@ const Manuals = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-[#1d68f2]" />
             </div>
             <span className="font-extrabold text-xs sm:text-sm tracking-[0.14em] text-slate-900 uppercase">
-              UIXSHUVO
+              Well Control
             </span>
           </div>
 
@@ -117,7 +117,7 @@ const Manuals = () => {
         <footer className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#1d68f2]" />
-            <span className="font-semibold text-slate-600">UIXSHUVO • Well Control Club</span>
+            <span className="font-semibold text-slate-600">Well Control • Well Control Club</span>
           </div>
           <span>© 2026 Well Control Club. All rights reserved.</span>
         </footer>
