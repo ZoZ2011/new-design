@@ -1,594 +1,497 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import {
-  Compass,
-  Play,
   ArrowRight,
   ArrowLeft,
-  Star,
-  MapPin,
-  CreditCard,
-  Grid,
-  ChevronRight,
   X,
-  Twitter,
   Facebook,
-  Instagram,
-  Linkedin,
-  Sparkles,
-  Plane,
+  Youtube,
+  Menu,
+  Calendar,
+  Building2,
+  MapPin,
 } from "lucide-react";
-import iwcfLogo from "@/assets/iwcf-logo.jpg";
-import iadcLogo from "@/assets/iadc-logo.png";
 
 const Index = () => {
-  const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
-  const userName = localStorage.getItem("userName");
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-
-  const nav = [
-    { label: "ABOUT", path: "/manuals" },
-    { label: "TOUR", path: "/exercises" },
-    { label: "PACKAGE", path: "/exercises/iwcf" },
-    { label: "CONTACT", path: "/manuals" },
-  ];
-
-  // Popular Destinations / Courses carousel cards
-  const destinations = [
+  // Projects / Portfolio items
+  const projects = [
     {
-      title: "Forest Wild Life",
-      subtitle: "NRT, Indonesia",
-      courseName: "IWCF Drilling",
-      rating: "4.7",
-      img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80",
-      path: "/exercises/iwcf/drilling",
+      title: "EcoHarvest Business Center",
+      img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=80",
+      tag: "LEARN DETAILS",
+      drag: false,
     },
     {
-      title: "Forest Wild Life",
-      subtitle: "NRT, Indonesia",
-      courseName: "IADC Well Services",
-      rating: "4.7",
-      img: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=80",
-      path: "/exercises/iacd/well-services",
+      title: "AquaVista Marina Build",
+      img: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=80",
+      tag: "LEARN DETAILS",
+      drag: false,
     },
     {
-      title: "Forest Wild Life",
-      subtitle: "NRT, Indonesia",
-      courseName: "Well Intervention",
-      rating: "4.7",
-      img: "https://images.unsplash.com/photo-1512100356356-de1b84283e18?w=800&auto=format&fit=crop&q=80",
-      path: "/exercises/iwcf/well-intervention",
+      title: "BioUrban Living Complex",
+      img: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop&q=80",
+      tag: "LEARN DETAILS",
+      dragIndicator: true,
     },
     {
-      title: "Ocean Breeze",
-      subtitle: "BALI, Indonesia",
-      courseName: "OGOR Mock Tests",
-      rating: "4.9",
-      img: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&auto=format&fit=crop&q=80",
-      path: "/exercises/iacd/well-services/ogor/mock-tests",
+      title: "TechHaven Residences",
+      img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&q=80",
+      tag: "LEARN DETAILS",
+      drag: false,
     },
   ];
 
-  const trackRef = useRef<HTMLDivElement>(null);
-  const scrollDestinations = (dir: number) => {
-    const el = trackRef.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>("[data-card]");
-    el.scrollBy({ left: dir * ((card?.offsetWidth ?? 320) + 20), behavior: "smooth" });
-  };
+  // Services list
+  const services = [
+    {
+      title: "Green space & sustainable landscape design",
+      desc: "We develop innovative and sustainable green space designs for urban spaces, housing estates and business centers.",
+      img: "https://images.unsplash.com/photo-1558445420-4e2e2a862660?w=200&auto=format&fit=crop&q=80",
+    },
+    {
+      title: "Smart home and automation technologies",
+      desc: "We integrate advanced smart home technologies to improve the comfort and energy efficiency of residential and commercial properties.",
+      img: "https://images.unsplash.com/photo-1558002038-1055907df827?w=200&auto=format&fit=crop&q=80",
+    },
+    {
+      title: "Engineering and construction of solar power systems",
+      desc: "We specialize in the design and construction of solar power systems for residential and commercial buildings.",
+      img: "https://images.unsplash.com/photo-1509391365360-e835f377c86a?w=200&auto=format&fit=crop&q=80",
+    },
+    {
+      title: "Innovative architectural and structural design",
+      desc: "Our team of architects and engineers develops innovative and unique projects that combine modern design and cutting-edge technology.",
+      img: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=200&auto=format&fit=crop&q=80",
+    },
+    {
+      title: "Consulting and certification of sustainable projects",
+      desc: "We provide consulting services and certify projects related to sustainable development and commercial energy.",
+      img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=200&auto=format&fit=crop&q=80",
+    },
+  ];
+
+  // Featured Case Studies
+  const caseStudies = [
+    {
+      title: "FUTURECO BUSINESS CENTER",
+      date: "15 June",
+      type: "Business Center",
+      place: "Downtown Business District",
+      img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1000&auto=format&fit=crop&q=80",
+      grayscale: true,
+    },
+    {
+      title: "INFINITY GREEN RESTAURANT",
+      date: "20 July",
+      type: "Commercial",
+      place: "Eco Park Avenue",
+      img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1000&auto=format&fit=crop&q=80",
+      grayscale: false,
+    },
+    {
+      title: "RENEWASPHERE DISTRICT",
+      date: "10 August",
+      type: "Residential",
+      place: "Green Valley",
+      img: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1000&auto=format&fit=crop&q=80",
+      grayscale: false,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] p-2 sm:p-5 lg:p-8 font-jakarta flex justify-center items-start">
-      {/* Central Canvas Container matching the reference design */}
-      <div className="w-full max-w-[1140px] bg-white rounded-[36px] sm:rounded-[44px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-slate-100 p-4 sm:p-8 lg:p-10 space-y-12 sm:space-y-16 overflow-hidden">
+    <div className="min-h-screen bg-[#f4f4f6] py-6 px-4 sm:px-6 lg:px-8 font-sans">
+      {/* Outer Main Container */}
+      <div className="max-w-[1320px] mx-auto bg-white rounded-[40px] shadow-2xl border border-slate-100 p-6 sm:p-10 lg:p-12 space-y-16">
         
-        {/* ================= TOP NAVIGATION ================= */}
-        <header className="flex items-center justify-between px-2 pt-2">
-          {/* Logo */}
-          <div
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2.5 cursor-pointer group"
-          >
-            <div className="relative w-8 h-8 rounded-full border-2 border-slate-900 flex items-center justify-center">
-              <span className="w-2 h-2 rounded-full bg-[#1d68f2]" />
-              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-900" />
+        {/* ================= HEADER ================= */}
+        <header className="flex items-center justify-between pb-6 border-b border-slate-100">
+          {/* Logo & Tag */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="font-black text-xl sm:text-2xl tracking-tight text-slate-900">NexArch</span>
+              <span className="w-2 h-2 rounded-full bg-slate-900" />
             </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-sm sm:text-base tracking-[0.15em] text-slate-900 uppercase">
-                UIXSHUVO
-              </span>
-              <span className="text-[9px] font-semibold text-slate-400 tracking-wider -mt-1 uppercase">
-                WELL CONTROL
-              </span>
+            <div className="hidden sm:block text-[10px] tracking-widest font-bold text-slate-400 uppercase bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
+              CONSTRUCTION COMPANY
             </div>
           </div>
 
-          {/* Center Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8">
-            {nav.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => navigate(item.path)}
-                className="text-xs font-bold text-slate-600 hover:text-slate-900 tracking-[0.14em] transition-colors uppercase cursor-pointer"
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-
-          {/* Right Action Button */}
-          {userId ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-slate-100 text-slate-900 rounded-full pl-3 pr-3.5 py-1.5 text-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>ID: {userId}</span>
-                {userName && <span className="text-slate-500 hidden sm:inline">({userName})</span>}
-              </div>
-              <button
-                onClick={() => {
-                  localStorage.removeItem("userId");
-                  localStorage.removeItem("userName");
-                  window.location.reload();
-                }}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-full px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
-              >
-                Logout
-              </button>
+          {/* Social Icons & Menu */}
+          <div className="flex items-center gap-4 sm:gap-6">
+            <div className="hidden md:flex items-center gap-3">
+              <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200 transition-colors">
+                <Facebook className="w-3.5 h-3.5 fill-current" />
+              </a>
+              <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200 transition-colors">
+                <Youtube className="w-3.5 h-3.5 fill-current" />
+              </a>
             </div>
-          ) : (
-            <button
-              onClick={() => navigate("/exercises")}
-              className="bg-[#111827] hover:bg-black text-white px-6 py-2.5 rounded-full text-xs font-semibold shadow-sm transition-all hover:scale-105 cursor-pointer"
-            >
-              Book Trip
+
+            <button className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs px-4 py-2 rounded-full transition-colors">
+              <Menu className="w-3.5 h-3.5" />
+              <span>MENU</span>
             </button>
-          )}
+
+            <div className="hidden lg:flex items-center gap-1 text-slate-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+            </div>
+
+            <button className="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 font-bold text-xs px-5 py-2.5 rounded-full transition-all shadow-xs">
+              CONTACT US
+            </button>
+          </div>
         </header>
 
         {/* ================= HERO SECTION ================= */}
-        <section className="relative rounded-[32px] sm:rounded-[38px] overflow-hidden bg-gradient-to-br from-[#cbe5f8] via-[#dcedfa] to-[#bfe1f8] min-h-[540px] sm:min-h-[620px] p-6 sm:p-10 lg:p-14 flex flex-col justify-between border border-blue-100/60 shadow-inner">
-          
-          {/* Airplane Soaring into Cloud Background */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&auto=format&fit=crop&q=80"
-              alt="Magic of Flight"
-              className="absolute -right-10 -top-8 w-[82%] sm:w-[70%] lg:w-[65%] h-full object-contain object-right-top opacity-95 transition-transform duration-1000 hover:scale-105"
-            />
-            {/* Soft Cloud Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#dcedfa] via-[#dcedfa]/80 to-transparent w-3/4 pointer-events-none" />
-            <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#cbe5f8] via-[#cbe5f8]/50 to-transparent pointer-events-none" />
+        <section className="relative pt-6 pb-12">
+          {/* Top Project Closed badge with avatar */}
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-md">
+              <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&auto=format&fit=crop&q=80" alt="Project" className="w-full h-full object-cover" />
+            </div>
+            <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+              248+ PROJECTS CLOSED
+            </span>
           </div>
 
-          {/* Left Vertical Step Tracker & Hero Content */}
-          <div className="relative z-10 flex gap-4 sm:gap-7 items-start">
-            
-            {/* 1-2-3 Step Timeline Pill */}
-            <div className="flex flex-col items-center pt-2 select-none shrink-0">
-              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/60 backdrop-blur-md border border-white/90 text-slate-700 text-[11px] sm:text-xs font-bold flex items-center justify-center shadow-xs">
-                1
-              </span>
-              <div className="w-px h-10 sm:h-14 bg-white/70" />
-              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-slate-600 text-[11px] sm:text-xs font-semibold flex items-center justify-center">
-                2
-              </span>
-              <div className="w-px h-10 sm:h-14 bg-white/70" />
-              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-slate-600 text-[11px] sm:text-xs font-semibold flex items-center justify-center">
-                3
-              </span>
+          {/* Headline with Floating Avatars */}
+          <div className="relative max-w-4xl">
+            {/* Top-right floating image */}
+            <div className="absolute right-12 -top-6 w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-lg hidden sm:block">
+              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=150&auto=format&fit=crop&q=80" alt="" className="w-full h-full object-cover" />
             </div>
 
-            {/* Hero Main Copy */}
-            <div className="max-w-[460px] pt-1">
-              <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600 mb-2 sm:mb-3">
-                ELEVATE YOUR TRAVEL JOURNEY
-              </p>
-              <h1 className="text-3xl sm:text-5xl lg:text-[56px] font-extrabold text-slate-900 tracking-tight leading-[1.08]">
-                Experience <br />
-                The Magic Of <br />
-                Flight!
-              </h1>
+            <h1 className="text-4xl sm:text-6xl lg:text-[72px] font-black tracking-tight text-slate-900 leading-[1.08]">
+              Building visions & <br />
+              creating <span className="font-serif italic font-normal text-slate-800">reality</span> with NexArch
+            </h1>
 
-              {/* Action Buttons */}
-              <div className="mt-8 sm:mt-10 flex items-center gap-3">
-                <button
-                  onClick={() => navigate("/exercises")}
-                  className="bg-[#1d68f2] hover:bg-blue-600 text-white font-semibold text-xs sm:text-sm px-6 sm:px-7 py-3 sm:py-3.5 rounded-full shadow-lg shadow-blue-500/25 transition-all hover:scale-105 cursor-pointer"
-                >
-                  Book A Trip Now
-                </button>
-                <button
-                  onClick={() => setIsVideoModalOpen(true)}
-                  aria-label="Play video"
-                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white text-[#1d68f2] shadow-md hover:shadow-lg flex items-center justify-center hover:scale-110 transition-all cursor-pointer"
-                >
-                  <Play className="w-4 h-4 fill-[#1d68f2] ml-0.5" />
-                </button>
-              </div>
+            {/* Center floating image */}
+            <div className="absolute left-1/3 -bottom-8 w-14 h-14 rounded-full overflow-hidden border-4 border-white shadow-lg hidden md:block">
+              <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=150&auto=format&fit=crop&q=80" alt="" className="w-full h-full object-cover" />
             </div>
           </div>
 
-          {/* Bottom Right Floating Cutout Card */}
-          <div className="relative z-10 self-end mt-12 sm:mt-0">
-            <div className="bg-white/95 backdrop-blur-md rounded-[24px] p-4 sm:p-5 shadow-xl border border-white/80 max-w-[270px]">
-              <div
-                onClick={() => navigate("/exercises")}
-                className="flex items-center justify-between text-xs font-bold text-slate-900 hover:text-blue-600 cursor-pointer transition-colors pb-3 border-b border-slate-100"
-              >
-                <span>Know More</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+          {/* Subtitle & CTA button */}
+          <div className="mt-12 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <p className="text-slate-500 text-sm sm:text-base max-w-md leading-relaxed font-normal">
+              About us. We are a futuristic construction company focused on innovative technologies and sustainability.
+            </p>
+
+            <button className="bg-slate-950 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm px-7 py-4 rounded-full flex items-center gap-4 transition-all shadow-lg hover:scale-105 group self-start sm:self-auto">
+              <span>START A PROJECT</span>
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                <ArrowRight className="w-4 h-4 text-white" />
               </div>
-              <div className="mt-3 flex items-center gap-3">
-                {/* Overlapping Avatars */}
-                <div className="flex -space-x-2 overflow-hidden shrink-0">
-                  <img
-                    className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                    alt=""
-                  />
-                  <img
-                    className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
-                    alt=""
-                  />
-                  <img
-                    className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80"
-                    alt=""
-                  />
-                </div>
-                <div>
-                  <h4 className="text-[11px] font-bold text-slate-900 leading-tight">
-                    Awesome Places
-                  </h4>
-                  <p className="text-[9px] text-slate-500 leading-tight mt-0.5">
-                    Discover The World One Adventure At A Time!
-                  </p>
-                </div>
-              </div>
-            </div>
+            </button>
           </div>
         </section>
 
-        {/* ================= FOLLOW & PARTNERS STRIP ================= */}
-        <section className="flex flex-col sm:flex-row items-center justify-between gap-6 py-1 border-b border-slate-100 pb-10">
-          {/* Social Follow */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-400">Follow</span>
-            <div className="flex items-center gap-2">
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors text-xs"
-              >
-                <Twitter className="w-3 h-3" />
-              </a>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors text-xs"
-              >
-                <Facebook className="w-3 h-3" />
-              </a>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors text-xs"
-              >
-                <Instagram className="w-3 h-3" />
-              </a>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors text-xs"
-              >
-                <Linkedin className="w-3 h-3" />
-              </a>
-            </div>
-          </div>
-
-          {/* Partner Brands */}
-          <div className="flex items-center flex-wrap justify-center gap-8 sm:gap-12 opacity-70">
-            <span className="text-slate-800 font-bold text-sm sm:text-base flex items-center gap-1.5 tracking-tight">
-              <svg className="w-4 h-4 text-rose-500" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-              </svg>
-              airbnb
-            </span>
-            <span className="text-slate-800 font-extrabold text-sm sm:text-base tracking-tight">
-              Booking.com
-            </span>
-            <span className="text-slate-800 font-bold text-sm sm:text-base tracking-tight flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full border-2 border-orange-500" />
-              trivago
-            </span>
-            <span className="text-slate-800 font-bold text-sm sm:text-base tracking-tight flex items-center gap-1">
-              <Plane className="w-3.5 h-3.5 text-blue-500" />
-              Expedia
-            </span>
-          </div>
-        </section>
-
-        {/* ================= SECTION 1: POPULAR DESTINATION ================= */}
-        <section className="space-y-6">
-          <div className="flex items-end justify-between">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Popular Destination
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-400 font-medium mt-1">
-                Unleash Your Wanderlust With SkyWings
-              </p>
-            </div>
-
-            {/* Carousel Arrow Controls */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => scrollDestinations(-1)}
-                aria-label="Previous"
-                className="w-8 h-8 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center transition-all cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => scrollDestinations(1)}
-                aria-label="Next"
-                className="w-8 h-8 rounded-full bg-slate-900 text-white hover:bg-black flex items-center justify-center transition-all cursor-pointer"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Cards Grid */}
-          <div
-            ref={trackRef}
-            className="flex gap-5 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {destinations.map((dest, i) => (
+        {/* ================= PROJECTS SLIDER SECTION ================= */}
+        <section className="space-y-6 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {projects.map((proj, idx) => (
               <div
-                key={i}
-                data-card
-                onClick={() => navigate(dest.path)}
-                className="snap-start shrink-0 w-[280px] sm:w-[320px] rounded-[28px] bg-white p-3 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                key={idx}
+                className="group relative rounded-[28px] overflow-hidden bg-slate-100 aspect-[4/5] flex flex-col justify-between p-5 shadow-sm hover:shadow-xl transition-all duration-300"
               >
-                {/* Image */}
-                <div className="relative aspect-[16/10] rounded-[20px] overflow-hidden bg-slate-100">
-                  <img
-                    src={dest.img}
-                    alt={dest.title}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                  />
+                {/* Background Image */}
+                <div className="absolute inset-0">
+                  <img src={proj.img} alt={proj.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30" />
                 </div>
 
-                {/* Card Meta */}
-                <div className="pt-3.5 pb-1 px-1.5 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
-                      {dest.title}
-                    </h3>
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium mt-0.5">
-                      <MapPin className="w-3 h-3 text-slate-400" />
-                      <span>{dest.subtitle}</span>
-                    </div>
+                {/* Top Badge */}
+                <div className="relative z-10 flex items-center justify-between">
+                  <span className="bg-white/90 backdrop-blur-md text-slate-900 text-[10px] font-extrabold px-3.5 py-1.5 rounded-full shadow-xs">
+                    {proj.tag}
+                  </span>
+
+                  {proj.dragIndicator && (
+                    <span className="bg-white/90 backdrop-blur-md text-slate-900 text-[10px] font-extrabold px-3 py-1.5 rounded-full shadow-xs">
+                      &lt; DRAG &gt;
+                    </span>
+                  )}
+
+                  <button className="w-7 h-7 rounded-full bg-white/80 backdrop-blur-md text-slate-900 flex items-center justify-center hover:bg-white transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Bottom Content */}
+                <div className="relative z-10 space-y-4">
+                  {/* Pagination dots */}
+                  <div className="flex items-center gap-1.5 justify-end">
+                    {[0, 1, 2, 3].map((dotIdx) => (
+                      <span
+                        key={dotIdx}
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          dotIdx === idx ? "bg-white w-3" : "bg-white/50"
+                        } transition-all`}
+                      />
+                    ))}
                   </div>
 
-                  {/* Rating Badge */}
-                  <span className="bg-[#1d68f2] text-white text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-xs">
-                    <Star className="w-3 h-3 fill-white" />
-                    <span>{dest.rating}</span>
+                  <h3 className="text-white font-extrabold text-xl sm:text-2xl leading-tight">
+                    {proj.title}
+                  </h3>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom Progress Bar */}
+          <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden mt-8">
+            <div className="bg-slate-900 w-1/4 h-full rounded-full" />
+          </div>
+        </section>
+
+        {/* ================= SERVICES SECTION ================= */}
+        <section className="space-y-12 pt-10">
+          <div className="text-center">
+            <h2 className="text-5xl sm:text-7xl font-black tracking-tight text-slate-900">
+              Services
+            </h2>
+          </div>
+
+          {/* Services Grid Layout matching Image 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Service 1 */}
+            <div className="bg-[#f8f9fb] rounded-[32px] p-8 border border-slate-100 flex flex-col justify-between space-y-8 hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+                <img src={services[0].img} alt="" className="w-full h-full object-cover" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="font-extrabold text-xl text-slate-900 leading-snug">
+                  {services[0].title}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {services[0].desc}
+                </p>
+              </div>
+              <button className="self-start bg-white hover:bg-slate-900 hover:text-white text-slate-900 border border-slate-200 font-bold text-[11px] px-5 py-2.5 rounded-full transition-all shadow-xs">
+                READ MORE
+              </button>
+            </div>
+
+            {/* Service 2 */}
+            <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm flex flex-col justify-between space-y-8 hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+                <img src={services[1].img} alt="" className="w-full h-full object-cover" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="font-extrabold text-xl text-slate-900 leading-snug">
+                  {services[1].title}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {services[1].desc}
+                </p>
+              </div>
+              <button className="self-start bg-white hover:bg-slate-900 hover:text-white text-slate-900 border border-slate-200 font-bold text-[11px] px-5 py-2.5 rounded-full transition-all shadow-xs">
+                READ MORE
+              </button>
+            </div>
+
+            {/* Service 3 */}
+            <div className="bg-[#f8f9fb] rounded-[32px] p-8 border border-slate-100 flex flex-col justify-between space-y-8 hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+                <img src={services[2].img} alt="" className="w-full h-full object-cover" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="font-extrabold text-xl text-slate-900 leading-snug">
+                  {services[2].title}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {services[2].desc}
+                </p>
+              </div>
+              <button className="self-start bg-white hover:bg-slate-900 hover:text-white text-slate-900 border border-slate-200 font-bold text-[11px] px-5 py-2.5 rounded-full transition-all shadow-xs">
+                READ MORE
+              </button>
+            </div>
+
+          </div>
+
+          {/* Second Row of Services */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-[#f8f9fb] rounded-[32px] p-8 border border-slate-100 flex flex-col justify-between space-y-8 hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+                <img src={services[3].img} alt="" className="w-full h-full object-cover" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="font-extrabold text-xl text-slate-900 leading-snug">
+                  {services[3].title}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {services[3].desc}
+                </p>
+              </div>
+              <button className="self-start bg-white hover:bg-slate-900 hover:text-white text-slate-900 border border-slate-200 font-bold text-[11px] px-5 py-2.5 rounded-full transition-all shadow-xs">
+                READ MORE
+              </button>
+            </div>
+
+            <div className="bg-[#f8f9fb] rounded-[32px] p-8 border border-slate-100 flex flex-col justify-between space-y-8 hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+                <img src={services[4].img} alt="" className="w-full h-full object-cover" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="font-extrabold text-xl text-slate-900 leading-snug">
+                  {services[4].title}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {services[4].desc}
+                </p>
+              </div>
+              <button className="self-start bg-white hover:bg-slate-900 hover:text-white text-slate-900 border border-slate-200 font-bold text-[11px] px-5 py-2.5 rounded-full transition-all shadow-xs">
+                READ MORE
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* ================= FEATURED CASE STUDIES / PROJECTS ================= */}
+        <section className="space-y-8 pt-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {caseStudies.map((cs, i) => (
+              <div
+                key={i}
+                className="group relative rounded-[32px] overflow-hidden bg-slate-900 aspect-[4/5] flex flex-col justify-between p-6 shadow-xl"
+              >
+                {/* Background Image */}
+                <div className="absolute inset-0">
+                  <img
+                    src={cs.img}
+                    alt={cs.title}
+                    className={`w-full h-full object-cover ${cs.grayscale ? "grayscale contrast-125" : ""} group-hover:scale-105 transition-transform duration-700`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
+                </div>
+
+                {/* Top Tags/Metadata Pill */}
+                <div className="relative z-10 flex flex-wrap gap-2 items-center">
+                  <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/20">
+                    <Calendar className="w-3 h-3" />
+                    <span>{cs.date}</span>
                   </span>
+                  <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/20">
+                    <Building2 className="w-3 h-3" />
+                    <span>{cs.type}</span>
+                  </span>
+                  <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/20">
+                    <MapPin className="w-3 h-3" />
+                    <span>{cs.place}</span>
+                  </span>
+                </div>
+
+                {/* Bottom Title & CTA */}
+                <div className="relative z-10 space-y-6">
+                  <h3 className="text-white font-black text-2xl sm:text-3xl leading-tight">
+                    {cs.title}
+                  </h3>
+
+                  <button className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs py-4 px-6 rounded-full flex items-center justify-between transition-all shadow-lg">
+                    <span>START A PROJECT</span>
+                    <div className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center">
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ================= SECTION 2: JOURNEY TO THE SKIES MADE SIMPLE! ================= */}
-        <section className="space-y-8 pt-4">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Journey To The Skies Made Simple!
+        {/* ================= TESTIMONIALS SECTION ================= */}
+        <section className="space-y-12 pt-12">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <h2 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 text-center sm:text-left">
+              Recent <span className="font-serif italic font-normal">feedback</span> <br />
+              from our clients
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
-              Travelling Is A Wonderful Way To Explore New Places, Learn About Different Cultures, And Gain Unique Experiences.
-            </p>
+
+            {/* Carousel Arrow Controls */}
+            <div className="flex items-center gap-3">
+              <button className="w-12 h-12 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer">
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <button className="w-12 h-12 rounded-full bg-slate-900 hover:bg-black text-white flex items-center justify-center transition-all cursor-pointer">
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          {/* 3 Step Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+          {/* Testimonial Cards Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
             
-            {/* Card 1: Find Your Destination */}
-            <div
-              onClick={() => navigate("/exercises")}
-              className="bg-[#f8fafc] rounded-[28px] p-7 sm:p-8 border border-slate-100 flex flex-col justify-between min-h-[300px] hover:shadow-md transition-all cursor-pointer group"
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-xs">
-                <Compass className="w-5 h-5 group-hover:rotate-45 transition-transform" />
-              </div>
-              <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                  Find Your <br />
-                  Destination
-                </h3>
-              </div>
+            {/* Left Preview Card */}
+            <div className="bg-[#f8f9fb] rounded-[32px] p-8 border border-slate-100 opacity-60 hidden lg:block">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                "NexArch was a pleasure and a productive one. They built our sustainable business center and they turned our vision into a reality. They provided us with great ideas to reduce our energy costs and their service was professional and tailored to our needs."
+              </p>
             </div>
 
-            {/* Card 2: Center Feature Card (Book A Ticket) */}
-            <div
-              onClick={() => navigate("/exercises")}
-              className="bg-gradient-to-b from-[#1d68f2] to-[#1554cc] text-white rounded-[28px] p-7 sm:p-8 shadow-xl shadow-blue-500/25 relative overflow-hidden flex flex-col justify-between min-h-[330px] cursor-pointer hover:shadow-2xl transition-all group"
-            >
-              {/* Circular Cutout Image Accent */}
-              <div className="absolute top-4 right-4 w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white/20 overflow-hidden shadow-inner">
-                <img
-                  src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&auto=format&fit=crop&q=80"
-                  alt=""
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
+            {/* Center Main Testimonial Card */}
+            <div className="bg-white rounded-[36px] p-8 sm:p-10 border-2 border-slate-100 shadow-2xl relative space-y-6">
+              {/* Quotation Mark */}
+              <div className="absolute top-6 right-8 text-slate-200 font-serif text-6xl select-none">
+                “
               </div>
 
-              {/* Top Left Icon Pill */}
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center shadow-xs">
-                <Grid className="w-5 h-5" />
-              </div>
+              <p className="text-slate-800 text-sm sm:text-base leading-relaxed relative z-10">
+                "NexArch exceeded my expectations! We commissioned them to design and build a sustainable home for our family and the result was amazing. They implemented advanced smart home technology, integrated a solar panel system and created green areas around the house."
+              </p>
 
-              {/* Title & Desc */}
-              <div className="mt-8 pr-12">
-                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  Book <br />
-                  A Ticket
-                </h3>
-                <p className="text-xs text-white/80 leading-relaxed mt-2.5 max-w-[210px]">
-                  Travelling Is A Wonderful Way To Explore New Places, Learn About Different Cultures, And Gain Unique Experiences.
-                </p>
-              </div>
-
-              {/* Bottom Link */}
-              <div className="mt-6 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-white hover:text-white/90">
-                <span>LEARN MORE</span>
-                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-
-            {/* Card 3: Pay & Start Journey */}
-            <div
-              onClick={() => navigate("/exercises")}
-              className="bg-[#f8fafc] rounded-[28px] p-7 sm:p-8 border border-slate-100 flex flex-col justify-between min-h-[300px] hover:shadow-md transition-all cursor-pointer group"
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-xs">
-                <CreditCard className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              </div>
-              <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                  Pay & <br />
-                  Start Journey
-                </h3>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* ================= SECTION 3: UNLEASH WANDERLUST WITH SKYWINGS ================= */}
-        <section className="space-y-6 pt-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
-            {/* Left Photo Card */}
-            <div className="lg:col-span-5 flex justify-center">
-              <div className="relative w-full max-w-[360px] aspect-[3/4] rounded-[32px] overflow-hidden shadow-lg border border-slate-100 bg-sky-50">
-                <img
-                  src="https://images.unsplash.com/photo-1507034589631-9433cc6bc453?w=800&auto=format&fit=crop&q=80"
-                  alt="Beach Holiday"
-                  className="w-full h-full object-cover"
-                />
-                
-                {/* Floating Discount Badge at bottom */}
-                <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md rounded-2xl p-3 flex items-center justify-between shadow-md border border-white/80">
-                  <div className="text-[#1d68f2] font-black text-lg">
-                    20% OFF
-                  </div>
-                  <div className="text-[10px] text-slate-500 font-semibold text-right leading-tight">
-                    Till 30 September, <br />
-                    2026
-                  </div>
+              <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-200">
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+                    alt="Jeremy"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              </div>
-            </div>
-
-            {/* Right Typographic Content */}
-            <div className="lg:col-span-7 flex flex-col justify-between space-y-8">
-              
-              <div className="space-y-4">
-                {/* Row 1: UNLEASH + small text */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-                    UNLEASH
-                  </h2>
-                  <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-                    Travelling Is A Wonderful Way To Explore New Places, Learn About Different Cultures, And Gain Unique
-                  </p>
-                </div>
-
-                {/* Row 2: WANDERLUST WITH */}
                 <div>
-                  <h2 className="text-4xl sm:text-5xl lg:text-[54px] font-black text-slate-900 tracking-tight">
-                    WANDERLUST WITH
-                  </h2>
-                </div>
-
-                {/* Row 3: small text + SKYWINGS */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-                    Travelling Is A Wonderful Way To Explore New Places, Learn About Different Cultures
-                  </p>
-                  <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-                    SKYWINGS
-                  </h2>
+                  <h4 className="font-extrabold text-slate-900 text-sm">Jeremy</h4>
+                  <p className="text-xs text-slate-400">Manager from LA</p>
                 </div>
               </div>
+            </div>
 
-              {/* Bottom CTA Pill Bar */}
-              <div
-                onClick={() => navigate("/exercises")}
-                className="w-full bg-gradient-to-r from-[#d9edf9] via-[#e5f3fd] to-[#d9edf9] hover:from-[#cbe7f7] hover:to-[#dceffa] text-slate-900 rounded-full py-4 px-8 text-center text-sm font-bold tracking-wide transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Book A Flight Now</span>
-                <ArrowRight className="w-4 h-4" />
+            {/* Right Preview Card */}
+            <div className="bg-[#f8f9fb] rounded-[32px] p-8 border border-slate-100 opacity-60 hidden lg:block">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                "NexArch is truly the company of the future. We collaborated with them on several green projects in the city and the results have always been stellar. A team of architects and landscape designers creating innovative projects that delight everyone."
+              </p>
+              <div className="flex items-center gap-3 pt-6">
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80" alt="" className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-xs">Helen</h4>
+                  <p className="text-[10px] text-slate-400">City Mayor</p>
+                </div>
               </div>
-
             </div>
 
           </div>
         </section>
 
         {/* ================= FOOTER ================= */}
-        <footer className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+        <footer className="pt-10 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#1d68f2]" />
-            <span className="font-semibold text-slate-600">UIXSHUVO • Well Control Club</span>
+            <span className="w-2 h-2 rounded-full bg-slate-900" />
+            <span className="font-bold text-slate-900">NexArch © 2026</span>
           </div>
-          <span>© 2026 Well Control Club. All rights reserved.</span>
+          <div className="flex items-center gap-6">
+            <a href="#" className="hover:text-slate-900 transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-slate-900 transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-slate-900 transition-colors">Contact</a>
+          </div>
         </footer>
 
       </div>
-
-      {/* Video / Feature Preview Modal */}
-      {isVideoModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[28px] max-w-xl w-full p-6 shadow-2xl relative space-y-4">
-            <button
-              onClick={() => setIsVideoModalOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#1d68f2]" />
-              <h3 className="font-bold text-slate-900 text-lg">Experience Well Control Prep</h3>
-            </div>
-            <div className="aspect-video rounded-2xl bg-slate-900 overflow-hidden relative flex items-center justify-center text-white p-6 text-center">
-              <div className="space-y-2">
-                <Play className="w-12 h-12 text-[#1d68f2] mx-auto opacity-80" />
-                <p className="font-semibold text-sm">Interactive Exam Simulation & Topic Drills</p>
-                <p className="text-xs text-slate-400">Practice IWCF Level 3, Level 4 & IADC Well Services</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => {
-                  setIsVideoModalOpen(false);
-                  navigate("/exercises");
-                }}
-                className="bg-[#1d68f2] text-white px-5 py-2.5 rounded-full text-xs font-semibold hover:bg-blue-600 transition-colors"
-              >
-                Start Practicing Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
