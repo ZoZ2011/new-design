@@ -10,8 +10,8 @@ import Exercises from "./pages/Exercises";
 import IACD from "./pages/IACD";
 import IACDDrilling from "./pages/IACDDrilling";
 import IACDWellServices from "./pages/IACDWellServices";
-import IACDOGORMockTests from "./pages/IACDOGORMockTests";
 import IACDWellServicesOGOR from "./pages/IACDWellServicesOGOR";
+import IACDOGORMockTests from "./pages/IACDOGORMockTests";
 import IWCF from "./pages/IWCF";
 import IWCFDrilling from "./pages/IWCFDrilling";
 import IWCFWellIntervention from "./pages/IWCFWellIntervention";
@@ -49,7 +49,6 @@ const App = () => (
           <Route path="/manuals" element={<Manuals />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signin/:category" element={<SignIn />} />
-          <Route path="/instructor-access" element={<SignIn initialMode="instructor" />} />
           <Route path="/questions/:category" element={<Questions />} />
           <Route path="/settings/:category" element={<Settings />} />
           <Route path="/question-manager" element={<QuestionManager />} />

@@ -55,10 +55,10 @@ const Index = () => {
   ];
 
   const numbers = [
-    { v: "500+", t: "Exam-style questions", d: "Written to IWCF and IADC syllabus, with worked answers." },
-    { v: "8+", t: "Disciplines", d: "Drilling, intervention, coiled tubing, snubbing, wireline." },
-    { v: "94%", t: "Pass rate", d: "Candidates who finished the full mock test set." },
-    { v: "24/7", t: "Access", d: "Practice on any device, from rig floor to hotel room." },
+    { v: "10+", t: "Well Control Courses", d: "IWCF, IADC, drilling & well intervention certification tracks." },
+    { v: "1,000+", t: "Practice Questions", d: "Exam-verified syllabus questions with worked formulas and solutions." },
+    { v: "4", t: "Training Levels", d: "Introductory, Level 2, Level 3 Driller and Level 4 Supervisor." },
+    { v: "100%", t: "Online Access", d: "Practice anytime on mobile, tablet or desktop from rig floor to home." },
   ];
 
   const trackRef = useRef<HTMLDivElement>(null);
@@ -93,7 +93,7 @@ const Index = () => {
             <header className="relative z-10 flex items-center justify-between px-5 sm:px-8 pt-5">
               <div className="flex items-center gap-2 text-background">
                 <Asterisk className="w-6 h-6 text-primary" strokeWidth={3} />
-                <span className="font-bold text-lg tracking-tight">Well Control<sup className="text-[9px] ml-0.5">®</sup></span>
+                <span className="font-bold text-lg tracking-tight">Well Control Club</span>
               </div>
               <nav className="hidden md:flex items-center gap-7">
                 {nav.map((n) => (
@@ -138,11 +138,14 @@ const Index = () => {
             <div className="relative z-10 flex-1 flex flex-col justify-between px-5 sm:px-10 pt-14 pb-8">
               <div>
                 <Marker dark>Next-Gen Well Control Training</Marker>
-                <h1 className="mt-5 text-background font-medium leading-[1.02] tracking-[-0.035em] text-[44px] sm:text-[64px] lg:text-[84px] max-w-[820px]">
-                  Master Well Control.
-                  <br />
-                  Build a Safer Tomorrow.
-                </h1>
+                <div className="mt-5 max-w-[840px]">
+                  <h1 className="text-background font-bold leading-[1.02] tracking-[-0.035em] text-[42px] sm:text-[62px] lg:text-[78px]">
+                    Master Well Control.
+                  </h1>
+                  <h2 className="mt-2 text-background/90 font-semibold leading-[1.1] tracking-[-0.025em] text-[24px] sm:text-[34px] lg:text-[42px]">
+                    Build a Safer Tomorrow.
+                  </h2>
+                </div>
                 <p className="mt-4 text-background/80 text-sm sm:text-base lg:text-lg max-w-[640px] font-normal leading-relaxed">
                   Interactive training, realistic scenarios and comprehensive assessments to develop your well control skills and confidence.
                 </p>

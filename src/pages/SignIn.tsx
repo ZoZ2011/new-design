@@ -1,19 +1,16 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { signinCheck } from "@/lib/backendApi";
-import { ArrowRight, ArrowLeft, Loader2, ShieldCheck, Shield } from "lucide-react";
+import { ArrowRight, Loader2, Shield } from "lucide-react";
 
 interface SignInProps {
   onSuccess?: () => void;
-  initialMode?: "candidate" | "instructor";
 }
 
 const ADMIN_CODE = "ADMIN DASH";
 
-export const SignIn = ({ onSuccess, initialMode = "candidate" }: SignInProps) => {
-  const [mode, setMode] = useState<"candidate" | "instructor">(initialMode);
+export const SignIn = ({ onSuccess }: SignInProps) => {
   const [idNumber, setIdNumber] = useState("");
-  const [adminId, setAdminId] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -26,9 +23,9 @@ export const SignIn = ({ onSuccess, initialMode = "candidate" }: SignInProps) =>
       return;
     }
 
-    // Admin redirect if entered in candidate field
+    // If admin ID is entered and user clicks Candidate Dashboard, it should not open admin
     if (trimmedId.toUpperCase() === ADMIN_CODE) {
-      navigate("/control-center");
+      setErrorMsg("Admin ID detected. Please click 'Instructor Access' below.");
       return;
     }
 
@@ -67,16 +64,16 @@ export const SignIn = ({ onSuccess, initialMode = "candidate" }: SignInProps) =>
   };
 
   const handleInstructorSignIn = () => {
-    const trimmed = adminId.trim();
+    const trimmed = idNumber.trim();
     if (!trimmed) {
-      setErrorMsg("Please enter your Administrator ID");
+      setErrorMsg("Please enter your ID number");
       return;
     }
 
     if (trimmed.toUpperCase() === ADMIN_CODE) {
       navigate("/control-center");
     } else {
-      setErrorMsg("Invalid Administrator ID. Please try again.");
+      setErrorMsg("Invalid Instructor ID. Please try again.");
     }
   };
 
@@ -101,13 +98,11 @@ export const SignIn = ({ onSuccess, initialMode = "candidate" }: SignInProps) =>
           {/* Middle Headline */}
           <div className="relative z-10 my-8 sm:my-10">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.12]">
-              {mode === "candidate" ? "Train with confidence." : "Instructor & Admin Portal"}
+              Train with confidence.
             </h1>
 
             <p className="text-white/85 text-xs sm:text-sm mt-3 max-w-md font-normal leading-relaxed">
-              {mode === "candidate"
-                ? "Practice realistic well control scenarios, strengthen your technical knowledge, and track your exam readiness."
-                : "Manage candidate access, review syllabus question banks, monitor activity, and oversee system settings."}
+              Practice realistic well control scenarios, strengthen your technical knowledge, and track your exam readiness.
             </p>
           </div>
 
@@ -119,9 +114,7 @@ export const SignIn = ({ onSuccess, initialMode = "candidate" }: SignInProps) =>
                 1
               </span>
               <p className="text-[11px] sm:text-xs font-bold text-slate-900 leading-snug">
-                {mode === "candidate"
-                  ? "Enter your registered candidate ID number to start"
-                  : "Enter your authorized Administrator ID number"}
+                Enter your registered candidate ID number to start
               </p>
             </div>
 
@@ -131,9 +124,7 @@ export const SignIn = ({ onSuccess, initialMode = "candidate" }: SignInProps) =>
                 2
               </span>
               <p className="text-[11px] sm:text-xs font-medium text-white/95 leading-snug">
-                {mode === "candidate"
-                  ? "Practice realistic exam questions with step explanations"
-                  : "Access Question Manager, User Roster & Answer Editor"}
+                Practice realistic exam questions with step explanations
               </p>
             </div>
 
@@ -143,9 +134,7 @@ export const SignIn = ({ onSuccess, initialMode = "candidate" }: SignInProps) =>
                 3
               </span>
               <p className="text-[11px] sm:text-xs font-medium text-white/95 leading-snug">
-                {mode === "candidate"
-                  ? "Achieve high passing scores on official exams"
-                  : "Oversee live candidate testing and permissions"}
+                Achieve high passing scores on official exams
               </p>
             </div>
           </div>
@@ -154,170 +143,87 @@ export const SignIn = ({ onSuccess, initialMode = "candidate" }: SignInProps) =>
         {/* Right Column (Sign In Form) */}
         <div className="lg:col-span-5 p-6 sm:p-10 lg:p-12 flex flex-col justify-center items-center">
           <div className="w-full max-w-sm mx-auto space-y-7">
-            
-            {mode === "candidate" ? (
-              <>
-                {/* Form Title: Candidate Login */}
-                <div className="text-center">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Candidate Login
-                  </h2>
-                  <p className="text-slate-500 text-xs sm:text-sm mt-1.5 font-medium">
-                    Enter your registered ID to continue
-                  </p>
-                </div>
+            {/* Form Title */}
+            <div className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Candidate Login
+              </h2>
+              <p className="text-slate-500 text-xs sm:text-sm mt-1.5 font-medium">
+                Enter your registered ID to continue
+              </p>
+            </div>
 
-                {/* Candidate Form */}
-                <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="candidateId"
-                      className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2"
-                    >
-                      Candidate ID
-                    </label>
-                    <input
-                      id="candidateId"
-                      type="text"
-                      value={idNumber}
-                      onChange={(e) => {
-                        setIdNumber(e.target.value);
-                        setErrorMsg("");
-                      }}
-                      onKeyDown={(e) => e.key === "Enter" && handleCandidateSignIn()}
-                      placeholder="e.g. 1024"
-                      disabled={loading}
-                      autoFocus
-                      className="w-full h-12 px-4 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-900 placeholder:text-slate-400 font-medium text-base focus:bg-white focus:border-[#2563eb] focus:ring-4 focus:ring-blue-100/70 transition-all outline-none"
-                    />
-                    {errorMsg && (
-                      <p
-                        className="text-destructive text-xs font-semibold mt-2 animate-fade-in"
-                        dir={errorMsg.includes("admin") ? "rtl" : "ltr"}
-                      >
-                        {errorMsg}
-                      </p>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={handleCandidateSignIn}
-                    disabled={loading}
-                    className="w-full h-12 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold text-base rounded-xl shadow-md shadow-blue-500/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+            {/* Form */}
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="candidateId"
+                  className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2"
+                >
+                  Candidate ID
+                </label>
+                <input
+                  id="candidateId"
+                  type="text"
+                  value={idNumber}
+                  onChange={(e) => {
+                    setIdNumber(e.target.value);
+                    setErrorMsg("");
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleCandidateSignIn()}
+                  placeholder="e.g. 1024 or ADMIN DASH"
+                  disabled={loading}
+                  autoFocus
+                  className="w-full h-12 px-4 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-900 placeholder:text-slate-400 font-medium text-base focus:bg-white focus:border-[#2563eb] focus:ring-4 focus:ring-blue-100/70 transition-all outline-none"
+                />
+                {errorMsg && (
+                  <p
+                    className="text-destructive text-xs font-semibold mt-2 animate-fade-in"
+                    dir={errorMsg.includes("admin") ? "rtl" : "ltr"}
                   >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Verifying...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Continue</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-
-                  {/* Instructor Access Button */}
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMode("instructor");
-                        setErrorMsg("");
-                      }}
-                      className="w-full h-11 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                    >
-                      <Shield className="w-4 h-4 text-[#2563eb]" />
-                      <span>Instructor Access</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Footer note */}
-                <div className="pt-4 border-t border-slate-100 text-center">
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    Need access or facing issues? Contact your course administrator or enter your instructor PIN.
+                    {errorMsg}
                   </p>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Form Title: Instructor Access */}
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 text-[#2563eb] mb-3">
-                    <ShieldCheck className="w-6 h-6" />
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Instructor Access
-                  </h2>
-                  <p className="text-slate-500 text-xs sm:text-sm mt-1.5 font-medium">
-                    Enter your Administrator ID to access the Control Center
-                  </p>
-                </div>
+                )}
+              </div>
 
-                {/* Instructor Form */}
-                <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="adminId"
-                      className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2"
-                    >
-                      Administrator / Instructor ID
-                    </label>
-                    <input
-                      id="adminId"
-                      type="text"
-                      value={adminId}
-                      onChange={(e) => {
-                        setAdminId(e.target.value);
-                        setErrorMsg("");
-                      }}
-                      onKeyDown={(e) => e.key === "Enter" && handleInstructorSignIn()}
-                      placeholder="e.g. ADMIN DASH"
-                      autoFocus
-                      className="w-full h-12 px-4 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-900 placeholder:text-slate-400 font-medium text-base focus:bg-white focus:border-[#2563eb] focus:ring-4 focus:ring-blue-100/70 transition-all outline-none"
-                    />
-                    {errorMsg && (
-                      <p className="text-destructive text-xs font-semibold mt-2 animate-fade-in">
-                        {errorMsg}
-                      </p>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={handleInstructorSignIn}
-                    className="w-full h-12 bg-slate-900 hover:bg-black text-white font-semibold text-base rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>Enter Control Center</span>
+              {/* Candidate Dashboard Button */}
+              <button
+                onClick={handleCandidateSignIn}
+                disabled={loading}
+                className="w-full h-12 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold text-base rounded-xl shadow-md shadow-blue-500/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verifying...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Candidate Dashboard</span>
                     <ArrowRight className="w-4 h-4" />
-                  </button>
+                  </>
+                )}
+              </button>
 
-                  {/* Back to Candidate Login */}
-                  <div className="pt-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMode("candidate");
-                        setErrorMsg("");
-                      }}
-                      className="text-xs text-slate-500 hover:text-slate-900 font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer py-1"
-                    >
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                      <span>Back to Candidate Login</span>
-                    </button>
-                  </div>
-                </div>
+              {/* Instructor Access Button */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={handleInstructorSignIn}
+                  className="w-full h-11 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                >
+                  <Shield className="w-4 h-4 text-[#2563eb]" />
+                  <span>Instructor Access</span>
+                </button>
+              </div>
+            </div>
 
-                {/* Footer note */}
-                <div className="pt-4 border-t border-slate-100 text-center">
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    Authorized instructors and examiners only. Enter ADMIN DASH to continue.
-                  </p>
-                </div>
-              </>
-            )}
-
+            {/* Footer note */}
+            <div className="pt-4 border-t border-slate-100 text-center">
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Need access or facing issues? Contact your course administrator or enter your instructor PIN.
+              </p>
+            </div>
           </div>
         </div>
 
