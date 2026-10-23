@@ -1,595 +1,279 @@
-import { useState, useRef } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Compass,
-  Play,
   ArrowRight,
-  ArrowLeft,
-  Star,
-  MapPin,
-  CreditCard,
-  Grid,
-  ChevronRight,
-  X,
-  Twitter,
-  Facebook,
-  Instagram,
-  Linkedin,
+  Award,
+  BookOpen,
+  BriefcaseBusiness,
+  Check,
+  ChevronDown,
+  Flame,
+  GraduationCap,
+  Layers3,
+  LogOut,
+  Play,
+  Search,
+  ShieldCheck,
   Sparkles,
-  Plane,
+  Target,
+  Trophy,
+  Waves,
+  Zap,
 } from "lucide-react";
 import iwcfLogo from "@/assets/iwcf-logo.jpg";
 import iadcLogo from "@/assets/iadc-logo.png";
+
+type Course = {
+  title: string;
+  provider: "IWCF" | "IADC";
+  track: string;
+  detail: string;
+  progress: number;
+  lessons: string;
+  color: string;
+  icon: typeof ShieldCheck;
+  path: string;
+};
+
+const courses: Course[] = [
+  {
+    title: "Drilling Well Control",
+    provider: "IWCF",
+    track: "Level 3 & 4",
+    detail: "Surface and subsea operations",
+    progress: 46,
+    lessons: "24 topics",
+    color: "violet",
+    icon: ShieldCheck,
+    path: "/exercises/iwcf/drilling",
+  },
+  {
+    title: "Well Intervention",
+    provider: "IWCF",
+    track: "Intervention",
+    detail: "Wireline, coiled tubing and snubbing",
+    progress: 18,
+    lessons: "16 topics",
+    color: "lime",
+    icon: Waves,
+    path: "/exercises/iwcf/well-intervention",
+  },
+  {
+    title: "Well Services",
+    provider: "IADC",
+    track: "WellSharp",
+    detail: "Service operations and pressure control",
+    progress: 31,
+    lessons: "20 topics",
+    color: "amber",
+    icon: Layers3,
+    path: "/exercises/iacd/well-services",
+  },
+  {
+    title: "Drilling Operations",
+    provider: "IADC",
+    track: "WellSharp",
+    detail: "Kick detection and shut-in procedures",
+    progress: 0,
+    lessons: "18 topics",
+    color: "blue",
+    icon: Target,
+    path: "/exercises/iacd/drilling",
+  },
+  {
+    title: "OGOR Mock Tests",
+    provider: "IADC",
+    track: "Exam practice",
+    detail: "Timed full-length practice exams",
+    progress: 0,
+    lessons: "3 mock tests",
+    color: "pink",
+    icon: Award,
+    path: "/exercises/iacd/well-services/ogor/mock-tests",
+  },
+];
+
+const colorStyles: Record<string, { badge: string; icon: string; bar: string; glow: string }> = {
+  violet: { badge: "bg-violet-100 text-violet-700", icon: "bg-violet-200 text-violet-700", bar: "bg-violet-500", glow: "bg-violet-200" },
+  lime: { badge: "bg-lime-100 text-lime-800", icon: "bg-lime-200 text-lime-800", bar: "bg-lime-500", glow: "bg-lime-200" },
+  amber: { badge: "bg-amber-100 text-amber-800", icon: "bg-amber-200 text-amber-800", bar: "bg-amber-500", glow: "bg-amber-200" },
+  blue: { badge: "bg-sky-100 text-sky-800", icon: "bg-sky-200 text-sky-800", bar: "bg-sky-500", glow: "bg-sky-200" },
+  pink: { badge: "bg-pink-100 text-pink-800", icon: "bg-pink-200 text-pink-800", bar: "bg-pink-500", glow: "bg-pink-200" },
+};
 
 const Index = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const userName = localStorage.getItem("userName");
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const firstName = userName?.trim().split(/\s+/)[0] || "there";
+  const [filter, setFilter] = useState<"All" | "IWCF" | "IADC">("All");
+  const [query, setQuery] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const lastCourse = localStorage.getItem("lastCourse") || courses[0].path;
 
-  const nav = [
-    { label: "ABOUT", path: "/manuals" },
-    { label: "TOUR", path: "/exercises" },
-    { label: "PACKAGE", path: "/exercises/iwcf" },
-    { label: "CONTACT", path: "/manuals" },
-  ];
+  const visibleCourses = useMemo(() => courses.filter((course) => {
+    const matchesProvider = filter === "All" || course.provider === filter;
+    const matchesQuery = `${course.title} ${course.provider} ${course.track}`.toLowerCase().includes(query.toLowerCase());
+    return matchesProvider && matchesQuery;
+  }), [filter, query]);
 
-  // Popular Destinations / Courses carousel cards
-  const destinations = [
-    {
-      title: "Forest Wild Life",
-      subtitle: "NRT, Indonesia",
-      courseName: "IWCF Drilling",
-      rating: "4.7",
-      img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80",
-      path: "/exercises/iwcf/drilling",
-    },
-    {
-      title: "Forest Wild Life",
-      subtitle: "NRT, Indonesia",
-      courseName: "IADC Well Services",
-      rating: "4.7",
-      img: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=80",
-      path: "/exercises/iacd/well-services",
-    },
-    {
-      title: "Forest Wild Life",
-      subtitle: "NRT, Indonesia",
-      courseName: "Well Intervention",
-      rating: "4.7",
-      img: "https://images.unsplash.com/photo-1512100356356-de1b84283e18?w=800&auto=format&fit=crop&q=80",
-      path: "/exercises/iwcf/well-intervention",
-    },
-    {
-      title: "Ocean Breeze",
-      subtitle: "BALI, Indonesia",
-      courseName: "OGOR Mock Tests",
-      rating: "4.9",
-      img: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&auto=format&fit=crop&q=80",
-      path: "/exercises/iacd/well-services/ogor/mock-tests",
-    },
-  ];
-
-  const trackRef = useRef<HTMLDivElement>(null);
-  const scrollDestinations = (dir: number) => {
-    const el = trackRef.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>("[data-card]");
-    el.scrollBy({ left: dir * ((card?.offsetWidth ?? 320) + 20), behavior: "smooth" });
+  const openCourse = (path: string) => {
+    localStorage.setItem("lastCourse", path);
+    navigate(path);
   };
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] p-2 sm:p-5 lg:p-8 font-jakarta flex justify-center items-start">
-      {/* Central Canvas Container matching the reference design */}
-      <div className="w-full max-w-[1140px] bg-white rounded-[36px] sm:rounded-[44px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-slate-100 p-4 sm:p-8 lg:p-10 space-y-12 sm:space-y-16 overflow-hidden">
-        
-        {/* ================= TOP NAVIGATION ================= */}
-        <header className="flex items-center justify-between px-2 pt-2">
-          {/* Logo */}
-          <div
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2.5 cursor-pointer group"
-          >
-            <div className="relative w-8 h-8 rounded-full border-2 border-slate-900 flex items-center justify-center">
-              <span className="w-2 h-2 rounded-full bg-[#1d68f2]" />
-              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-900" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-sm sm:text-base tracking-[0.15em] text-slate-900 uppercase">
-                UIXSHUVO
-              </span>
-              <span className="text-[9px] font-semibold text-slate-400 tracking-wider -mt-1 uppercase">
-                WELL CONTROL
-              </span>
-            </div>
-          </div>
+    <main className="min-h-screen bg-[#eeeaff] px-3 py-5 sm:px-6 sm:py-8 font-jakarta">
+      <div className="mx-auto max-w-[1320px] overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_28px_90px_rgba(46,35,89,0.18)] sm:rounded-[34px]">
+        <header className="relative z-20 flex min-h-[68px] items-center justify-between gap-4 bg-[#111111] px-5 text-white sm:px-8">
+          <button onClick={() => navigate("/")} className="shrink-0 text-xl font-black tracking-tight text-white" aria-label="Well Control home">
+            well<span className="text-[#d8f33f]">wise</span>
+          </button>
 
-          {/* Center Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8">
-            {nav.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => navigate(item.path)}
-                className="text-xs font-bold text-slate-600 hover:text-slate-900 tracking-[0.14em] transition-colors uppercase cursor-pointer"
-              >
-                {item.label}
-              </button>
-            ))}
+          <nav className="hidden items-center gap-1 md:flex">
+            <button className="rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white">⌂&nbsp; Dashboard</button>
+            <button onClick={() => document.getElementById("course-library")?.scrollIntoView({ behavior: "smooth" })} className="rounded-full px-4 py-2 text-xs text-white/65 transition hover:bg-white/10 hover:text-white">◫&nbsp; Courses</button>
+            <button onClick={() => navigate("/exercises")} className="rounded-full px-4 py-2 text-xs text-white/65 transition hover:bg-white/10 hover:text-white">◎&nbsp; Practice</button>
+            <button onClick={() => navigate("/manuals")} className="rounded-full px-4 py-2 text-xs text-white/65 transition hover:bg-white/10 hover:text-white">▤&nbsp; Manuals</button>
           </nav>
 
-          {/* Right Action Button */}
-          {userId ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-slate-100 text-slate-900 rounded-full pl-3 pr-3.5 py-1.5 text-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>ID: {userId}</span>
-                {userName && <span className="text-slate-500 hidden sm:inline">({userName})</span>}
-              </div>
-              <button
-                onClick={() => {
-                  localStorage.removeItem("userId");
-                  localStorage.removeItem("userName");
-                  window.location.reload();
-                }}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-full px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
-              >
-                Logout
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => navigate("/exercises")}
-              className="bg-[#111827] hover:bg-black text-white px-6 py-2.5 rounded-full text-xs font-semibold shadow-sm transition-all hover:scale-105 cursor-pointer"
-            >
-              Book Trip
+          <div className="relative">
+            <button onClick={() => setMenuOpen((open) => !open)} className="flex items-center gap-2 rounded-full px-1 py-1 text-left hover:bg-white/10">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-orange-400 text-sm">👷</span>
+              <span className="hidden sm:block">
+                <span className="block text-[11px] font-semibold">{userName || "Candidate"}</span>
+                <span className="block text-[9px] text-white/55">{userId ? `ID ${userId}` : "Well control learner"}</span>
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 text-white/65" />
             </button>
-          )}
+            {menuOpen && (
+              <div className="absolute right-0 top-12 z-30 w-44 rounded-2xl border border-slate-100 bg-white p-2 text-slate-700 shadow-xl">
+                <button onClick={() => navigate("/settings/iwcf")} className="w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-slate-50">Settings</button>
+                <button onClick={() => { localStorage.removeItem("userId"); localStorage.removeItem("userName"); window.location.reload(); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50"><LogOut className="h-3.5 w-3.5" /> Sign out</button>
+              </div>
+            )}
+          </div>
         </header>
 
-        {/* ================= HERO SECTION ================= */}
-        <section className="relative rounded-[32px] sm:rounded-[38px] overflow-hidden bg-gradient-to-br from-[#cbe5f8] via-[#dcedfa] to-[#bfe1f8] min-h-[540px] sm:min-h-[620px] p-6 sm:p-10 lg:p-14 flex flex-col justify-between border border-blue-100/60 shadow-inner">
-          
-          {/* Airplane Soaring into Cloud Background */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&auto=format&fit=crop&q=80"
-              alt="Magic of Flight"
-              className="absolute -right-10 -top-8 w-[82%] sm:w-[70%] lg:w-[65%] h-full object-contain object-right-top opacity-95 transition-transform duration-1000 hover:scale-105"
-            />
-            {/* Soft Cloud Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#dcedfa] via-[#dcedfa]/80 to-transparent w-3/4 pointer-events-none" />
-            <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#cbe5f8] via-[#cbe5f8]/50 to-transparent pointer-events-none" />
-          </div>
-
-          {/* Left Vertical Step Tracker & Hero Content */}
-          <div className="relative z-10 flex gap-4 sm:gap-7 items-start">
-            
-            {/* 1-2-3 Step Timeline Pill */}
-            <div className="flex flex-col items-center pt-2 select-none shrink-0">
-              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/60 backdrop-blur-md border border-white/90 text-slate-700 text-[11px] sm:text-xs font-bold flex items-center justify-center shadow-xs">
-                1
-              </span>
-              <div className="w-px h-10 sm:h-14 bg-white/70" />
-              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-slate-600 text-[11px] sm:text-xs font-semibold flex items-center justify-center">
-                2
-              </span>
-              <div className="w-px h-10 sm:h-14 bg-white/70" />
-              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-slate-600 text-[11px] sm:text-xs font-semibold flex items-center justify-center">
-                3
-              </span>
-            </div>
-
-            {/* Hero Main Copy */}
-            <div className="max-w-[460px] pt-1">
-              <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600 mb-2 sm:mb-3">
-                ELEVATE YOUR TRAVEL JOURNEY
-              </p>
-              <h1 className="text-3xl sm:text-5xl lg:text-[56px] font-extrabold text-slate-900 tracking-tight leading-[1.08]">
-                Experience <br />
-                The Magic Of <br />
-                Flight!
-              </h1>
-
-              {/* Action Buttons */}
-              <div className="mt-8 sm:mt-10 flex items-center gap-3">
-                <button
-                  onClick={() => navigate("/exercises")}
-                  className="bg-[#1d68f2] hover:bg-blue-600 text-white font-semibold text-xs sm:text-sm px-6 sm:px-7 py-3 sm:py-3.5 rounded-full shadow-lg shadow-blue-500/25 transition-all hover:scale-105 cursor-pointer"
-                >
-                  Book A Trip Now
-                </button>
-                <button
-                  onClick={() => setIsVideoModalOpen(true)}
-                  aria-label="Play video"
-                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white text-[#1d68f2] shadow-md hover:shadow-lg flex items-center justify-center hover:scale-110 transition-all cursor-pointer"
-                >
-                  <Play className="w-4 h-4 fill-[#1d68f2] ml-0.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Right Floating Cutout Card */}
-          <div className="relative z-10 self-end mt-12 sm:mt-0">
-            <div className="bg-white/95 backdrop-blur-md rounded-[24px] p-4 sm:p-5 shadow-xl border border-white/80 max-w-[270px]">
-              <div
-                onClick={() => navigate("/exercises")}
-                className="flex items-center justify-between text-xs font-bold text-slate-900 hover:text-blue-600 cursor-pointer transition-colors pb-3 border-b border-slate-100"
-              >
-                <span>Know More</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </div>
-              <div className="mt-3 flex items-center gap-3">
-                {/* Overlapping Avatars */}
-                <div className="flex -space-x-2 overflow-hidden shrink-0">
-                  <img
-                    className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                    alt=""
-                  />
-                  <img
-                    className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
-                    alt=""
-                  />
-                  <img
-                    className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80"
-                    alt=""
-                  />
-                </div>
-                <div>
-                  <h4 className="text-[11px] font-bold text-slate-900 leading-tight">
-                    Awesome Places
-                  </h4>
-                  <p className="text-[9px] text-slate-500 leading-tight mt-0.5">
-                    Discover The World One Adventure At A Time!
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ================= FOLLOW & PARTNERS STRIP ================= */}
-        <section className="flex flex-col sm:flex-row items-center justify-between gap-6 py-1 border-b border-slate-100 pb-10">
-          {/* Social Follow */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-400">Follow</span>
-            <div className="flex items-center gap-2">
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors text-xs"
-              >
-                <Twitter className="w-3 h-3" />
-              </a>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors text-xs"
-              >
-                <Facebook className="w-3 h-3" />
-              </a>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors text-xs"
-              >
-                <Instagram className="w-3 h-3" />
-              </a>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors text-xs"
-              >
-                <Linkedin className="w-3 h-3" />
-              </a>
-            </div>
-          </div>
-
-          {/* Partner Brands */}
-          <div className="flex items-center flex-wrap justify-center gap-8 sm:gap-12 opacity-70">
-            <span className="text-slate-800 font-bold text-sm sm:text-base flex items-center gap-1.5 tracking-tight">
-              <svg className="w-4 h-4 text-rose-500" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-              </svg>
-              airbnb
-            </span>
-            <span className="text-slate-800 font-extrabold text-sm sm:text-base tracking-tight">
-              Booking.com
-            </span>
-            <span className="text-slate-800 font-bold text-sm sm:text-base tracking-tight flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full border-2 border-orange-500" />
-              trivago
-            </span>
-            <span className="text-slate-800 font-bold text-sm sm:text-base tracking-tight flex items-center gap-1">
-              <Plane className="w-3.5 h-3.5 text-blue-500" />
-              Expedia
-            </span>
-          </div>
-        </section>
-
-        {/* ================= SECTION 1: POPULAR DESTINATION ================= */}
-        <section className="space-y-6">
-          <div className="flex items-end justify-between">
+        <div className="space-y-6 bg-[#fbfbfa] p-4 sm:p-7 lg:p-9">
+          <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Popular Destination
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-400 font-medium mt-1">
-                Unleash Your Wanderlust With SkyWings
-              </p>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">YOUR WELL CONTROL CLASSROOM</p>
+              <h1 className="text-2xl font-extrabold tracking-tight text-[#171717] sm:text-3xl">Good morning, {firstName}!</h1>
+              <p className="mt-1 text-xs text-slate-500">You’re making steady progress toward your certification. <span className="text-lime-600">✦</span></p>
             </div>
-
-            {/* Carousel Arrow Controls */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => scrollDestinations(-1)}
-                aria-label="Previous"
-                className="w-8 h-8 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center transition-all cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => scrollDestinations(1)}
-                aria-label="Next"
-                className="w-8 h-8 rounded-full bg-slate-900 text-white hover:bg-black flex items-center justify-center transition-all cursor-pointer"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="flex min-w-[92px] items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5"><span className="text-lg">🏅</span><span><b className="block text-sm text-slate-900">248</b><small className="text-[9px] text-slate-500">Points</small></span></div>
+              <div className="flex min-w-[92px] items-center gap-2 rounded-2xl border border-violet-200 bg-violet-50 px-3 py-2.5"><GraduationCap className="h-5 w-5 text-violet-500" /><span><b className="block text-sm text-slate-900">2</b><small className="text-[9px] text-slate-500">Programs</small></span></div>
+              <div className="flex min-w-[92px] items-center gap-2 rounded-2xl border border-lime-200 bg-lime-50 px-3 py-2.5"><Award className="h-5 w-5 text-amber-500" /><span><b className="block text-sm text-slate-900">1</b><small className="text-[9px] text-slate-500">Certificate</small></span></div>
             </div>
-          </div>
+          </section>
 
-          {/* Cards Grid */}
-          <div
-            ref={trackRef}
-            className="flex gap-5 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {destinations.map((dest, i) => (
-              <div
-                key={i}
-                data-card
-                onClick={() => navigate(dest.path)}
-                className="snap-start shrink-0 w-[280px] sm:w-[320px] rounded-[28px] bg-white p-3 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between"
-              >
-                {/* Image */}
-                <div className="relative aspect-[16/10] rounded-[20px] overflow-hidden bg-slate-100">
-                  <img
-                    src={dest.img}
-                    alt={dest.title}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                  />
+          <section className="grid gap-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(275px,.85fr)]">
+            <div className="space-y-5">
+              <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-slate-400">PICK UP WHERE YOU LEFT OFF</p><h2 className="mt-1 text-base font-extrabold text-slate-900">Continue learning</h2></div>
+                  <span className="rounded-full bg-lime-100 px-3 py-1 text-[10px] font-bold text-lime-800">46% complete</span>
                 </div>
-
-                {/* Card Meta */}
-                <div className="pt-3.5 pb-1 px-1.5 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
-                      {dest.title}
-                    </h3>
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium mt-0.5">
-                      <MapPin className="w-3 h-3 text-slate-400" />
-                      <span>{dest.subtitle}</span>
-                    </div>
+                <button onClick={() => openCourse(lastCourse)} className="group flex w-full items-center gap-4 rounded-2xl bg-[#fafafa] p-3 text-left transition hover:bg-violet-50 sm:p-4">
+                  <div className="relative flex h-[70px] w-[70px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-lime-200">
+                    <div className="absolute -right-3 -top-3 h-16 w-16 rounded-full bg-lime-300" />
+                    <ShieldCheck className="relative h-10 w-10 text-violet-700" />
+                    <Sparkles className="absolute bottom-2 left-2 h-4 w-4 text-violet-500" />
                   </div>
-
-                  {/* Rating Badge */}
-                  <span className="bg-[#1d68f2] text-white text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-xs">
-                    <Star className="w-3 h-3 fill-white" />
-                    <span>{dest.rating}</span>
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ================= SECTION 2: JOURNEY TO THE SKIES MADE SIMPLE! ================= */}
-        <section className="space-y-8 pt-4">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Journey To The Skies Made Simple!
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
-              Travelling Is A Wonderful Way To Explore New Places, Learn About Different Cultures, And Gain Unique Experiences.
-            </p>
-          </div>
-
-          {/* 3 Step Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            
-            {/* Card 1: Find Your Destination */}
-            <div
-              onClick={() => navigate("/exercises")}
-              className="bg-[#f8fafc] rounded-[28px] p-7 sm:p-8 border border-slate-100 flex flex-col justify-between min-h-[300px] hover:shadow-md transition-all cursor-pointer group"
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-xs">
-                <Compass className="w-5 h-5 group-hover:rotate-45 transition-transform" />
-              </div>
-              <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                  Find Your <br />
-                  Destination
-                </h3>
-              </div>
-            </div>
-
-            {/* Card 2: Center Feature Card (Book A Ticket) */}
-            <div
-              onClick={() => navigate("/exercises")}
-              className="bg-gradient-to-b from-[#1d68f2] to-[#1554cc] text-white rounded-[28px] p-7 sm:p-8 shadow-xl shadow-blue-500/25 relative overflow-hidden flex flex-col justify-between min-h-[330px] cursor-pointer hover:shadow-2xl transition-all group"
-            >
-              {/* Circular Cutout Image Accent */}
-              <div className="absolute top-4 right-4 w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white/20 overflow-hidden shadow-inner">
-                <img
-                  src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&auto=format&fit=crop&q=80"
-                  alt=""
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              </div>
-
-              {/* Top Left Icon Pill */}
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center shadow-xs">
-                <Grid className="w-5 h-5" />
-              </div>
-
-              {/* Title & Desc */}
-              <div className="mt-8 pr-12">
-                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  Book <br />
-                  A Ticket
-                </h3>
-                <p className="text-xs text-white/80 leading-relaxed mt-2.5 max-w-[210px]">
-                  Travelling Is A Wonderful Way To Explore New Places, Learn About Different Cultures, And Gain Unique Experiences.
-                </p>
-              </div>
-
-              {/* Bottom Link */}
-              <div className="mt-6 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-white hover:text-white/90">
-                <span>LEARN MORE</span>
-                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-
-            {/* Card 3: Pay & Start Journey */}
-            <div
-              onClick={() => navigate("/exercises")}
-              className="bg-[#f8fafc] rounded-[28px] p-7 sm:p-8 border border-slate-100 flex flex-col justify-between min-h-[300px] hover:shadow-md transition-all cursor-pointer group"
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-xs">
-                <CreditCard className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              </div>
-              <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                  Pay & <br />
-                  Start Journey
-                </h3>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* ================= SECTION 3: UNLEASH WANDERLUST WITH SKYWINGS ================= */}
-        <section className="space-y-6 pt-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
-            {/* Left Photo Card */}
-            <div className="lg:col-span-5 flex justify-center">
-              <div className="relative w-full max-w-[360px] aspect-[3/4] rounded-[32px] overflow-hidden shadow-lg border border-slate-100 bg-sky-50">
-                <img
-                  src="https://images.unsplash.com/photo-1507034589631-9433cc6bc453?w=800&auto=format&fit=crop&q=80"
-                  alt="Beach Holiday"
-                  className="w-full h-full object-cover"
-                />
-                
-                {/* Floating Discount Badge at bottom */}
-                <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md rounded-2xl p-3 flex items-center justify-between shadow-md border border-white/80">
-                  <div className="text-[#1d68f2] font-black text-lg">
-                    20% OFF
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-center gap-2"><span className="text-[9px] font-bold text-violet-600">IWCF · DRILLING</span><span className="rounded-full bg-slate-100 px-2 py-0.5 text-[8px] text-slate-500">Level 3 & 4</span></div>
+                    <h3 className="truncate text-sm font-extrabold text-slate-900">Drilling Well Control</h3>
+                    <p className="mt-1 text-[10px] text-slate-500">11 of 24 topics completed</p>
+                    <div className="mt-2 h-1.5 max-w-[230px] overflow-hidden rounded-full bg-slate-200"><div className="h-full w-[46%] rounded-full bg-violet-500" /></div>
                   </div>
-                  <div className="text-[10px] text-slate-500 font-semibold text-right leading-tight">
-                    Till 30 September, <br />
-                    2026
-                  </div>
+                  <span className="hidden shrink-0 items-center gap-2 rounded-full bg-[#171717] px-4 py-2.5 text-[10px] font-bold text-white transition group-hover:bg-violet-600 sm:flex">Resume <Play className="h-3 w-3 fill-current" /></span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 sm:hidden" />
+                </button>
+              </article>
+
+              <section id="course-library" className="scroll-mt-5">
+                <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+                  <div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-slate-400">BUILD YOUR SKILLS</p><h2 className="mt-1 text-base font-extrabold text-slate-900">Choose a course</h2></div>
+                  <label className="flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-3"><Search className="h-3.5 w-3.5 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a course" className="w-28 bg-transparent text-[10px] outline-none placeholder:text-slate-400 sm:w-36" /></label>
                 </div>
-              </div>
-            </div>
-
-            {/* Right Typographic Content */}
-            <div className="lg:col-span-7 flex flex-col justify-between space-y-8">
-              
-              <div className="space-y-4">
-                {/* Row 1: UNLEASH + small text */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-                    UNLEASH
-                  </h2>
-                  <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-                    Travelling Is A Wonderful Way To Explore New Places, Learn About Different Cultures, And Gain Unique
-                  </p>
+                <div className="mb-3 flex items-center gap-2">
+                  {(["All", "IWCF", "IADC"] as const).map((provider) => <button key={provider} onClick={() => setFilter(provider)} className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold transition ${filter === provider ? "bg-[#171717] text-white" : "bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-100"}`}>{provider === "All" ? "All courses" : provider}</button>)}
+                  <span className="ml-auto text-[9px] text-slate-400">{visibleCourses.length} courses</span>
                 </div>
-
-                {/* Row 2: WANDERLUST WITH */}
-                <div>
-                  <h2 className="text-4xl sm:text-5xl lg:text-[54px] font-black text-slate-900 tracking-tight">
-                    WANDERLUST WITH
-                  </h2>
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {visibleCourses.map((course) => {
+                    const style = colorStyles[course.color];
+                    const Icon = course.icon;
+                    return (
+                      <button key={course.title} onClick={() => openCourse(course.path)} className="group relative flex min-h-[112px] items-center gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
+                        <span className={`absolute -right-6 -top-8 h-20 w-20 rounded-full opacity-40 ${style.glow}`} />
+                        <span className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${style.icon}`}><Icon className="h-6 w-6" /></span>
+                        <span className="relative z-10 min-w-0 flex-1">
+                          <span className="mb-1 flex flex-wrap items-center gap-1.5"><span className={`rounded-full px-2 py-0.5 text-[8px] font-bold ${style.badge}`}>{course.provider}</span><span className="text-[8px] text-slate-400">{course.track}</span></span>
+                          <span className="block truncate text-[11px] font-extrabold text-slate-900">{course.title}</span>
+                          <span className="mt-0.5 block truncate text-[9px] text-slate-500">{course.detail}</span>
+                          <span className="mt-2 flex items-center gap-2"><span className="h-1 flex-1 overflow-hidden rounded-full bg-slate-100"><span className={`block h-full rounded-full ${style.bar}`} style={{ width: `${course.progress}%` }} /></span><span className="text-[8px] text-slate-400">{course.progress ? `${course.progress}%` : course.lessons}</span></span>
+                        </span>
+                        <ArrowRight className="relative z-10 h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-700" />
+                      </button>
+                    );
+                  })}
                 </div>
+                {visibleCourses.length === 0 && <p className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-xs text-slate-500">No courses match “{query}”. Try IWCF or IADC.</p>}
+              </section>
+            </div>
 
-                {/* Row 3: small text + SKYWINGS */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-                    Travelling Is A Wonderful Way To Explore New Places, Learn About Different Cultures
-                  </p>
-                  <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-                    SKYWINGS
-                  </h2>
+            <aside className="space-y-4">
+              <article className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="absolute -right-12 -top-10 h-40 w-40 rounded-full bg-lime-100/70" />
+                <div className="relative flex items-start justify-between">
+                  <div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-slate-400">KEEP THE MOMENTUM</p><h2 className="mt-1 text-base font-extrabold text-slate-900">Your study streak</h2></div>
+                  <div className="flex items-center gap-1 text-2xl font-black text-slate-900"><Zap className="h-6 w-6 fill-lime-400 text-lime-500" />5</div>
                 </div>
+                <p className="relative mt-1 text-[10px] text-slate-500">You’ve practiced 5 days in a row. Keep it going!</p>
+                <div className="relative my-5 grid grid-cols-7 gap-1.5">
+                  {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => <div key={`${day}-${index}`} className="flex flex-col items-center gap-1.5"><span className="text-[8px] font-semibold text-slate-400">{day}</span><span className={`flex h-7 w-7 items-center justify-center rounded-full ${index < 5 ? "bg-lime-300 text-slate-900" : "border border-slate-200 text-slate-300"}`}>{index < 5 ? <Check className="h-3.5 w-3.5" /> : <span className="text-[8px]">•</span>}</span></div>)}
+                </div>
+                <div className="relative space-y-3 border-t border-slate-100 pt-4">
+                  <div className="flex items-center justify-between text-[9px]"><span className="font-semibold text-slate-700">Weekly goal</span><span className="text-slate-400">4 of 5 sessions</span></div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full w-4/5 rounded-full bg-lime-400" /></div>
+                  <button onClick={() => navigate("/exercises")} className="flex items-center gap-1 pt-1 text-[10px] font-bold text-slate-700 hover:text-violet-600">View practice tracks <ArrowRight className="h-3 w-3" /></button>
+                </div>
+              </article>
+
+              <article className="relative overflow-hidden rounded-[22px] bg-gradient-to-br from-[#8061e9] via-[#7652da] to-[#5135b7] p-5 text-white shadow-sm">
+                <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full border-[20px] border-white/10" />
+                <div className="relative">
+                  <p className="text-[9px] font-bold uppercase tracking-[.18em] text-white/65">YOUR NEXT MILESTONE</p>
+                  <h2 className="mt-2 max-w-[230px] text-lg font-extrabold leading-tight">Get exam-ready with a mock test</h2>
+                  <p className="mt-2 max-w-[240px] text-[10px] leading-relaxed text-white/75">Practice under timed conditions and see where to focus next.</p>
+                  <button onClick={() => openCourse("/exercises/iacd/well-services/ogor/mock-tests")} className="mt-4 flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[10px] font-bold text-violet-700 transition hover:bg-lime-200">Explore mock tests <ArrowRight className="h-3 w-3" /></button>
+                </div>
+              </article>
+
+              <article className="flex items-center gap-3 rounded-[18px] border border-slate-200 bg-white p-4">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-500"><BriefcaseBusiness className="h-5 w-5" /></span>
+                <span className="min-w-0 flex-1"><b className="block text-[11px] text-slate-900">Career resources</b><small className="text-[9px] text-slate-500">Guides, manuals and study aids</small></span>
+                <button onClick={() => navigate("/manuals")} aria-label="Open manuals" className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-800"><ArrowRight className="h-4 w-4" /></button>
+              </article>
+
+              <div className="flex items-center justify-center gap-3 py-1 opacity-60">
+                <img src={iwcfLogo} alt="IWCF" className="h-6 max-w-[62px] object-contain grayscale" />
+                <span className="h-4 w-px bg-slate-300" />
+                <img src={iadcLogo} alt="IADC" className="h-6 max-w-[62px] object-contain grayscale" />
               </div>
+            </aside>
+          </section>
 
-              {/* Bottom CTA Pill Bar */}
-              <div
-                onClick={() => navigate("/exercises")}
-                className="w-full bg-gradient-to-r from-[#d9edf9] via-[#e5f3fd] to-[#d9edf9] hover:from-[#cbe7f7] hover:to-[#dceffa] text-slate-900 rounded-full py-4 px-8 text-center text-sm font-bold tracking-wide transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Book A Flight Now</span>
-                <ArrowRight className="w-4 h-4" />
-              </div>
-
-            </div>
-
-          </div>
-        </section>
-
-        {/* ================= FOOTER ================= */}
-        <footer className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#1d68f2]" />
-            <span className="font-semibold text-slate-600">UIXSHUVO • Well Control Club</span>
-          </div>
-          <span>© 2026 Well Control Club. All rights reserved.</span>
-        </footer>
-
-      </div>
-
-      {/* Video / Feature Preview Modal */}
-      {isVideoModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[28px] max-w-xl w-full p-6 shadow-2xl relative space-y-4">
-            <button
-              onClick={() => setIsVideoModalOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#1d68f2]" />
-              <h3 className="font-bold text-slate-900 text-lg">Experience Well Control Prep</h3>
-            </div>
-            <div className="aspect-video rounded-2xl bg-slate-900 overflow-hidden relative flex items-center justify-center text-white p-6 text-center">
-              <div className="space-y-2">
-                <Play className="w-12 h-12 text-[#1d68f2] mx-auto opacity-80" />
-                <p className="font-semibold text-sm">Interactive Exam Simulation & Topic Drills</p>
-                <p className="text-xs text-slate-400">Practice IWCF Level 3, Level 4 & IADC Well Services</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => {
-                  setIsVideoModalOpen(false);
-                  navigate("/exercises");
-                }}
-                className="bg-[#1d68f2] text-white px-5 py-2.5 rounded-full text-xs font-semibold hover:bg-blue-600 transition-colors"
-              >
-                Start Practicing Now
-              </button>
-            </div>
-          </div>
+          <footer className="flex flex-col items-center justify-between gap-2 border-t border-slate-200 pt-4 text-[9px] text-slate-400 sm:flex-row">
+            <span className="font-semibold text-slate-600">wellwise · Well Control Prep</span>
+            <span>Choose a track, practice with purpose, and build confidence for exam day.</span>
+          </footer>
         </div>
-      )}
-    </div>
+      </div>
+    </main>
   );
 };
 
