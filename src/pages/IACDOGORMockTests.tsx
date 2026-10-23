@@ -134,9 +134,10 @@ const IACDOGORMockTests = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-7 items-stretch">
-            {allTests.map((test) => (
+            {allTests.map((test, idx) => (
               <SelectionCard
                 key={test.slug}
+                number={idx + 1}
                 badge={test.badge}
                 title={test.name}
                 subtitle={test.subtitle}

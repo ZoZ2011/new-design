@@ -171,7 +171,7 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
                     setErrorMsg("");
                   }}
                   onKeyDown={(e) => e.key === "Enter" && handleCandidateSignIn()}
-                  placeholder="e.g. 1024 or ADMIN DASH"
+                  placeholder="1024 or ADMIN DASH"
                   disabled={loading}
                   autoFocus
                   className="w-full h-12 px-4 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-900 placeholder:text-slate-400 font-medium text-base focus:bg-white focus:border-[#2563eb] focus:ring-4 focus:ring-blue-100/70 transition-all outline-none"
@@ -205,15 +205,16 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
                 )}
               </button>
 
-              {/* Instructor Access Button */}
+              {/* Instructor Access Button (Colored like Candidate button) */}
               <div className="pt-1">
                 <button
                   type="button"
                   onClick={handleInstructorSignIn}
-                  className="w-full h-11 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                  className="w-full h-12 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-semibold text-base rounded-xl shadow-md shadow-indigo-500/25 hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <Shield className="w-4 h-4 text-[#2563eb]" />
+                  <Shield className="w-4 h-4 text-white" />
                   <span>Instructor Access</span>
+                  <ArrowRight className="w-4 h-4 opacity-80" />
                 </button>
               </div>
             </div>

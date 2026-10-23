@@ -10,6 +10,7 @@ export interface SelectionCardProps {
   features: string[];
   onClick: () => void;
   loading?: boolean;
+  number?: number | string;
 }
 
 export const SelectionCard: React.FC<SelectionCardProps> = ({
@@ -21,6 +22,7 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({
   features,
   onClick,
   loading = false,
+  number,
 }) => {
   return (
     <div
@@ -38,12 +40,26 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({
         }`}
       >
         <div>
-          {/* Badge */}
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-xs ${
-            isFeatured ? "bg-white text-blue-700" : "bg-white/90 text-slate-800"
-          }`}>
-            {badge}
-          </span>
+          {/* Top row with Badge and Number */}
+          <div className="flex items-center justify-between gap-2">
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-xs ${
+              isFeatured ? "bg-white text-blue-700" : "bg-white/90 text-slate-800"
+            }`}>
+              {badge}
+            </span>
+
+            {number !== undefined && (
+              <span
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-black tracking-tight shadow-sm transition-transform duration-300 group-hover:scale-110 ${
+                  isFeatured
+                    ? "bg-[#1d68f2] text-white shadow-blue-500/25"
+                    : "bg-white text-slate-900 border border-slate-200/80 shadow-xs"
+                }`}
+              >
+                {number}
+              </span>
+            )}
+          </div>
 
           {/* Main Title */}
           <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-4 leading-tight">

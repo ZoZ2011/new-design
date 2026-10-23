@@ -65,6 +65,7 @@ const IACDDrilling = () => {
             {dynamicCategories.map((cat, idx) => (
               <SelectionCard
                 key={cat.slug}
+                number={idx + 1}
                 badge={`DRILLING #${idx + 1}`}
                 title={cat.name}
                 subtitle="WellSharp drilling practice & worked problems"

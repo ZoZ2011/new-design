@@ -7,6 +7,19 @@ import SelectionCard from "@/components/SelectionCard";
 
 const STATIC_TOPICS = [
   {
+    slug: "workover",
+    name: "Workover",
+    badge: "COMPLETIONS",
+    subtitle: "Workover operations and completion procedures",
+    isFeatured: false,
+    features: [
+      "Kill Fluid Weight & Volume Calculations",
+      "Packer & Tubing Retrieval Drills",
+      "Well Control Barriers Verification",
+      "Perforating & Stimulation Safety",
+    ],
+  },
+  {
     slug: "coiled-tubing",
     name: "Coiled Tubing",
     badge: "OPERATIONS",
@@ -20,30 +33,16 @@ const STATIC_TOPICS = [
     ],
   },
   {
-    slug: "mock-tests",
-    name: "OGOR Mock Tests",
-    badge: "EXAM SIMULATION",
-    subtitle: "Full-length timed mock tests #1, #2 and #3",
-    isFeatured: true,
-    isMockTestRedirect: true,
-    features: [
-      "Official Timed Exam Simulation",
-      "Covers All OGOR Well Services Modules",
-      "Immediate Review & Score Breakdown",
-      "Realistic Exam Question Pool",
-    ],
-  },
-  {
-    slug: "workover",
-    name: "Workover",
-    badge: "COMPLETIONS",
-    subtitle: "Workover operations and completion procedures",
+    slug: "wireline",
+    name: "Wireline",
+    badge: "WELL SERVICES",
+    subtitle: "Wireline logging, fishing and perforation operations",
     isFeatured: false,
     features: [
-      "Kill Fluid Weight & Volume Calculations",
-      "Packer & Tubing Retrieval Drills",
-      "Well Control Barriers Verification",
-      "Perforating & Stimulation Safety",
+      "Slickline & E-Line Pressure Equipment",
+      "Stuffing Box & Grease Injection Heads",
+      "Tool String Fishing Operations",
+      "Pressure Bleed-off Safety Steps",
     ],
   },
   {
@@ -60,16 +59,17 @@ const STATIC_TOPICS = [
     ],
   },
   {
-    slug: "wireline",
-    name: "Wireline",
-    badge: "WELL SERVICES",
-    subtitle: "Wireline logging, fishing and perforation operations",
-    isFeatured: false,
+    slug: "mock-tests",
+    name: "OGOR Mock Tests",
+    badge: "EXAM SIMULATION",
+    subtitle: "Full-length timed mock tests #1, #2 and #3",
+    isFeatured: true,
+    isMockTestRedirect: true,
     features: [
-      "Slickline & E-Line Pressure Equipment",
-      "Stuffing Box & Grease Injection Heads",
-      "Tool String Fishing Operations",
-      "Pressure Bleed-off Safety Steps",
+      "Official Timed Exam Simulation",
+      "Covers All OGOR Well Services Modules",
+      "Immediate Review & Score Breakdown",
+      "Realistic Exam Question Pool",
     ],
   },
 ];
@@ -77,34 +77,43 @@ const STATIC_TOPICS = [
 const IACDWellServicesOGOR = () => {
   const navigate = useNavigate();
   const { openCategory, AccessModal } = useCategoryAccess();
-  const [dynamicCategories, setDynamicCategories] = useState<{ name: string; slug: string }[]>([]);
+  const [dynamicCategories, setDynamicCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDynamic = async () => {
-      const { data } = await supabase
-        .from("question_categories")
-        .select("name, slug")
-        .eq("parent_path", "/exercises/iacd/well-services/ogor")
-        .order("display_order");
-      if (data) setDynamicCategories(data);
-      setLoading(false);
+    const fetchCats = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("question_categories")
+          .select("*")
+          .eq("parent_path", "/exercises/iacd/well-services/ogor")
+          .order("display_order");
+
+        if (!error && data) {
+          setDynamicCategories(data);
+        }
+      } catch (err) {
+        console.error("Error fetching OGOR categories:", err);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchDynamic();
+    fetchCats();
   }, []);
 
   const extraCategories = dynamicCategories
-    .filter((d) => !STATIC_TOPICS.some((s) => s.slug === d.slug))
-    .map((d) => ({
-      slug: d.slug,
-      name: d.name,
-      badge: "CATEGORY",
-      subtitle: "Practice questions & mock review",
+    .filter((c) => !STATIC_TOPICS.some((s) => s.slug === c.slug))
+    .map((c) => ({
+      slug: c.slug,
+      name: c.name,
+      badge: "OGOR MODULE",
+      subtitle: c.description || "IADC OGOR exam practice questions",
       isFeatured: false,
       features: [
-        "Curated Syllabus Questions",
-        "Step-by-Step Worked Solutions",
-        "Interactive Self-Assessment",
+        "Syllabus questions with answers",
+        "Step-by-step verified explanations",
+        "Timed mock practice mode",
+        "Official scoring assessment",
       ],
     }));
 
@@ -114,10 +123,10 @@ const IACDWellServicesOGOR = () => {
     <div className="min-h-screen bg-[#fafafc] font-jakarta">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#fafafc]/90 backdrop-blur-md border-b border-slate-200/60">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3 flex-wrap">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-2 flex-wrap">
           <button
             onClick={() => navigate("/exercises/iacd/well-services")}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -127,7 +136,7 @@ const IACDWellServicesOGOR = () => {
           <span className="text-slate-300">›</span>
           <button
             onClick={() => navigate("/exercises/iacd/well-services")}
-            className="text-xs sm:text-sm text-slate-500 hover:text-slate-900 transition-colors"
+            className="text-xs sm:text-sm text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
           >
             Well Services
           </button>
@@ -143,7 +152,7 @@ const IACDWellServicesOGOR = () => {
             IADC OGOR Topics
           </h1>
           <p className="text-slate-500 text-sm sm:text-base font-normal max-w-md mx-auto">
-            Select a discipline or mock exam to start practicing.
+            Choose an OGOR topic to practice or take a full timed simulation exam.
           </p>
         </div>
 
@@ -154,9 +163,10 @@ const IACDWellServicesOGOR = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-7 items-stretch">
-            {allTopics.map((topic: any) => (
+            {allTopics.map((topic: any, idx: number) => (
               <SelectionCard
                 key={topic.slug}
+                number={idx + 1}
                 badge={topic.badge}
                 title={topic.name}
                 subtitle={topic.subtitle}

@@ -84,7 +84,6 @@ const ChatWidget = () => {
 
   // UI accordion sections in right sidebar
   const [generalOpen, setGeneralOpen] = useState(true);
-  const [notesOpen, setNotesOpen] = useState(true);
   const [filesOpen, setFilesOpen] = useState(false);
   const [linksOpen, setLinksOpen] = useState(false);
 
@@ -127,9 +126,33 @@ const ChatWidget = () => {
     };
     poll();
     const t = setInterval(poll, 2500);
+
+    // Realtime channel for instant deletion & message sync across all devices
+    const channel = supabase
+      .channel("chat-realtime-sync")
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "chat_messages" },
+        (payload) => {
+          const deletedId = (payload.old as any)?.id;
+          if (deletedId) {
+            setMsgs((prev) => prev.filter((m) => m.id !== deletedId));
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_messages" },
+        () => {
+          poll();
+        }
+      )
+      .subscribe();
+
     return () => {
       stop = true;
       clearInterval(t);
+      supabase.removeChannel(channel);
     };
   }, [enabled, isAdmin, userId]);
 
@@ -454,7 +477,8 @@ const ChatWidget = () => {
               )}
 
               {filteredMsgs.map((m) => {
-                const mine = m.sender_id === me;
+                const localUid = userId || localStorage.getItem("userId") || "";
+                const mine = m.sender_id === me || (!!localUid && m.sender_id === localUid);
                 const isAudio = m.attachment_type?.startsWith("audio/") || m.attachment_name?.endsWith(".webm");
                 const isImg = m.attachment_type?.startsWith("image/");
                 const isDoc = m.attachment_signed && !isImg && !isAudio;
@@ -558,14 +582,14 @@ const ChatWidget = () => {
                           })}
                         </div>
 
-                        {/* Delete message button (shown on hover for admin or message owner) */}
+                        {/* Delete message button (shown for admin or message owner) */}
                         {(isAdmin || mine) && (
                           <button
                             onClick={() => remove(m.id)}
                             title="Delete message"
                             className={`absolute top-2 ${
                               mine ? "-left-7" : "-right-7"
-                            } opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 shadow-xs border border-slate-200 flex items-center justify-center transition-all cursor-pointer`}
+                            } opacity-80 sm:opacity-0 sm:group-hover:opacity-100 hover:!opacity-100 w-6 h-6 rounded-full bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 shadow-xs border border-slate-200 flex items-center justify-center transition-all cursor-pointer`}
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -723,31 +747,6 @@ const ChatWidget = () => {
                     <span className="inline-block bg-[#8075f8] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full">
                       Active User
                     </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Notes Section matching screenshot */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs space-y-3">
-              <div
-                className="flex items-center justify-between font-bold text-slate-800 cursor-pointer"
-                onClick={() => setNotesOpen(!notesOpen)}
-              >
-                <span>Exam Study Tips</span>
-                {notesOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-              </div>
-
-              {notesOpen && (
-                <div className="space-y-2 pt-1 text-[11px] text-slate-600 leading-relaxed">
-                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                    <p className="font-semibold text-slate-800 mb-1">Formula References</p>
-                    <p>Always verify hydrostatic gradient: 0.052 × MW (ppg) × TVD (ft).</p>
-                    <span className="text-[10px] text-slate-400 mt-1 block">IWCF Syllabus</span>
-                  </div>
-                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                    <p className="font-semibold text-slate-800 mb-1">Direct Admin Help</p>
-                    <p>Use "Direct to Admin" tab or type #admin for private questions.</p>
                   </div>
                 </div>
               )}

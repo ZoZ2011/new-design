@@ -166,6 +166,7 @@ const IWCFDrilling = () => {
                 {dayCategories.map((cat, idx) => (
                   <SelectionCard
                     key={cat.slug}
+                    number={idx + 1}
                     badge={`TOPIC #${idx + 1}`}
                     title={cat.name}
                     subtitle="Practice questions & mock review"
@@ -216,6 +217,7 @@ const IWCFDrilling = () => {
             {days.map((day) => (
               <SelectionCard
                 key={day.slug}
+                number={idx + 1}
                 badge={day.badge}
                 title={day.title}
                 subtitle={day.subtitle}
@@ -261,6 +263,7 @@ const IWCFDrilling = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 max-w-3xl mx-auto items-stretch">
           <SelectionCard
+            number={1}
             badge="CANDIDATE TRACK"
             title="Level 3"
             subtitle="Driller candidate well control certification preparation"
@@ -276,6 +279,7 @@ const IWCFDrilling = () => {
             onClick={() => handleSelectLevel(3)}
           />
           <SelectionCard
+            number={2}
             badge="SUPERVISOR TRACK"
             title="Level 4"
             subtitle="Supervisor & toolpusher well control certification prep"

@@ -65,6 +65,7 @@ const IWCFWellIntervention = () => {
             {dynamicCategories.map((cat, idx) => (
               <SelectionCard
                 key={cat.slug}
+                number={idx + 1}
                 badge={`MODULE #${idx + 1}`}
                 title={cat.name}
                 subtitle="Intervention techniques & mock questions"
