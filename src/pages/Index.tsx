@@ -124,7 +124,7 @@ const Index = () => {
       <div className="mx-auto max-w-[1320px] overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_28px_90px_rgba(46,35,89,0.18)] sm:rounded-[34px]">
         <header className="relative z-20 flex min-h-[68px] items-center justify-between gap-4 bg-[#111111] px-5 text-white sm:px-8">
           <button onClick={() => navigate("/")} className="shrink-0 text-xl font-black tracking-tight text-white" aria-label="Well Control home">
-            well<span className="text-[#d8f33f]">wise</span>
+            UIX<span className="text-[#d8f33f]">SHUVO</span>
           </button>
 
           <nav className="hidden items-center gap-1 md:flex">
@@ -155,7 +155,7 @@ const Index = () => {
         <div className="space-y-6 bg-[#fbfbfa] p-4 sm:p-7 lg:p-9">
           <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">YOUR WELL CONTROL CLASSROOM</p>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">NEXT-GEN WELL CONTROL PREP FOR DRILLING CREWS</p>
               <h1 className="text-2xl font-extrabold tracking-tight text-[#171717] sm:text-3xl">Good morning, {firstName}!</h1>
               <p className="mt-1 text-xs text-slate-500">You’re making steady progress toward your certification. <span className="text-lime-600">✦</span></p>
             </div>
@@ -265,7 +265,7 @@ const Index = () => {
           </section>
 
           <footer className="flex flex-col items-center justify-between gap-2 border-t border-slate-200 pt-4 text-[9px] text-slate-400 sm:flex-row">
-            <span className="font-semibold text-slate-600">wellwise · Well Control Prep</span>
+            <span className="font-semibold text-slate-600">UIXSHUVO · Well Control Club</span>
             <span>Choose a track, practice with purpose, and build confidence for exam day.</span>
           </footer>
         </div>
