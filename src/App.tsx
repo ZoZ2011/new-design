@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -25,6 +26,8 @@ import AdminUsers from "./pages/AdminUsers";
 import AnswerEditor from "./pages/AnswerEditor";
 import NotFound from "./pages/NotFound";
 
+const IPhone3D = lazy(() => import("./pages/IPhone3D"));
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -46,6 +49,14 @@ const App = () => (
           <Route path="/exercises/iwcf" element={<IWCF />} />
           <Route path="/exercises/iwcf/drilling" element={<IWCFDrilling />} />
           <Route path="/exercises/iwcf/well-intervention" element={<IWCFWellIntervention />} />
+          <Route
+            path="/iphone-3d"
+            element={
+              <Suspense fallback={null}>
+                <IPhone3D />
+              </Suspense>
+            }
+          />
           <Route path="/manuals" element={<Manuals />} />
           <Route path="/signin/:category" element={<SignIn />} />
           <Route path="/questions/:category" element={<Questions />} />

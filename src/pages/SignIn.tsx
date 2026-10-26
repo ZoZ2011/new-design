@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { signinCheck } from "@/lib/backendApi";
-import { ArrowRight, Loader2, ShieldCheck, User } from "lucide-react";
+import { ArrowRight, Loader2, ShieldCheck, Smartphone, User } from "lucide-react";
 
 interface SignInProps {
   onSuccess?: () => void;
@@ -196,6 +196,15 @@ export const SignIn = ({ onSuccess }: SignInProps) => {
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
+              </button>
+
+              {/* 3D viewer shortcut */}
+              <button
+                onClick={() => navigate("/iphone-3d")}
+                className="w-full h-12 bg-white hover:bg-slate-50 text-slate-900 font-semibold text-sm rounded-xl border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Smartphone className="w-4 h-4 text-[#2563eb]" />
+                <span>iPhone</span>
               </button>
 
               {/* Toggle between Candidate Login and Instructor Access */}

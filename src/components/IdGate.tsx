@@ -12,9 +12,10 @@ const IdGate = ({ children }: { children: ReactNode }) => {
 
   const p = location.pathname;
   const isControlCenter = p.startsWith("/control-center");
+  const isPublic = p.startsWith("/iphone-3d");
   const isAuthenticated = !!localStorage.getItem("userId");
 
-  if (isControlCenter || isAuthenticated) {
+  if (isControlCenter || isPublic || isAuthenticated) {
     return <>{children}</>;
   }
 
